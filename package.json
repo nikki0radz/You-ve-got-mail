@@ -1,0 +1,1 @@
+{"name":"youve-got-mail","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"node scripts/serve.mjs","test":"node --test tests/*.test.mjs","check":"node --check app.js && node --check domain.mjs","build":"node scripts/build.mjs"}}
