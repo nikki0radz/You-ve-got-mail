@@ -25,3 +25,10 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .guest .wheel-orbs button{aspect-ratio:1;min-height:0;padding:6px;width:100%;margin:0;overflow:hidden;background:#e1e5cc;border:1px solid #a7ae90;border-radius:50%}
 .guest .wheel-orbs button:nth-child(2){background:#f4dda9;padding:13px;outline:2px dashed #b3a06f;outline-offset:-6px}
 .guest .wheel-orbs img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}.guest .browse{width:calc(100% - 8px)}
+.flight,.delivery-receipt{text-align:center}.flight img,.delivery-receipt img{display:block;height:100px;max-width:100%;object-fit:contain;margin:4px auto 12px}
+.flight img{animation:pigeon-hop 1s ease-in-out infinite alternate}
+@keyframes pigeon-hop{to{transform:translate(6px,-5px) rotate(2deg)}}
+@media(prefers-reduced-motion:reduce){.flight img{animation:none}}
+.delivery-receipt .ticks{font:bold 25px/1.2 system-ui;color:#3b6547}.delivery-receipt .reply{white-space:pre-wrap;overflow-wrap:anywhere}
+.guest .smallprint{font-size:13px}.guest .final-proof{position:relative;overflow:hidden;margin:8px auto;background:linear-gradient(145deg,#99b6aa,#9daab7,#c7b59f);width:min(100%,180px);aspect-ratio:600/1120;border-radius:14px}
+.guest .final-proof img{width:100%;height:100%;object-fit:contain}

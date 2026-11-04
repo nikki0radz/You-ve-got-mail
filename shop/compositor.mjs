@@ -13,7 +13,7 @@ function loadSheet(url) {
   return sheets.get(url);
 }
 
-function writeText(context, value, rect, colour) {
+export function writeText(context, value, rect, colour) {
   if (!value.trim()) return;
   const [x, y, width, height] = rect;
   let lines;

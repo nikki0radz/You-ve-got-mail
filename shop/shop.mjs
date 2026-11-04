@@ -1,3 +1,4 @@
+import {startGuestStudio} from './guest-studio.mjs';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
@@ -26,7 +27,7 @@ export async function openShop(onTest, initialCategory, guest=false){
   const trigger=document.activeElement;
   if(dialog.open)return;
   dialog.showModal();
-  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing');dialog.replaceChildren();trigger?.focus();};
+  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
   dialog.oncancel=e=>{e.preventDefault();cancel();};
@@ -40,6 +41,13 @@ export async function openShop(onTest, initialCategory, guest=false){
   const report=e=>{const line=dialog.querySelector('.parcel-error');if(line)line.textContent=e.message||String(e);};
   const backButton='<button class="secondary" data-prev>‹ Back</button>';
   const chooseItem=it=>{current=it;group=it.category;step=0;dirty=false;
+    if(guest){
+      disposeReel?.();disposeReel=null;
+      startGuestStudio(dialog,it,backFromItem,async(image,name,category,reopen)=>{
+        await onTest(image,name,category,reopen);dialog.close();
+      });
+      return;
+    }
     draft={words:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
   const shelfButton=it=>'<button type="button" class="parcel-tile" data-item="'+catalog.indexOf(it)+'">'+miniature(it)+'<span>'+esc(it.name)+'</span></button>';
   function rememberShop(){

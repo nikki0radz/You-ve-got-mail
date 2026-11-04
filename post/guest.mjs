@@ -9,7 +9,7 @@ const kinds={Photos:'a framed photo',Stickers:'a sticker',Reminders:'a reminder'
 let draft;
 async function api(path,key,body){
   const resp=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+key,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
-  const data=await resp.json();if(!resp.ok)throw new Error(data.error||'Could not reach the post office.');return data;
+  const data=await resp.json();if(!resp.ok){const error=new Error(data.error||'Could not reach the post office.');error.status=resp.status;throw error;}return data;
 }
 async function scaled(data){
   if(data.length<=1800000)return data;
@@ -51,7 +51,7 @@ function choose(){
   const stage=steps.querySelector('.wheel-paper'),orbs=[...stage.querySelectorAll('.wheel-orbs button')];
   function offset(n){return (position+n+categories.length)%categories.length;}
   function move(n){position=offset(n);paint();}
-  function browse(){openShop(async(image,name,group)=>{draft={image:await scaled(image),kind:kinds[group]};review();},categories[position],true);}
+  function browse(){openShop(async(image,name,group,reopen)=>{draft={sender:draft?.sender||'',time:draft?.time||'',image:await scaled(image),kind:kinds[group],reopen};review();},categories[position],true);}
   function paint(){
     const category=categories[position],label=collectionName(category);
     stage.querySelector('small').textContent=(position+1)+' / '+categories.length;
@@ -75,26 +75,95 @@ function choose(){
   stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();move(e.key==='ArrowRight'?1:-1);}};
   stage.querySelector('.browse').onclick=browse;paint();
 }
+let preparedKey='', pollTimer;
+const storageKey='pigeon-receipt:'+token;
+function rememberKey(){
+  if(!preparedKey){
+    try{preparedKey=localStorage.getItem(storageKey)||'';}catch{}
+    if(!/^[0-9a-f]{64}$/.test(preparedKey)){
+      preparedKey=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
+      try{localStorage.setItem(storageKey,preparedKey);}catch{}
+    }
+  }return preparedKey;
+}
+function loading(){
+  steps.innerHTML='<section class="flight"><img src="assets/home/mascot.webp" alt=""><h2>One moment. Tiny satchel.</h2><p>Your pigeon is getting the parcel ready for its flight to Nicole’s phone.</p></section>';
+  status.textContent=preview?'Preview flight · No parcel will be sent.':'Preparing your delivery…';
+}
+function openReceipt(key){
+  history.replaceState(null,'','#reply-'+key);
+  showReceipt(key);
+}
 function review(){
-  status.textContent='Your phone’s local time is used for scheduling.';
-  steps.innerHTML='<img class="proof" alt="Your parcel"><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="What should the notification say?"></label><label>Delivery time (leave blank for now)<input id="when" type="datetime-local"></label><button id="back">Choose again</button><button id="send">Send parcel</button>';
-  steps.querySelector('img').src=draft.image;steps.querySelector('#back').onclick=choose;
-  if(preview){const send=steps.querySelector('#send');send.disabled=true;send.textContent='Preview only';status.textContent='Sending is available with a one-time invitation.';return;}
-  steps.querySelector('#send').onclick=async e=>{
-    const sender=steps.querySelector('#sender').value.trim(),value=steps.querySelector('#when').value,when=value?new Date(value).getTime():Date.now();
-    if(!sender){status.textContent='Add your name first.';return;}
+  steps.innerHTML='<h2>Ready for take-off?</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><label>Delivery time (leave blank for now)<input id="when" type="datetime-local"></label><button class="quiet" id="back">‹ Edit parcel</button><button class="accept" id="send"></button>';
+  const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
+  sender.value=draft.sender||'';whenField.value=draft.time||'';send.textContent=preview?'Try the pigeon’s flight':'Hand it to the pigeon';
+  status.textContent=preview?'Preview only. No mail will be sent.':'Delivery times use your local time.';
+  steps.querySelector('img').src=draft.image;steps.querySelector('#back').onclick=()=>{draft.sender=sender.value;draft.time=whenField.value;draft.reopen();};
+  send.onclick=async()=>{
+    const name=sender.value.trim(),value=whenField.value,when=value?new Date(value).getTime():Date.now();
+    if(!preview&&!name){status.textContent='Add your name first.';sender.focus();return;}
     if(value&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000)){status.textContent='Choose a future time within 30 days.';return;}
-    e.target.disabled=true;steps.querySelector('#back').disabled=true;status.textContent='Sending…';
-    try{const {receipt}=await api('send',token,{...draft,sender,when});history.replaceState(null,'','#reply-'+receipt);showReceipt(receipt);}
-    catch(err){status.textContent=err.message;e.target.disabled=false;steps.querySelector('#back').disabled=false;}
+    draft.sender=name;draft.time=value;loading();
+    const wait=new Promise(resolve=>setTimeout(resolve,5000));
+    if(preview){await wait;showReceipt(null);return;}
+    const key=rememberKey();
+    try{
+      const {receipt}=await api('send',token,{image:draft.image,kind:draft.kind,sender:name,when,receiptSecret:key});
+      // Save the real receipt URL immediately, even if the page closes during the animation.
+      history.replaceState(null,'','#reply-'+receipt);
+      await wait;showReceipt(receipt);
+    }catch(err){
+      await wait;
+      try{await api('receipt',key);openReceipt(key);return;}catch{}
+      review();
+      status.textContent=err.status&&err.status<500?err.message:'We couldn’t check whether the post office got your parcel. Reconnect and try again. Retrying won’t send a second copy.';
+    }
   };
 }
 function showReceipt(key){
-  steps.innerHTML='<h2>Your parcel was sent.</h2><p>Keep this page to check for a reply.</p><button>Check for reply</button>';
-  const check=async()=>{try{const r=await api('receipt',key);status.textContent=r.reply?'Reply: '+r.reply:'No reply yet.';}catch(err){status.textContent=err.message;}};
-  steps.querySelector('button').onclick=check;check();
+  clearTimeout(pollTimer);let checking=false,confirmed=false;
+  steps.innerHTML='<article class="delivery-receipt"><img src="assets/home/mascot.webp" alt=""><div class="ticks" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Check for a reply</button><p class="smallprint">This link is good for one delivery. To send another, ask Nicole for a fresh link or <a download="Youve-Got-Mail-0.1.2.apk" href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.2.apk">download the Android test app</a>.</p><p class="smallprint">You’ve Got Mail is still in development. Thanks for taking our pigeon for a test flight.</p></article>';
+  const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),ticks=steps.querySelector('.ticks'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
+  function display(ack){
+    confirmed=ack;ticks.textContent=ack?'✓✓':'✓';
+    heading.textContent=ack?'Special delivery. It’s on her phone!':'In the pigeon’s postbag.';
+    detail.textContent=ack?'Nicole’s phone has received your parcel. It can pop up when her settings and delivery time allow. She can reply if she likes. Any reply will appear here.':'The post office has your parcel. We’re waiting for Nicole’s phone to collect it. You can come back to this receipt to check.';
+  }
+  if(!key){heading.textContent='Flight preview complete';detail.textContent='No parcel was sent. On a real receipt, one tick means queued and two mean Nicole’s phone has received it.';check.textContent='Back to the preview';check.onclick=choose;status.textContent='';return;}
+  heading.textContent='Checking the pigeon’s route…';status.textContent='';
+  async function refresh(manual=false){
+    if(checking||!check.isConnected)return;checking=true;check.disabled=true;clearTimeout(pollTimer);
+    let expired=false,hasReply=false;
+    try{
+      const result=await api('receipt',key);
+      if(!check.isConnected)return;
+      display(result.status==='acknowledged');
+      hasReply=Boolean(result.reply);reply.textContent=hasReply?'Nicole replied: '+result.reply:confirmed?'No reply yet. Check back here whenever you like.':'';
+      status.textContent=manual?'Receipt checked just now.':'';
+    }catch(e){
+      expired=e.status===404;
+      if(expired){ticks.textContent='';heading.textContent='Receipt unavailable';detail.textContent='This receipt may have expired. Ask Nicole for a fresh invitation.';}
+      status.textContent=expired?'':'Couldn’t refresh the receipt. Try again when you’re connected.';
+    }finally{
+      checking=false;check.disabled=expired;
+      if(!expired&&!hasReply&&check.isConnected)pollTimer=setTimeout(()=>{if(!document.hidden)refresh();else pollTimer=setTimeout(()=>refresh(),30000);},confirmed?30000:7000);
+    }
+  }
+  check.onclick=()=>refresh(true);refresh();
 }
-if(preview)invitation();
-else if(/^reply-[a-f0-9]{64}$/.test(token))showReceipt(token.slice(6));
-else if(/^[a-f0-9]{64}$/.test(token)){try{await api('link',token);invitation();}catch(e){status.textContent=e.message;}}
-else status.textContent='Open the full invitation link your friend shared with you.';
+async function start(){
+  if(preview){invitation();return;}
+  if(/^reply-[a-f0-9]{64}$/.test(token)){showReceipt(token.slice(6));return;}
+  if(!/^[a-f0-9]{64}$/.test(token)){status.textContent='Open the full invitation link your friend shared with you.';return;}
+  try{
+    await api('link',token);invitation();
+  }catch(e){
+    if(e.status===410){
+      let remembered;try{remembered=localStorage.getItem(storageKey);}catch{}
+      if(remembered){try{await api('receipt',remembered);openReceipt(remembered);return;}catch{}}
+    }
+    status.textContent=e.message;
+  }
+}
+start();
