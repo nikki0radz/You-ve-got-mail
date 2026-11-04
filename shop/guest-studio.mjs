@@ -173,9 +173,15 @@ export function startGuestStudio(dialog,item,back,onReady){
     const source=dialog.querySelector('[data-file=main]');
     if(item.maskSheet){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
+    const removeNote=tool('remove-note');
+    if(removeNote)styles.after(removeNote);
     function togglePanel(panel){
       if(panel===stickers&&!stickers.querySelector('.sticker-grid button'))bindStickerPicker(stickers);
       const opening=panel.hidden;styles.hidden=true;stickers.hidden=true;panel.hidden=!opening;
+      if(removeNote){
+        if(styles.hidden)styles.after(removeNote);
+        else styles.append(removeNote);
+      }
       tool('note').setAttribute('aria-expanded',String(!styles.hidden));
       tool('second').setAttribute('aria-expanded',String(!stickers.hidden));
     }
@@ -190,14 +196,14 @@ export function startGuestStudio(dialog,item,back,onReady){
     };});
     if(state.note){
       tool('edit-note').onclick=()=>startText('note');
-      tool('remove-note').onclick=()=>{state.note=null;noteMoved=false;active='art';dirty=true;show();};
+      removeNote.onclick=()=>{state.note=null;noteMoved=false;active='art';dirty=true;show();tool('note').focus();};
     }
     tool('ready').onclick=async()=>{
       if(busy)return;
       const error=dialog.querySelector('.studio-error');
       if(item.maskSheet&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
       if(item.textBox&&!state.words.trim()){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
-      if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or remove it in Note options.';startText('note');return;}
+      if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
       busy=true;const ready=tool('ready');ready.disabled=true;
       try{const canvas=await renderParcel(item,state);await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);}
       catch(e){grabError(e);}finally{busy=false;ready.disabled=false;}

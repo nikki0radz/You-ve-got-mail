@@ -2,7 +2,7 @@ import {fonts} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
 import {guestItems,guestSelection} from './guest-selection.mjs';
-import {startGuestStudio} from './guest-studio.mjs?v=sticker-dock-1';
+import {startGuestStudio} from './guest-studio.mjs?v=visible-remove-1';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
