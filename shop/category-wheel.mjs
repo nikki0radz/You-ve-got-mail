@@ -5,37 +5,57 @@ const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo
 const categories=Object.keys(guestSelection);
 
 export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse}){
-  let position=Math.max(0,categories.indexOf(initialCategory));
-  root.innerHTML='<button type="button" class="wheel-back">‹ Back</button><section class="wheel"><h2>Pick your post</h2><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs"><button type="button"></button><button type="button"></button><button type="button"></button></div><p class="caption"></p><button type="button" class="browse"></button></div></section>';
+  const first=Math.max(0,categories.indexOf(initialCategory));
+  root.innerHTML='<button type="button" class="wheel-back pocket-back"><span aria-hidden="true">←</span> Back</button><section class="wheel"><h2>Pick your post</h2><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
-  const stage=root.querySelector('.wheel-paper'),orbs=[...stage.querySelectorAll('.wheel-orbs button')];
-  const offset=n=>(position+n+categories.length)%categories.length;
-  function move(n){position=offset(n);paint();}
-  const browse=()=>onBrowse(categories[position]);
-  function paint(){
-    const category=categories[position],label=collectionName(category);
-    stage.querySelector('small').textContent=(position+1)+' / '+categories.length;
-    stage.querySelector('h3').textContent=label;
-    stage.querySelector('.caption').textContent=captions[category];
-    stage.querySelector('.browse').textContent='Browse '+label.toLowerCase();
-    orbs.forEach((button,i)=>{
-      const key=categories[offset(i-1)],id=String(guestSelection[key][0][0]).padStart(3,'0');
-      const img=new Image();img.alt='';img.draggable=false;
-      img.src=key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+id+'.webp':'assets/guest/'+id+'.svg';
-      button.setAttribute('aria-label',(i===1?'Browse ':'Show ')+collectionName(key).toLowerCase());
-      button.replaceChildren(img);
-    });
+  const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
+  const cards=slots.map((key,slot)=>{
+    const button=document.createElement('button'),face=document.createElement('span'),img=new Image();
+    button.type='button';img.alt='';img.draggable=false;
+    const id=String(guestSelection[key][0][0]).padStart(3,'0');
+    img.src=key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+id+'.webp':'assets/guest/'+id+'.svg';
+    face.append(img);button.append(face);rail.append(button);
+    button.onclick=()=>{if(performance.now()<suppressUntil)return;if(Math.abs(position()-slot)<.05)onBrowse(key);else move(slot);};
+    return button;
+  });
+  let selected=-1,timer,drag=null,suppressUntil=0;
+  const step=()=>cards[1].getBoundingClientRect().left-cards[0].getBoundingClientRect().left;
+  const position=()=>step()?rail.scrollLeft/step():first+1;
+  function move(slot,instant=false){
+    rail.scrollTo({left:slot*step(),behavior:instant||matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
-  let start=null,suppressUntil=0;
-  stage.onpointerdown=e=>{start=[e.clientX,e.clientY];};
-  stage.onpointercancel=()=>{start=null;};
-  stage.onpointerup=e=>{
-    if(!start)return;
-    const dx=e.clientX-start[0],dy=e.clientY-start[1];start=null;
-    if(Math.abs(dx)>30&&Math.abs(dx)>Math.abs(dy)){suppressUntil=Date.now()+350;move(dx<0?1:-1);}
+  function paint(){
+    const pos=position(),nearest=Math.max(0,Math.min(slots.length-1,Math.round(pos)));
+    cards.forEach((card,i)=>{
+      const distance=Math.abs(pos-i),d=distance<.01?0:Math.min(1,distance);
+      card.style.setProperty('--orb-scale',String(.98-.36*d));card.style.setProperty('--orb-alpha',String(1-.55*d));
+      card.style.zIndex=String(Math.round(100*(1-d)));
+    });
+    if(nearest===selected)return;
+    selected=nearest;const key=slots[selected],label=collectionName(key);
+    cards.forEach((card,i)=>{card.tabIndex=i===selected?0:-1;card.setAttribute('aria-current',String(i===selected));card.setAttribute('aria-label',(i===selected?'Browse ':'Show ')+collectionName(slots[i]).toLowerCase());});
+    root.querySelector('.wheel-paper small').textContent=(categories.indexOf(key)+1)+' / '+categories.length;
+    root.querySelector('.wheel-paper h3').textContent=label;root.querySelector('.caption').textContent=captions[key];
+  }
+  rail.onscroll=()=>{paint();clearTimeout(timer);timer=setTimeout(()=>{
+    if(drag||!rail.isConnected)return;
+    if(selected===0)move(categories.length,true);else if(selected===slots.length-1)move(1,true);
+  },180);};
+  rail.onkeydown=e=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+    e.preventDefault();const i=categories.indexOf(slots[selected]);
+    const target=e.key==='Home'?0:e.key==='End'?categories.length-1:(i+(e.key==='ArrowLeft'?-1:1)+categories.length)%categories.length;
+    move(target+1,true);paint();cards[target+1].focus({preventScroll:true});
   };
-  stage.addEventListener('click',e=>{if(Date.now()<suppressUntil)e.stopImmediatePropagation();},true);
-  orbs.forEach((button,i)=>button.onclick=()=>i===1?browse():move(i-1));
-  stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();move(e.key==='ArrowRight'?1:-1);}};
-  stage.querySelector('.browse').onclick=browse;paint();
+  rail.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button===0)drag={id:e.pointerId,x:e.clientX,start:rail.scrollLeft,moved:false};};
+  rail.onpointermove=e=>{
+    if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;
+    if(!drag.moved&&Math.abs(dx)<5)return;
+    if(!drag.moved){rail.setPointerCapture(e.pointerId);rail.style.scrollSnapType='none';drag.moved=true;}
+    rail.scrollLeft=drag.start-dx;
+  };
+  function endDrag(){if(!drag)return;if(drag.moved){const slot=Math.round(position());suppressUntil=performance.now()+350;rail.style.scrollSnapType='';move(slot);}drag=null;}
+  rail.onpointerup=rail.onpointercancel=rail.onlostpointercapture=endDrag;
+  rail.onpointerleave=()=>{if(drag&&!drag.moved)drag=null;};
+  move(first+1,true);paint();
 }

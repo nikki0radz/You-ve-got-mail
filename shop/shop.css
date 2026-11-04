@@ -53,12 +53,9 @@
 
 #parcel-shop .wheel { text-align:center; }
 #parcel-shop .wheel-back { background:none; border:0; color:var(--mm-text); min-height:44px; }
-#parcel-shop .wheel-paper { color:#354932; background:#f5ebd5; border:1px dashed #a3ac92; border-radius:15px; padding:14px 8px; touch-action:pan-y; }
+#parcel-shop .wheel-paper { color:#354932; background:#f5ebd5; border:1px dashed #a3ac92; border-radius:15px; padding:14px 8px; touch-action:auto; }
 #parcel-shop .wheel-paper h3 { font-size:26px; line-height:1.1; margin:5px; }
-#parcel-shop .wheel-orbs { display:grid; grid-template-columns:21% 53% 21%; align-items:center; justify-content:space-between; padding:4px 0 10px; }
-#parcel-shop .wheel-orbs button { aspect-ratio:1; min-height:0; padding:6px; width:100%; margin:0; overflow:hidden; background:#e1e5cc; border:1px solid #a7ae90; border-radius:50%; }
-#parcel-shop .wheel-orbs button:nth-child(2) { background:#f4dda9; padding:13px; outline:2px dashed #b3a06f; outline-offset:-6px; }
-#parcel-shop .wheel-orbs img { display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+
 #parcel-shop .wheel-paper .browse { width:calc(100% - 8px); min-height:44px; background:#40563e; color:#fff9e8; border:0; border-radius:12px; font-weight:bold; }
 
 .library-filter { margin:10px 0; }
@@ -77,3 +74,14 @@
 .library-grid button { display:grid; align-content:start; justify-items:center; gap:4px; min-width:0; padding:6px 4px; border:1px solid #d4c9ae; border-radius:12px; color:#294236; background:#f8f0dc; font:650 12px/1.25 system-ui; text-align:center; }
 .library-grid .grid-art { width:100%; aspect-ratio:1.2; }
 .library-grid .grid-art>img,.library-grid .grid-art>svg { display:block; width:100%; height:100%; object-fit:contain; }
+
+/* The category face scales and fades continuously with distance from the snap point. */
+.wheel .category-reel{position:relative;display:flex;align-items:center;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;user-select:none;padding:4px 0 10px;mask-image:linear-gradient(to right,transparent,#000 13%,#000 87%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 13%,#000 87%,transparent)}
+.category-reel::-webkit-scrollbar{display:none}
+.category-reel::before,.category-reel::after{content:"";flex:0 0 30.5%}
+.wheel .category-reel button{display:grid;place-items:center;flex:0 0 39%;aspect-ratio:.77;scroll-snap-align:center;min-width:0;min-height:0;margin:0;padding:0;border:0;background:transparent;box-shadow:none;cursor:pointer}
+.wheel .category-reel button>span{display:grid;place-items:center;width:132%;aspect-ratio:1;box-sizing:border-box;border-radius:50%;background:#e1e5cc;border:1px solid #a7ae90;opacity:var(--orb-alpha,.45);transform:scale(var(--orb-scale,.62));pointer-events:none}
+.wheel .category-reel button[aria-current=true]>span{background:#f4dda9;outline:2px dashed #b3a06f;outline-offset:-6px}
+.category-reel img{display:block;width:86%;height:86%;object-fit:contain}
+.wheel .category-reel button:focus-visible{outline:0}.wheel .category-reel button:focus-visible>span{outline:3px solid #355840;outline-offset:-4px}
+.guest button.wheel-back.pocket-back,#parcel-shop button.wheel-back.pocket-back{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:7px 17px;min-height:44px;margin:0 0 8px;border:1px solid #94a28a;border-radius:28px;background:#fcf7e9;color:#324e39;box-shadow:0 2px 3px #47574420;font:700 15px system-ui}

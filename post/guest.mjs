@@ -1,5 +1,5 @@
 import {scaled} from '../shop/transport-image.mjs';
-import {mountCategoryWheel} from '../shop/category-wheel.mjs';
+import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=glide-1';
 import {openShop} from '../shop/shop.mjs';
 const preview=!location.hash && new URLSearchParams(location.search).get('preview')==='1';
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
