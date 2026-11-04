@@ -19,3 +19,7 @@ aside label,dialog label{display:grid;gap:4px;font-size:12px;font-weight:650;mar
 
 .board-link{color:#fff9e8;padding:7px 9px;font-weight:650}.board-link:focus-visible{outline:2px solid white}
 #round{padding:8px 18px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;background:#faf8ef;border-bottom:1px solid #bdc6b9}#round small{font:700 10px monospace;letter-spacing:.08em}#option-numbers{display:flex;gap:4px;flex-wrap:wrap}#option-numbers button{min-width:31px;padding:5px 8px}#option-numbers button[aria-pressed=true]{background:#365a40;color:#fff9e8}#option-name{font-size:12px;color:#435c49}
+#round{display:grid;justify-content:stretch;gap:5px}.option-row{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:4px}.option-row strong{margin-right:6px;font-size:13px}.option-row span{font-size:12px;margin-left:5px}.option-row button{padding:4px 8px}.option-row [aria-pressed=true]{background:#365a40;color:#fff9e8}
+#commentDialog{position:fixed;inset:auto;margin:0;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;box-shadow:0 6px 32px #243a2c44}
+#commentDialog::backdrop{background:transparent}
+.comment-position{display:flex;justify-content:space-between;gap:8px;margin:6px 0 10px}.comment-position button{font-size:12px}#commentGrip{cursor:grab;touch-action:none;user-select:none}#commentGrip:active{cursor:grabbing}

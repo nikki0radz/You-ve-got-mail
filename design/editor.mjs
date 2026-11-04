@@ -30,37 +30,56 @@ const surface=f=>f.contentWindow?.designSurface;
 let basedOnOption=initial.basedOnOption||current(book)?.revisions.at(-1)?.reviewOption||null;
 const round=Object.hasOwn(rounds,screen)?rounds[screen]:null;
 let comparison=round&&initial.comparison?.id===round.id?initial.comparison:{id:round?.id,active:0,states:{}};
+const optionGroups=round?[round,...(round.groups||[])]:[];
+const prefix=i=>optionGroups.length>1?String.fromCharCode(65+i):'';
+function picks(){return optionGroups.map((g,i)=>i===0?comparison.active||0:comparison.picks?.[g.id]||0);}
+function stateKey(values){return values.slice(1).some(Boolean)?values.join('-'):String(values[0]||0);}
 function optionInfo(){
-  const number=comparison.active||0;if(!number&&basedOnOption)return basedOnOption;return round?{roundId:round.id,title:round.title,number,name:number?round.options[number-1]?.name:'Current layout'}:null;
+  const values=picks();if(!values.some(Boolean)&&basedOnOption)return basedOnOption;
+  const groups=optionGroups.map((g,i)=>({roundId:g.id,title:g.title,number:values[i],label:prefix(i)+(values[i]||' Current'),name:g.options[values[i]-1]?.name||'Current layout'}));
+  return groups.length?{...groups[0],groups}:null;
 }
 function clearRound(revision){basedOnOption=revision?.reviewOption||null;comparison={id:round?.id,active:0,states:{}};renderOptions();}
-function switchOption(number){
-  if(!round||number===comparison.active)return;
+function switchOption(groupIndex,number){
+  const values=picks(),group=optionGroups[groupIndex];if(number===values[groupIndex])return;
   const view=surface(activeFrame);if(!view)return;
-  comparison.states[comparison.active]={layout:structuredClone(layout),comments:structuredClone(comments),dirty};
-  let next=comparison.states[number];
+  comparison.states[stateKey(values)]={layout:structuredClone(layout),comments:structuredClone(comments),dirty};
+  values[groupIndex]=number;
+  let next=comparison.states[stateKey(values)];
   if(!next){
-    const base=comparison.states[0],option=round.options[number-1];
-    const candidate=cleanLayout(base.layout);
-    for(const change of option.changes||[]){
+    const base=comparison.states[0],candidate=cleanLayout(layout);
+    // Revert only the properties controlled by this group before applying its next choice.
+    for(const option of group.options)for(const change of option.changes||[]){
       const id=change.element||view.idFor?.(change.selector);
       if(!id){status('Open the starting screen to compare this option.');return;}
-      candidate.styles[id]={...candidate.styles[id],...change.style};
+      const style=candidate.styles[id]||={};
+      for(const prop of Object.keys(change.style)){
+        if(Object.hasOwn(base.layout.styles[id]||{},prop))style[prop]=base.layout.styles[id][prop];else delete style[prop];
+      }
+    }
+    for(const change of group.options[number-1]?.changes||[]){
+      const id=change.element||view.idFor?.(change.selector);
+      Object.assign(candidate.styles[id],change.style);
     }
     next={layout:cleanLayout(candidate),comments:structuredClone(base.comments),dirty:true};
   }
-  comparison.active=number;layout=cleanLayout(next.layout);comments=structuredClone(next.comments);dirty=next.dirty;undo=null;
+  comparison.active=values[0];comparison.picks=Object.fromEntries(optionGroups.map((g,i)=>[g.id,values[i]]));
+  layout=cleanLayout(next.layout);comments=structuredClone(next.comments);dirty=next.dirty;undo=null;
   cache();renderOptions();renderFrames();bookUI();elList();inspector();dimensions();
-  status(number?'Viewing option '+number+' · '+round.options[number-1].name:'Viewing your original working layout.');
+  status(group.title+' · '+(number?prefix(groupIndex)+number+' · '+group.options[number-1].name:'Current layout'));
 }
 function renderOptions(){
-  $('round').hidden=!round;if(!round)return;
-  $('round-title').textContent=round.title;$('option-name').textContent=optionInfo().name;
-  const bar=$('option-numbers');bar.replaceChildren();
-  for(const [i,name] of ['Current',...round.options.map(o=>o.name)].entries()){
-    const b=btn(i?String(i):name,()=>switchOption(i));b.title=name;b.setAttribute('aria-label',i?'Option '+i+' · '+name:name);
-    b.setAttribute('aria-pressed',String(i===comparison.active));bar.append(b);
-  }
+  const bar=$('round');bar.hidden=!round;if(!round)return;bar.replaceChildren();
+  optionGroups.forEach((group,index)=>{
+    const row=document.createElement('div');row.className='option-row';row.setAttribute('role','group');row.setAttribute('aria-label',group.title);
+    const title=document.createElement('strong');title.textContent=(prefix(index)?prefix(index)+' · ':'')+group.title;row.append(title);
+    const selected=picks()[index];
+    for(const [i,name] of ['Current',...group.options.map(o=>o.name)].entries()){
+      const code=i?prefix(index)+i:'Current';const button=btn(code,()=>switchOption(index,i));button.title=name;
+      button.setAttribute('aria-label',group.title+' · '+code+(i?' · '+name:''));button.setAttribute('aria-pressed',String(i===selected));row.append(button);
+    }
+    const caption=document.createElement('span');caption.textContent=group.options[selected-1]?.name||'Current layout';row.append(caption);bar.append(row);
+  });
 }
 function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,comments,comparison,basedOnOption,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
 function dimensions(){

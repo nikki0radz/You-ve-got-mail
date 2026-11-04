@@ -19,3 +19,5 @@
 
 - For design reviews, use the workroom board and the actual interactive screen at the paired phone size. Implement feedback from the exported review against the identified screen and working layout. Preserve unrelated screens and return a refreshed review link.
 - When Nicole requests alternatives, put the requested number in a versioned round in design/rounds.mjs. If no count is specified, default to six (within five to ten). Show numbered controls above the complete phone preview even for a one-element change. Use a fresh round ID for new alternatives so past exports can identify the chosen option.
+
+- For multiple review targets, label each row with its element name and a letter, and prefix its numbered choices (A1, A2; B1, B2). Preserve independent choices in the full-screen preview and include them in the exported review.

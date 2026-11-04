@@ -20,7 +20,7 @@ function draw(){
     const picker=/picker|gallery|wheel|choose pigeon|fit photo|colour|calendar/i.test(name);
     if(!name.toLowerCase().includes(query)||(filter==='Pickers'?!picker:filter==='Review options'?!rounds[id]:filter!=='All screens'&&filter!==group))continue;
     const a=document.createElement('a');a.href='index.html?page='+encodeURIComponent(id);a.className='card';
-    const small=document.createElement('small');small.textContent=rounds[id]?group+' · '+rounds[id].options.length+' options':group;
+    const small=document.createElement('small');small.textContent=rounds[id]?group+' · '+[rounds[id],...(rounds[id].groups||[])].map(g=>g.options.length).join(' + ')+' options':group;
     const title=document.createElement('strong');title.textContent=name;
     const box=document.createElement('div');box.className='mini';box.dataset.screen=id;
     box.style.width=size.width*scale+'px';box.style.height=(size.height+(size.insets?.top||0)+(size.insets?.bottom||0))*scale+'px';
