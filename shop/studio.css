@@ -47,7 +47,7 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 .ink-picker label{display:grid;gap:5px;margin:10px 0 0;font:600 13px system-ui}.ink-picker input[type=range]{width:100%;accent-color:#41664c}.ink-picker output{display:inline-flex;align-items:center;gap:8px;margin:8px auto;font:600 12px monospace}.ink-picker output::before{background:var(--ink)}
 .ink-actions button,#parcel-shop button:is([data-prev],[data-keep],[data-discard],.frame-use,.wheel-back,.browse),#parcel-shop.guest-studio button:not(.corner),#parcel-shop.guest-studio .studio-tools button{border-radius:30px;min-height:44px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;box-shadow:0 1px 4px #172d282b;font-weight:700}
 #parcel-shop.guest-studio .studio-tools button{background:#faf4e5;border:1px solid #a6b39b;box-shadow:0 1px 4px #172d282b}
-#parcel-shop.guest-studio .studio-tools button[aria-expanded=true]{background:#bfd2b9;border-color:#648066;color:#203e2c;box-shadow:inset 0 2px 3px #365a4038}
+#parcel-shop.guest-studio .studio-tools [data-tool=second][aria-expanded=true]{background:#bfd2b9;border-color:#648066;color:#203e2c;box-shadow:inset 0 2px 3px #365a4038}
 #parcel-shop.guest-studio .studio-tools{gap:5px}#parcel-shop.guest-studio .studio-back,#parcel-shop.guest-studio .studio-link{text-decoration:none}
 #parcel-shop .ink-row .colour-chip{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:5px 12px;border-radius:30px;background:#faf4e5;color:#294938;border:1px solid #9aa68c}
 .ink-picker input[type=range]{appearance:none;border-radius:18px;height:12px;margin:7px 0;background:linear-gradient(to right,#000,var(--bright));border:1px solid #88947f}
@@ -68,3 +68,26 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 #parcel-shop.guest-studio .sticker-grid button{border-radius:14px;display:grid;justify-items:center;font-size:12px}
 .sticker-grid img{height:48px;width:100%;object-fit:contain}
 #parcel-shop.guest-studio .sticker-grid [aria-pressed=true]{outline:2px solid #365a40}
+
+/* The open note tab and its panel share one paper edge. */
+#parcel-shop.guest-studio .studio-tools:has([data-tool=note][aria-expanded=true]){
+  background:transparent;border:0;border-radius:0;padding:0;margin-bottom:0;align-items:flex-start;
+}
+#parcel-shop.guest-studio .studio-tools [data-tool=note][aria-expanded=true]{
+  position:relative;z-index:1;background:#faf4e5;border:1px solid #83937c;border-bottom-color:transparent;
+  border-radius:18px 18px 0 0;box-shadow:none;
+}
+#parcel-shop.guest-studio .banner-options:not([hidden]){
+  box-sizing:border-box;width:min(100%,332px);margin:-1px auto 9px;padding:9px 6px 4px;
+  border:1px solid #83937c;border-radius:0 14px 16px 16px;background:#faf4e5;
+}
+#parcel-shop.guest-studio .banner-options button:is([data-tool=edit-note],[data-tool=remove-note]){
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:4px 9px;
+  background:transparent;border:0;border-radius:4px;box-shadow:none;color:#34563e;font-size:13px;
+}
+#parcel-shop.guest-studio .banner-options button[data-tool=remove-note]{color:#884942}
+.banner-options [data-tool]::before{
+  content:"";width:15px;height:15px;background:currentColor;mask:var(--action-icon) center / contain no-repeat;
+}
+.banner-options [data-tool=edit-note]{--action-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='m4 16-1 5 5-1L21 7l-4-4Z M14 6l4 4'/%3E%3C/svg%3E")}
+.banner-options [data-tool=remove-note]{--action-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7'/%3E%3C/svg%3E")}
