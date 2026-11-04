@@ -5,12 +5,12 @@ import {escapeHtml as esc} from '../domain.mjs';
 const categories=['Notes','Photos','Postcards','Flowers','Love notes','Messages','Jokes','Stickers'];
 const displayName=category=>category==='Photos'?'Photo frames':category;
 const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cce8','Lilac'],['#45634d','Forest']];
-let catalog;
+let appCatalog;
 async function getCatalog(){
-  if(catalog)return catalog;
+  if(appCatalog)return appCatalog;
   const response=await fetch('assets/post/catalog.json');
   if(!response.ok)throw new Error('The shop could not load. Open it again to retry.');
-  catalog=await response.json();return catalog;
+  appCatalog=await response.json();return appCatalog;
 }
 function miniature(item){
   const [x,y,w,h]=item.rect;
@@ -18,6 +18,7 @@ function miniature(item){
 }
 export async function openShop(onTest, initialCategory, guest=false){
   const dialog=document.querySelector('#parcel-shop');
+  let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
   let returnScroll=0,previewURL,shopScroll=0,backFromItem;
   const stripOffsets=new Map();
@@ -46,7 +47,7 @@ export async function openShop(onTest, initialCategory, guest=false){
   const wireTiles=back=>dialog.querySelectorAll('[data-item]').forEach(btn=>btn.onclick=()=>{backFromItem=back;if(back===browse)rememberShop();else returnScroll=dialog.scrollTop;chooseItem(catalog[Number(btn.dataset.item)]);});
   function browse(){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
-    shell('Pick & post','The parcel shop','<div class="postal-shelves">'+categories.map(cat=>{
+    shell('Pick & post','The parcel shop','<div class="postal-shelves">'+availableCategories.map(cat=>{
       const items=catalog.filter(it=>it.category===cat);
       return '<section><h3>'+displayName(cat)+'</h3><div class="postal-strip"><button class="bubble previous" aria-label="Previous '+cat+'">‹</button><div class="strip-items">'+items.map(shelfButton).join('')+'</div><button class="bubble following" aria-label="More '+cat+'">›</button></div><button class="seam" data-cat="'+cat+'" aria-label="See all '+cat+'">See all ↓</button></section>';
     }).join('')+'</div>');
@@ -73,7 +74,7 @@ export async function openShop(onTest, initialCategory, guest=false){
   function selectControl(key,opts){return '<label>'+key+'<select data-setting="'+key.toLowerCase()+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(draft[key.toLowerCase()]===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
   async function paint(){
     const token=++latest,slot=dialog.querySelector('.parcel-canvas');
-    try{const art=await composePNG(current,draft);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
+    try{const density=guest&&stages()[step]==='Ready'?2:1;const art=await composePNG(current,draft,density);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft,density):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
     catch(e){if(token===latest)report(e)}
   }
   function edit(){
@@ -134,6 +135,8 @@ export async function openShop(onTest, initialCategory, guest=false){
       }catch(e){if(e.name!=='AbortError')report(e)}
     });paint();
   }
-  try{await getCatalog();if(dialog.open){if(categories.includes(initialCategory)){group=initialCategory;gallery()}else browse()}}
+  try{catalog=await getCatalog();availableCategories=categories;
+    if(guest){const {guestItems,guestSelection}=await import('./guest-selection.mjs');catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
+    if(dialog.open){if(availableCategories.includes(initialCategory)){group=initialCategory;gallery()}else browse()}}
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }

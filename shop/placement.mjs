@@ -1,8 +1,9 @@
 // The shared portrait canvas keeps the relative layout when another handset fits it to screen.
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export function scene(art,draft){
-  const canvas=document.createElement('canvas');canvas.width=600;canvas.height=1120;
+export function scene(art,draft,density=1){
+  const canvas=document.createElement('canvas');canvas.width=600*density;canvas.height=1120*density;
   const ctx=canvas.getContext('2d');
+  ctx.imageSmoothingQuality='high';
   const draw=(img,layer)=>{
     const w=layer.size*canvas.width,h=w*img.height/img.width;
     const scale=Math.min(1,canvas.height/h),width=w*scale,height=h*scale;

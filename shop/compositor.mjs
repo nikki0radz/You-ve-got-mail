@@ -39,11 +39,13 @@ function writeText(context, value, rect, colour) {
   }
 }
 
-export async function composePNG(item, draft) {
-  const [sheet, mask] = await Promise.all([loadSheet(item.sheet), item.maskSheet && loadSheet(item.maskSheet)]);
+export async function composePNG(item, draft, density = 1) {
+  const [sheet, mask] = await Promise.all([loadSheet(item.master || item.sheet), item.maskSheet && loadSheet(item.maskSheet)]);
   const canvas = document.createElement('canvas');
-  canvas.width = 640; canvas.height = draft.extra.trim() ? 768 : 640;
+  canvas.width = 640 * density; canvas.height = (draft.extra.trim() ? 768 : 640) * density;
   const ctx = canvas.getContext('2d');
+  ctx.scale(density, density);
+  ctx.imageSmoothingQuality = 'high';
   ctx.beginPath();
   if (draft.shape === 'Oval') ctx.ellipse(320,320,311,311,0,0,2*Math.PI);
   else ctx.roundRect(9,9,622,622,draft.shape === 'Square' ? 0 : 38);
@@ -56,14 +58,17 @@ export async function composePNG(item, draft) {
     const [l,t,r,b] = item.opening;
     const pw = (r-l)*width, ph = (b-t)*height;
     const fit = Math.max(pw / draft.photo.width, ph / draft.photo.height) * draft.zoom;
-    const photo = document.createElement('canvas'); photo.width = photo.height = 640;
+    const photo = document.createElement('canvas'); photo.width = photo.height = 640 * density;
     const layer = photo.getContext('2d');
+    layer.scale(density, density);
+    layer.imageSmoothingQuality = 'high';
     layer.drawImage(draft.photo, x+l*width+(pw-draft.photo.width*fit)*draft.panX, y+t*height+(ph-draft.photo.height*fit)*draft.panY, draft.photo.width*fit, draft.photo.height*fit);
     layer.globalCompositeOperation='destination-in';
     layer.drawImage(mask, ...item.rect, x,y,width,height);
-    ctx.drawImage(photo,0,0);
+    ctx.drawImage(photo,0,0,640,640);
   }
-  ctx.drawImage(sheet, ...item.rect, x,y,width,height);
+  if (item.master) ctx.drawImage(sheet, x,y,width,height);
+  else ctx.drawImage(sheet, ...item.rect, x,y,width,height);
   if (item.textBox) {
     const [l,t,r,b]=item.textBox;
     writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],item.ink);

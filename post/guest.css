@@ -1,9 +1,19 @@
-body {min-height:100dvh; background:#e3e9db; color:#243e32;}
-.guest {max-width:430px;margin:auto;padding:30px 20px;text-align:center;}
-.guest .bird {height:110px;display:block;margin:0 auto 12px;}
-.guest small {font-weight:800;letter-spacing:.14em;}
-.guest h1 {font-size:2.4rem;line-height:1.04;margin:.5em;}
-.guest button,.guest input {margin:5px;padding:12px;border-radius:16px;border:1px solid #54715f;}
-.guest button {color:#fff;background:#325541;}
-.guest label {display:grid;text-align:left;margin:.5em;}
-.guest .proof {max-height:32dvh;max-width:90%;background:#c7d5c5;border-radius:12px;}
+@font-face{font-family:PostalBaloo;src:url('../assets/home/baloo.woff') format('woff');font-weight:400 800;font-display:swap}
+body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b8ac8e;min-height:100dvh;margin:0;padding:16px 12px;background:#eae3cf;color:var(--heading);font:500 16px/1.5 system-ui,sans-serif}
+.guest{max-width:420px;margin:clamp(8px,5vw,40px) auto;padding:18px 22px 24px;border:1px solid var(--rule);border-radius:22px;background:var(--paper);box-shadow:0 5px 16px #3c412619}
+.guest header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 26px}
+.guest header strong,.guest h1,.guest h2{font-family:PostalBaloo,system-ui,sans-serif;font-weight:800;color:var(--heading)}
+.guest header strong{font-size:20px;line-height:1.1}
+.guest header span,.guest .eyebrow,.guest .dossier{font:700 11px/1.5 ui-monospace,monospace;letter-spacing:.07em}
+.guest .dossier{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border:1px solid var(--rule);border-radius:0 8px 8px 8px;background:#fff8e6;box-shadow:2px 3px #cfc2a5;color:#424938}
+.dossier:before{content:"FILE 01";position:absolute;left:-1px;top:-17px;background:#d8c8a4;color:#443c2e;padding:1px 12px;border-radius:5px 8px 0 0}
+.dossier .seal{display:table;padding:2px 6px;margin:0 0 10px;border:2px solid #874b40;color:#874b40;transform:rotate(-4deg)}
+.dossier img{background:#e5e2cd;border:4px solid #fffaf0;width:70px;height:78px;object-fit:contain;transform:rotate(6deg);box-shadow:0 2px 4px #34392733}
+.guest .eyebrow{margin:24px 0 4px;color:var(--copy)}
+.guest h1,.guest h2{margin:0 0 8px;font-size:clamp(30px,8vw,40px);line-height:1.04;letter-spacing:-.04em}
+.guest p,.guest label{color:var(--copy)}
+.guest p{margin:0 0 16px}.guest #status{font-size:14px;margin:12px 0 0}.guest #status:empty{display:none}
+.guest button,.guest input{font:inherit;border-radius:12px;min-height:44px;padding:9px 12px}.guest button{background:var(--button);color:#fff9e8;border:1px solid var(--button);font-weight:700;margin:4px}
+.guest .mission-go{width:100%;margin:12px 0 0}.guest .quiet{display:block;margin:3px auto;background:var(--paper);color:var(--button);border-color:transparent;text-decoration:underline;text-underline-offset:3px}
+.guest label{display:grid;margin:12px 0;font-weight:600}.guest input{background:#fffaf0;border:1px solid #7f846e;color:var(--heading)}
+.guest input::placeholder{color:#5d6859}.guest .proof{display:block;margin:auto;max-height:32dvh;max-width:90%;background:#c7d5c5;border-radius:12px}

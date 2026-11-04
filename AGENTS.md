@@ -10,3 +10,5 @@
 - Include Send test in development. A real single-use Send me something link must be enforced atomically by the server, not browser storage.
 - Android overlay/background/lock-screen/DND behavior requires native implementation and physical-device testing. A browser draft must not pretend to grant Android permissions.
 - Preserve unrelated changes and existing deployment settings. Run relevant checks before pushing.
+
+- On light surfaces, explicitly pair body, helper and placeholder text with a dark ink. Check rendered normal text contrast of at least 4.5:1 in each supported theme.
