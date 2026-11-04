@@ -35,3 +35,7 @@
 .home-dock{position:absolute;bottom:4%;left:6%;right:6%;display:flex;justify-content:space-evenly;gap:5%;padding:4%;background:#eef2e47d;border-radius:15px;pointer-events:none}
 .home-dock i{flex:1;aspect-ratio:1;display:grid;place-items:center;background:#6c9989;border-radius:25%;color:white;font:700 16px system-ui}.home-dock i:nth-child(2){background:#779cb1}.home-dock i:nth-child(3){background:#ad8096}.home-dock i:nth-child(4){background:#81828b}
 .studio-colours{text-align:center;margin:8px auto;color:#344d38;font-size:14px}.studio-colours summary{cursor:pointer}.studio-colours label{display:inline-flex;align-items:center;gap:5px;margin:5px;font-weight:600}.studio-colours input[type=color]{width:44px;height:36px;min-height:36px;padding:3px;background:#faf5e7;border:1px solid #9aa68c;border-radius:8px}
+#parcel-shop.guest-studio .studio-tools{flex-wrap:nowrap;width:min(100%,332px);margin:12px auto 8px;padding:3px;gap:0;border:1px solid #9aa68c;background:#dce8d5;border-radius:32px}
+#parcel-shop.guest-studio .studio-tools button{min-height:44px;flex:1;border:0;border-radius:28px;background:transparent;color:#294938}
+#parcel-shop.guest-studio .studio-tools button:first-child,#parcel-shop.guest-studio .studio-tools:has(+.banner-options:not([hidden])) [data-tool=note]{background:#faf4e5;box-shadow:0 1px 4px #172d282b}
+#parcel-shop.guest-studio .studio-tools:has(+.banner-options:not([hidden])) [data-tool=photo]{background:transparent;box-shadow:none}

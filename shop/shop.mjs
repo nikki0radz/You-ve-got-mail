@@ -1,10 +1,12 @@
+import {mountCategoryWheel} from './category-wheel.mjs';
+import {guestItems,guestSelection} from './guest-selection.mjs';
 import {startGuestStudio} from './guest-studio.mjs';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
 import {escapeHtml as esc,collectionName as displayName} from '../domain.mjs';
 
-const categories=['Notes','Photos','Postcards','Flowers','Love notes','Messages','Jokes','Stickers'];
+const categories=['Notes','Photos','Postcards','Flowers','Love notes','Reminders','Stickers'];
 const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cce8','Lilac'],['#45634d','Forest']];
 let appCatalog;
 async function getCatalog(){
@@ -18,7 +20,16 @@ function miniature(item){
   const clip=item.artClip?' style="clip-path:path(evenodd, &quot;'+esc(item.artClip)+'&quot;)"':'';
   return '<svg viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><g'+clip+'><svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'" overflow="hidden"><image href="'+esc(item.sheet)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg></g></svg>';
 }
-export async function openShop(onTest, initialCategory, guest=false){
+export function openReplyShop(onReady,initialCategory='Stickers',onCancel){
+  return openShop(onReady,initialCategory,{curated:true,wheel:true,studio:true,onCancel});
+}
+
+export async function openShop(onTest, initialCategory, options={}){
+  // Existing guest links call openShop with true.
+  const guest=options===true || Boolean(options.curated);
+  const studio=guest || Boolean(options.studio);
+  let completed=false;
+
   const dialog=document.querySelector('#parcel-shop');
   let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
@@ -28,7 +39,7 @@ export async function openShop(onTest, initialCategory, guest=false){
   const trigger=document.activeElement;
   if(dialog.open)return;
   dialog.showModal();
-  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();};
+  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
   dialog.oncancel=e=>{e.preventDefault();cancel();};
@@ -42,10 +53,10 @@ export async function openShop(onTest, initialCategory, guest=false){
   const report=e=>{const line=dialog.querySelector('.parcel-error');if(line)line.textContent=e.message||String(e);};
   const backButton='<button class="secondary" data-prev>‹ Back</button>';
   const chooseItem=it=>{current=it;group=it.category;step=0;dirty=false;
-    if(guest){
+    if(studio){
       disposeReel?.();disposeReel=null;
       startGuestStudio(dialog,it,backFromItem,async(image,name,category,reopen)=>{
-        await onTest(image,name,category,reopen);dialog.close();
+        await onTest(image,name,category,reopen);completed=true;dialog.close();
       });
       return;
     }
@@ -71,17 +82,25 @@ export async function openShop(onTest, initialCategory, guest=false){
       prev.onclick=()=>row.scrollBy({left:-row.clientWidth,behavior:'smooth'});next.onclick=()=>row.scrollBy({left:row.clientWidth,behavior:'smooth'});row.onscroll=sync;requestAnimationFrame(sync);
     });
   }
+  function wheel(){
+    disposeReel?.();disposeReel=null;
+    mountCategoryWheel(dialog,{initialCategory:group,onBack:()=>dialog.close(),onBrowse:category=>{
+      group=category;returnScroll=0;gallery();
+    }});
+    cancel=()=>dialog.close();dialog.scrollTop=0;
+  }
   function gallery(){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=catalog.filter(it=>it.category===group);
+    const back=options.wheel?wheel:guest?()=>dialog.close():browse;
     if(guest&&group==='Photos'){
       const frames=[...items].sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
-      shell('Photo frames','Choose a frame',backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through photo frames"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All frames <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All five frames"></div><button class="primary frame-use"></button>',()=>dialog.close());
+      shell('Photo frames','Choose a frame',backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through photo frames"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All frames <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All five frames"></div><button class="primary frame-use"></button>',back);
       disposeReel=mountFrameReel(dialog,frames,Math.max(0,frames.findIndex(it=>it.name===chosenFrame)),item=>{
         chosenFrame=item.name;backFromItem=gallery;chooseItem(item);
       });return;
     }
-    shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',guest?()=>dialog.close():browse);wireTiles(gallery);dialog.scrollTop=returnScroll;
+    shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',back);wireTiles(gallery);dialog.scrollTop=returnScroll;
   }
   function confirmExit(action){
     if(!dirty){action();return}
@@ -160,7 +179,7 @@ export async function openShop(onTest, initialCategory, guest=false){
     });paint();
   }
   try{catalog=await getCatalog();availableCategories=categories;
-    if(guest){const {guestItems,guestSelection}=await import('./guest-selection.mjs');catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
-    if(dialog.open){if(availableCategories.includes(initialCategory)){group=initialCategory;gallery()}else browse()}}
+    if(guest){catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
+    if(dialog.open){if(options.wheel){group=initialCategory;wheel();}else if(availableCategories.includes(initialCategory)){group=initialCategory;gallery()}else browse()}}
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }

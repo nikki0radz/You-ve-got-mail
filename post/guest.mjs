@@ -1,6 +1,6 @@
-import {collectionName} from '../domain.mjs';
+import {scaled} from '../shop/transport-image.mjs';
+import {mountCategoryWheel} from '../shop/category-wheel.mjs';
 import {openShop} from '../shop/shop.mjs';
-import {guestSelection} from '../shop/guest-selection.mjs';
 const preview=!location.hash && new URLSearchParams(location.search).get('preview')==='1';
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
 const token=location.hash.slice(1);
@@ -11,27 +11,6 @@ async function api(path,key,body){
   const resp=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+key,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const data=await resp.json();if(!resp.ok){const error=new Error(data.error||'Could not reach the post office.');error.status=resp.status;throw error;}return data;
 }
-async function scaled(data){
-  if(data.length<=1800000)return data;
-  const img=new Image();img.src=data;await img.decode();
-  // Preserve the portrait dimensions first. Reduce photo colour precision before resizing.
-  const quant=document.createElement('canvas');quant.width=img.width;quant.height=img.height;
-  const ctx=quant.getContext('2d');ctx.drawImage(img,0,0);
-  const pixels=ctx.getImageData(0,0,quant.width,quant.height);
-  for(const bits of [3,4]){
-    const mask=255<<bits;
-    for(let i=0;i<pixels.data.length;i+=4){
-      if(!pixels.data[i+3])continue;
-      for(let k=i;k<i+3;k++)pixels.data[k]=Math.round((pixels.data[k]&mask)*255/(255&mask));
-    }
-    ctx.putImageData(pixels,0,0);const candidate=quant.toDataURL('image/png');if(candidate.length<=1800000)return candidate;
-  }
-  let width=img.width;
-  while(data.length>1800000&&width>150){
-    width=Math.round(width*.8);const c=document.createElement('canvas');c.width=width;c.height=Math.round(img.height*width/img.width);c.getContext('2d').drawImage(img,0,0,c.width,c.height);data=c.toDataURL('image/png');
-  }
-  return data;
-}
 function invitation(){
   steps.innerHTML='<section class="invitation"><img class="courier" src="assets/home/mascot.webp?v=satchel" alt="Pigeon with a messenger bag on a green letterbox"><p class="eyebrow">A PIGEON FROM NICOLE</p><h1>Got a minute for<br>Nicole?</h1><p id="brief">She sent you a one-time link. Pick a little something and this pigeon will drop it onto her phone.</p><button class="accept" id="accept">Alright, pigeon. I’m in.</button><button class="quiet" id="decline">Tell her I’m out.</button></section>';
   status.textContent='';
@@ -41,39 +20,16 @@ function invitation(){
     steps.querySelector('#back').onclick=invitation;
   };
 }
-const categories=Object.keys(guestSelection);
-const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for her screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
-let position=categories.indexOf('Photos');
+let lastCategory='Photos';
 function choose(){
-  steps.innerHTML='<button class="wheel-back">‹ Back</button><section class="wheel"><h2>Pick your post</h2><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs"><button></button><button></button><button></button></div><p class="caption"></p><button class="browse"></button></div></section>';
   status.textContent='';
-  steps.querySelector('.wheel-back').onclick=invitation;
-  const stage=steps.querySelector('.wheel-paper'),orbs=[...stage.querySelectorAll('.wheel-orbs button')];
-  function offset(n){return (position+n+categories.length)%categories.length;}
-  function move(n){position=offset(n);paint();}
-  function browse(){openShop(async(image,name,group,reopen)=>{draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};review();},categories[position],true);}
-  function paint(){
-    const category=categories[position],label=collectionName(category);
-    stage.querySelector('small').textContent=(position+1)+' / '+categories.length;
-    stage.querySelector('h3').textContent=label;
-    stage.querySelector('.caption').textContent=captions[category];
-    stage.querySelector('.browse').textContent='Browse '+label.toLowerCase();
-    orbs.forEach((button,i)=>{
-      const key=categories[offset(i-1)],id=String(guestSelection[key][0][0]).padStart(3,'0');
-      const img=new Image();img.alt='';img.draggable=false;
-      img.src=key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+id+'.webp':'assets/guest/'+id+'.svg';
-      button.setAttribute('aria-label',(i===1?'Browse ':'Show ')+collectionName(key).toLowerCase());
-      button.replaceChildren(img);
-    });
-  }
-  let start=null,suppressUntil=0;
-  stage.onpointerdown=e=>{start=[e.clientX,e.clientY];};
-  stage.onpointercancel=()=>{start=null;};
-  stage.onpointerup=e=>{if(!start)return;const dx=e.clientX-start[0],dy=e.clientY-start[1];start=null;if(Math.abs(dx)>30&&Math.abs(dx)>Math.abs(dy)){suppressUntil=Date.now()+350;move(dx<0?1:-1);}};
-  stage.addEventListener('click',e=>{if(Date.now()<suppressUntil)e.stopImmediatePropagation();},true);
-  orbs.forEach((button,i)=>button.onclick=()=>i===1?browse():move(i-1));
-  stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();move(e.key==='ArrowRight'?1:-1);}};
-  stage.querySelector('.browse').onclick=browse;paint();
+  mountCategoryWheel(steps,{initialCategory:lastCategory,onBack:invitation,onBrowse:category=>{
+    lastCategory=category;
+    openShop(async(image,name,group,reopen)=>{
+      draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};
+      review();
+    },category,true);
+  }});
 }
 let preparedKey='', pollTimer;
 const storageKey='pigeon-receipt:'+token;
@@ -140,7 +96,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.3.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.4.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';
@@ -168,7 +124,10 @@ function showReceipt(key){
       const result=await api('receipt',key);
       if(!check.isConnected)return;
       display(result);
-      hasReply=Boolean(result.reply);reply.textContent=hasReply?'Nicole replied: '+result.reply:'';
+      hasReply=Boolean(result.reply||result.replyImage);reply.textContent=result.reply?'Nicole replied: '+result.reply:'';
+      if(typeof result.replyImage==='string'&&result.replyImage.startsWith('data:image/png;base64,')){
+        const image=new Image();image.src=result.replyImage;image.alt='Sticker reply from Nicole';image.style.cssText='width:100%;max-width:220px;height:auto;max-height:320px;object-fit:contain';reply.append(image);
+      }
       status.textContent=manual?'Receipt checked just now.':'';
     }catch(e){
       expired=e.status===404;

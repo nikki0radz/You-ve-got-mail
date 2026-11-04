@@ -9,14 +9,20 @@ const sheets = new Map();
 
 async function dimensions(path) {
   if (!sheets.has(path)) {
-    const png = await load(path);
-    assert.equal(png.subarray(1,4).toString(), 'PNG', path);
-    sheets.set(path, [png.readUInt32BE(16), png.readUInt32BE(20)]);
+    const bytes = await load(path);
+    if(path.endsWith('.svg')){
+      const viewBox=/viewBox="0 0 (\d+) (\d+)"/.exec(bytes.toString('utf8'));
+      assert.ok(viewBox,path);
+      sheets.set(path,viewBox.slice(1).map(Number));
+    }else{
+      assert.equal(bytes.subarray(1,4).toString(), 'PNG', path);
+      sheets.set(path, [bytes.readUInt32BE(16), bytes.readUInt32BE(20)]);
+    }
   }
   return sheets.get(path);
 }
 
-test('all shop items have distinct names within their collection and usable PNG coordinates', async () => {
+test('all shop items have distinct names within their collection and usable artwork coordinates', async () => {
   const keys = new Set();
   for (const item of catalog) {
     const key = item.category + '/' + item.name;

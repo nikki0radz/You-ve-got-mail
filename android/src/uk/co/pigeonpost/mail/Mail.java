@@ -31,16 +31,20 @@ final class Mail {
         }
     }
     static JSONObject request(Context c,String path,JSONObject body)throws Exception{
+        return authorized(path,body,owner(c));
+    }
+    static JSONObject authorized(String path,JSONObject body,String key)throws Exception{
         HttpURLConnection h=(HttpURLConnection)new URL(RELAY+path).openConnection();
         try{h.setConnectTimeout(10000);h.setReadTimeout(15000);h.setInstanceFollowRedirects(false);
-            h.setRequestProperty("Authorization","Bearer "+owner(c));
+            h.setRequestProperty("Authorization","Bearer "+key);
             if(body!=null){h.setRequestMethod("POST");h.setDoOutput(true);h.setRequestProperty("Content-Type","application/json");try(OutputStream o=h.getOutputStream()){o.write(body.toString().getBytes(StandardCharsets.UTF_8));}}
-            int status=h.getResponseCode();if(status<200||status>=300)throw new IOException("Post office returned "+status);
+            int status=h.getResponseCode();if(status<200||status>=300){String error="Post office returned "+status;try{error=new JSONObject(new String(read(h.getErrorStream()),StandardCharsets.UTF_8)).optString("error",error);}catch(Exception ignored){}throw new IOException(error);}
             byte[] b=read(h.getInputStream());return b.length==0?new JSONObject():new JSONObject(new String(b,StandardCharsets.UTF_8));
         }finally{h.disconnect();}
     }
     static void channels(Context c){
         NotificationManager n=c.getSystemService(NotificationManager.class);
+        n.createNotificationChannel(new NotificationChannel("friends","Friend status changes",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(ALERT,"Incoming mail warnings",NotificationManager.IMPORTANCE_HIGH));
         n.createNotificationChannel(new NotificationChannel(QUIET,"Mailbox deliveries",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(LISTEN,"Listening for a test letter",NotificationManager.IMPORTANCE_LOW));
@@ -50,7 +54,7 @@ final class Mail {
         return n.areNotificationsEnabled() && n.getNotificationChannel(channel).getImportance()>NotificationManager.IMPORTANCE_NONE;
     }
     static PendingIntent action(Context c,String id,String action,boolean activity){
-        Intent i=new Intent(c,activity?Main.class:Delivery.class).setAction(action).setData(new Uri.Builder().scheme("pigeon").authority("mail").appendPath(id).build()).putExtra("id",id);
+        Intent i=new Intent(c,activity?("open".equals(action)?OpenParcel.class:Main.class):Delivery.class).setAction(action).setData(new Uri.Builder().scheme("pigeon").authority("mail").appendPath(id).build()).putExtra("id",id);
         return activity?PendingIntent.getActivity(c,0,i,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT):PendingIntent.getBroadcast(c,0,i,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
     }
     static JSONObject meta(Context c,String id){
@@ -64,10 +68,13 @@ final class Mail {
         return new File(c.getFilesDir(),id+".png");
     }
     static boolean exact(Context c){return Build.VERSION.SDK_INT<31||c.getSystemService(AlarmManager.class).canScheduleExactAlarms();}
-    static void alarm(Context c,String id,long at){
-        AlarmManager mgr=c.getSystemService(AlarmManager.class); PendingIntent p=action(c,id,"arrive",false);
+    static boolean full(Context c){return prefs(c).getBoolean("open",true)&&prefs(c).getBoolean("fullPopup",true);}
+    static int delay(Context c){return prefs(c).getInt("warningSeconds",3);}
+    static void alarm(Context c,String id,long at){schedule(c,id,"arrive",at);}
+    static void schedule(Context c,String id,String action,long at){
+        AlarmManager mgr=c.getSystemService(AlarmManager.class); PendingIntent p=action(c,id,action,false);
         long delay=at-System.currentTimeMillis();
-        if(delay<=12000){new Handler(Looper.getMainLooper()).postDelayed(()->{try{p.send();}catch(PendingIntent.CanceledException ignored){}},Math.max(0,delay));}
+        if(delay<=16000){new Handler(Looper.getMainLooper()).postDelayed(()->{try{p.send();}catch(PendingIntent.CanceledException ignored){}},Math.max(0,delay));}
         if(exact(c)){try{mgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,p);return;}catch(SecurityException ignored){}}
         mgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,p);
     }
@@ -82,7 +89,7 @@ final class Mail {
         android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.length,size);
         if(!"image/png".equals(size.outMimeType)||size.outWidth<1||size.outHeight<1||(long)size.outWidth*size.outHeight>16000000)throw new IOException("Invalid PNG size");
         AtomicFile f=new AtomicFile(dest);FileOutputStream out=f.startWrite();try{out.write(bytes);f.finishWrite(out);}catch(IOException e){f.failWrite(out);throw e;}
-        JSONObject m=new JSONObject();for(String k:new String[]{"sender","kind","text"})m.put(k,payload.optString(k));
+        JSONObject m=new JSONObject().put("created",System.currentTimeMillis()).put("inboxOnly",payload.optBoolean("inboxOnly"));for(String k:new String[]{"sender","kind","text","senderCode"})m.put(k,payload.optString(k));
         m.put("id",id).put("remote",remote).put("when",Math.max(System.currentTimeMillis(),payload.optLong("when",0))).put("status","scheduled");save(c,m);alarm(c,id,m.getLong("when"));
     }
     static List<JSONObject> history(Context c){
@@ -104,6 +111,8 @@ final class Mail {
         synchronized(Mail.class){if(value.equals(prefs(c).getString(key,"")))prefs(c).edit().remove(key).commit();}
     }
     static void sync(Context c)throws Exception{
+        try{PostOffice.friends(c);}catch(Exception ignored){}
+        new Handler(Looper.getMainLooper()).post(()->UnlockQueue.watch(c.getApplicationContext()));
         for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
             try{flushOutcome(c,key);}catch(Exception ignored){}
         }

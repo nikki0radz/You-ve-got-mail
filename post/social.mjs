@@ -28,7 +28,7 @@ export function installSocial(state,save,refresh){
     refresh();profile();return true;
   }
   function profile(){
-    show('My profile',`<figure class="photo-booth"><img src="${profilePhoto(state.profile)}" alt="Your pigeon portrait"><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(state.profile.code)}</strong></div>${btn('Change pigeon','change','pill')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
+    show('My profile',`<figure class="photo-booth"><img src="${profilePhoto(state.profile)}" alt="Your pigeon portrait"><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change pigeon','change','pill')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
     on('change',()=>{choice=Number.isInteger(state.profile.pigeon)?state.profile.pigeon:-1;wall();});
     on('edit',()=>{
       show('What should we call you?',`<label>Your name<input maxlength="40" class="social-input" value="${esc(state.profile.name)}"></label>${btn('Save name','save')}`,profile);

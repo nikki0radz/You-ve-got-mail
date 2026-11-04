@@ -1,4 +1,4 @@
-// Numbered designs come from the full app catalogue. Lettered designs are guest-only.
+// Invitations and replies use a curated subset of the full catalogue.
 export const guestSelection = {
   "Notes": [
     [2, "Sticky note"],
@@ -34,26 +34,23 @@ export const guestSelection = {
     [162, "I miss you"],
   ],
   "Love notes": [
-    ["L01", "Bee mine", 397, 396],
-    ["L10", "I’m nuts about you", 397, 397],
-    ["L11", "I love you · chocolates", 397, 396],
-    ["L20", "Come cuddle", 428, 397],
-    ["L03", "Olive you", 397, 396],
+    ["L01", "Bee mine"],
+    ["L10", "I’m nuts about you"],
+    ["L11", "I love you · chocolates"],
+    ["L20", "Come cuddle"],
+    ["L03", "Olive you"],
   ],
   "Reminders": [
-    ["R01", "Take your meds", 397, 396],
-    ["R09", "Charge your phone", 396, 397],
-    ["R27", "Book your appointment", 388, 397],
-    ["R15", "Feed the cat", 397, 396],
+    ["R01", "Take your meds"],
+    ["R09", "Charge your phone"],
+    ["R27", "Book your appointment"],
+    ["R15", "Feed the cat"],
   ],
 };
 
 export function guestItems(catalog) {
-  return Object.entries(guestSelection).flatMap(([category, picks]) => picks.map(([id, name, width, height]) => {
+  return Object.entries(guestSelection).flatMap(([category, picks]) => picks.map(([id, name]) => {
     const master = 'assets/guest/' + String(id).padStart(3,'0') + '.svg';
-    if (width && height) {
-      return {category, name, master, sheet:master, sheetWidth:width, sheetHeight:height, rect:[0,0,width,height]};
-    }
     const item = catalog.find(entry => entry.category === category && entry.name === name);
     if (!item) throw new Error('Missing invitation design ' + id);
     return {...item, master};

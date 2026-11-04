@@ -5,15 +5,15 @@ A pigeon delivers transparent PNGs. The Android test edition receives real parce
 ## Try it on Android
 
 1. Install the signed APK on Android 9 or later. On first launch, open **Set up delivery**. Enable notifications and display over other apps. Enable precise schedules for timed tests.
-2. Tap **Send test** and switch apps. The local test starts five seconds later. With warnings on, the incoming notification offers **Reject** for three seconds before the artwork appears. Dismiss and Reply appear on the overlay after one second.
+2. Tap **Send test** and switch apps. The local test starts five seconds later. With warnings on, the incoming notification offers **Reject** for your selected 3, 10 or 15 seconds before the artwork appears. Dismiss and Reply appear on the overlay after one second.
 3. Under **Settings → Send me something**, create a link and share it with a friend. They open it in their browser, choose a frame or sticker, fit a photo, position it on the portrait preview, and optionally add a note or second picture. They can send immediately or pick a time within 30 days. Their receipt page can check for your reply.
-4. In **Inbox → Phone inbox & schedules**, open received mail, view rejected pop-ups, reply, or cancel a pending delivery. In Settings, enable **Scheduling** to add a timing step to local test parcels.
+4. In **Inbox**, open received mail, send a sticker or text reply, or cancel a scheduled local parcel. Use **Sent** to check friend deliveries and replies. Under **Your people → Friends**, exchange codes and accept requests. Pick a design on the home wheel to send it to yourself or an accepted friend, now or later.
 
-Sharing an invitation starts a 30-minute live listening session. After this, Android checks periodically and on app resume. Use **Phone permissions → Listen for mail for 30 minutes** to start another session. Scheduled parcels already downloaded to the phone use native alarms. Exact timing requires alarm access. Android may defer background checks or restrict overlays on protected screens. Devices without cross-window blur show transparent tint. Pausing pop-ups leaves optional notifications available.
+Sharing an invitation starts a 30-minute live listening session. After this, Android checks periodically and on app resume. Use **Settings → Notification settings → Listen for mail for 30 minutes** to start another session. Scheduled parcels already downloaded to the phone use native alarms. Exact timing requires alarm access. Android may defer background checks or restrict overlays on protected screens. Devices without cross-window blur show transparent tint. In **Notification settings**, choose full pop-ups or notifications while open, and inbox-only or completely closed while closed. With full pop-ups enabled, pending deliveries can open one second after unlock. Friend-status notifications are opt-in.
 
 ## Guest delivery
 
-The Android app creates a private mailbox key on the device. The HTTPS delivery service stores hashed credentials, claims a link atomically, and clears the parcel from the server after the receiver saves and acknowledges it. Invitations expire after seven days. The invitation and reply receipt travel in URL fragments on the guest page. Anyone holding an unspent invitation can use it once. Demo friend cards on the home screen still run local tests.
+The Android app creates a private mailbox key on the device. The HTTPS delivery service stores hashed credentials, claims a link atomically, and clears the parcel from the server after the receiver saves and acknowledges it. Invitations expire after seven days. The invitation and reply receipt travel in URL fragments on the guest page. Anyone holding an unspent invitation can use it once. Friend mail uses mutually accepted connections. The app stores received history on the device and saves a private receipt for each sent friend parcel.
 
 ## Development
 

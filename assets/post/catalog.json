@@ -3269,1232 +3269,466 @@
  },
  {
   "category": "Love notes",
-  "name": "I love you",
-  "sheet": "assets/post/love-notes-01.png",
+  "name": "Bee mine",
+  "sheet": "assets/guest/L01.svg",
+  "master": "assets/guest/L01.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 396,
   "rect": [
-   2,
-   2,
-   491,
-   473
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   397,
+   396
+  ]
  },
  {
   "category": "Love notes",
-  "name": "I miss you",
-  "sheet": "assets/post/love-notes-01.png",
+  "name": "I’m nuts about you",
+  "sheet": "assets/guest/L10.svg",
+  "master": "assets/guest/L10.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 397,
   "rect": [
-   532,
-   2,
-   485,
-   469
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   397,
+   397
+  ]
  },
  {
   "category": "Love notes",
-  "name": "Wish you were here",
-  "sheet": "assets/post/love-notes-01.png",
+  "name": "I love you · chocolates",
+  "sheet": "assets/guest/L11.svg",
+  "master": "assets/guest/L11.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 396,
   "rect": [
-   1062,
-   2,
-   526,
-   472
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   397,
+   396
+  ]
  },
  {
   "category": "Love notes",
-  "name": "Have a good day",
-  "sheet": "assets/post/love-notes-01.png",
+  "name": "Come cuddle",
+  "sheet": "assets/guest/L20.svg",
+  "master": "assets/guest/L20.svg",
+  "sheetWidth": 428,
+  "sheetHeight": 397,
   "rect": [
-   2,
-   517,
-   495,
-   507
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   428,
+   397
+  ]
  },
  {
   "category": "Love notes",
-  "name": "You’re beautiful",
-  "sheet": "assets/post/love-notes-01.png",
+  "name": "Olive you",
+  "sheet": "assets/guest/L03.svg",
+  "master": "assets/guest/L03.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 396,
   "rect": [
-   532,
-   517,
-   498,
-   482
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   397,
+   396
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "Thinking about you",
-  "sheet": "assets/post/love-notes-01.png",
+  "category": "Reminders",
+  "name": "Take your meds",
+  "sheet": "assets/guest/R01.svg",
+  "master": "assets/guest/R01.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 396,
   "rect": [
-   1062,
-   517,
-   516,
-   511
-  ],
-  "sheetWidth": 1590,
-  "sheetHeight": 1030
+   0,
+   0,
+   397,
+   396
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "Goodnight",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Finish your assignment",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
    2,
    2,
-   486,
-   476
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   332,
+   338
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "Good morning",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Upload your file",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
-   504,
+   375,
    2,
-   487,
-   480
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   344,
+   363
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "Can’t wait to see you",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Text them back",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
-   1006,
+   748,
    2,
-   490,
-   472
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   311,
+   324
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "Sad ’cause you’re not here",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Reply to that email",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
    2,
-   514,
-   475,
-   495
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   369,
+   369,
+   298
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "I’m wearing your T-shirt",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Bring the hairbrush",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
-   504,
-   514,
-   498,
-   508
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   375,
+   369,
+   319,
+   360
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "One more kiss",
-  "sheet": "assets/post/love-notes-02.png",
+  "category": "Reminders",
+  "name": "Leave for your appointment",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
-   1006,
-   514,
-   490,
-   505
-  ],
-  "sheetWidth": 1506,
-  "sheetHeight": 1024
+   748,
+   369,
+   369,
+   342
+  ]
  },
  {
-  "category": "Love notes",
-  "name": "You’re my favourite",
-  "sheet": "assets/post/love-notes-03.png",
+  "category": "Reminders",
+  "name": "Pick up your prescription",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
    2,
-   2,
-   466,
-   468
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "Come cuddle me",
-  "sheet": "assets/post/love-notes-03.png",
-  "rect": [
-   493,
-   2,
-   468,
-   460
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "Proud of you",
-  "sheet": "assets/post/love-notes-03.png",
-  "rect": [
-   984,
-   2,
-   481,
-   459
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "Always on your team",
-  "sheet": "assets/post/love-notes-03.png",
-  "rect": [
-   2,
-   499,
-   472,
-   493
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "You make me smile",
-  "sheet": "assets/post/love-notes-03.png",
-  "rect": [
-   493,
-   499,
-   471,
-   468
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "Text me when you’re home",
-  "sheet": "assets/post/love-notes-03.png",
-  "rect": [
-   984,
-   499,
-   487,
-   488
-  ],
-  "sheetWidth": 1473,
-  "sheetHeight": 994
- },
- {
-  "category": "Love notes",
-  "name": "Fancy a date?",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   2,
-   2,
-   501,
-   482
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "I saved you a bite",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   525,
-   2,
-   493,
-   477
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "Steal my hoodie",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   1048,
-   2,
-   515,
-   481
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "Your side is cold",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   2,
-   508,
-   505,
-   496
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "Meet me in my dreams",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   525,
-   508,
-   505,
-   487
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "I pick you",
-  "sheet": "assets/post/love-notes-04.png",
-  "rect": [
-   1048,
-   508,
-   519,
-   502
-  ],
-  "sheetWidth": 1569,
-  "sheetHeight": 1012
- },
- {
-  "category": "Love notes",
-  "name": "You feel like home",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   2,
-   2,
-   482,
-   475
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Love notes",
-  "name": "I brought snacks",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   506,
-   2,
-   473,
-   475
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Love notes",
-  "name": "Get well, love",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   1010,
-   2,
-   489,
-   477
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Love notes",
-  "name": "You’ve got this",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   2,
-   493,
-   482,
-   486
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Love notes",
-  "name": "Thank you for being you",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   506,
-   493,
-   481,
-   487
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Love notes",
-  "name": "Still got a crush on you",
-  "sheet": "assets/post/love-notes-05.png",
-  "rect": [
-   1010,
-   493,
-   500,
-   483
-  ],
-  "sheetWidth": 1512,
-  "sheetHeight": 982
- },
- {
-  "category": "Messages",
-  "name": "A little love",
-  "copy": "Just in case you forgot: I like you. A lot.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   2,
-   2,
-   461,
-   452
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "Pocket hug",
-  "copy": "Keep this one for later.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   507,
-   2,
-   439,
-   429
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "First thought",
-  "copy": "You were my first thought this morning.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   1012,
-   2,
-   501,
-   455
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "On my way",
-  "copy": "Shoes on. Keys found. Nearly there.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   2,
-   477,
-   464,
-   453
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "Door’s open",
-  "copy": "Come in. The kettle’s on.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   507,
-   477,
-   486,
-   471
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "Small win",
-  "copy": "Tell me one good thing about today.",
-  "sheet": "assets/post/messages-01.png",
-  "rect": [
-   1012,
-   477,
-   476,
-   457
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Messages",
-  "name": "Good night",
-  "copy": "Sleep well, my favourite human.",
-  "sheet": "assets/post/messages-02.png",
-  "rect": [
-   2,
-   2,
-   379,
-   523
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Messages",
-  "name": "Coffee run",
-  "copy": "Want your usual?",
-  "sheet": "assets/post/messages-02.png",
-  "rect": [
-   520,
-   2,
-   514,
-   301
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Messages",
-  "name": "Home safe",
-  "copy": "Home safe. Your turn to check in.",
-  "sheet": "assets/post/messages-02.png",
-  "rect": [
-   1038,
-   2,
-   451,
-   367
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Messages",
-  "name": "Thinking of you",
-  "copy": "No reason. Just you.",
-  "sheet": "assets/post/messages-02.png",
-  "rect": [
-   2,
-   529,
-   486,
-   392
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Messages",
-  "name": "Lunch date",
-  "copy": "Lunch together? My treat.",
-  "sheet": "assets/post/messages-02.png",
-  "rect": [
-   520,
-   529,
-   489,
-   428
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   736,
+   325,
+   332
+  ]
  },
  {
-  "category": "Messages",
-  "name": "Rainy day",
-  "copy": "I saved you the dry side of the umbrella.",
-  "sheet": "assets/post/messages-02.png",
+  "category": "Reminders",
+  "name": "Charge your phone",
+  "sheet": "assets/guest/R09.svg",
+  "master": "assets/guest/R09.svg",
+  "sheetWidth": 396,
+  "sheetHeight": 397,
   "rect": [
-   1038,
-   529,
-   496,
-   418
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   0,
+   0,
+   396,
+   397
+  ]
  },
  {
-  "category": "Messages",
-  "name": "Proud of you",
-  "copy": "I saw how hard you worked for that.",
-  "sheet": "assets/post/messages-03.png",
+  "category": "Reminders",
+  "name": "Pack your keys",
+  "sheet": "assets/post/reminders-01.png",
+  "sheetWidth": 1119,
+  "sheetHeight": 1101,
   "rect": [
-   2,
-   2,
-   409,
-   435
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Tiny reminder",
-  "copy": "Unclench your jaw. Have a sip of water.",
-  "sheet": "assets/post/messages-03.png",
-  "rect": [
-   512,
-   2,
-   506,
-   466
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Meet me",
-  "copy": "Same place, same two idiots?",
-  "sheet": "assets/post/messages-03.png",
-  "rect": [
-   1022,
-   2,
-   496,
-   242
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Quiet company",
-  "copy": "We can sit together and say nothing.",
-  "sheet": "assets/post/messages-03.png",
-  "rect": [
-   2,
-   507,
-   414,
-   464
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Miss your face",
-  "copy": "Please return it to my general vicinity.",
-  "sheet": "assets/post/messages-03.png",
-  "rect": [
-   512,
-   507,
-   489,
-   417
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Your song",
-  "copy": "That song came on. Guess who I thought of.",
-  "sheet": "assets/post/messages-03.png",
-  "rect": [
-   1022,
-   507,
-   314,
-   501
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
- },
- {
-  "category": "Messages",
-  "name": "Fresh start",
-  "copy": "Can we try that conversation again?",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   2,
-   2,
-   479,
-   474
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "No rush",
-  "copy": "Reply when you’ve got the energy.",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   529,
-   2,
-   458,
-   453
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "Friday plans",
-  "copy": "You, me, absolutely no plans?",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   1056,
-   2,
-   418,
-   496
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "Thank you",
-  "copy": "That little thing you did meant a lot.",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   2,
-   502,
-   504,
-   464
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "Permission slip",
-  "copy": "One evening off. Signed, the pigeon.",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   529,
-   502,
-   523,
-   471
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "Good luck",
-  "copy": "Go do the thing. I’m rooting for you.",
-  "sheet": "assets/post/messages-04.png",
-  "rect": [
-   1056,
-   502,
-   479,
-   430
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Messages",
-  "name": "Wish you were here",
-  "copy": "There’s a perfectly good space next to me.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   2,
-   2,
-   506,
-   329
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Messages",
-  "name": "Save me a seat",
-  "copy": "Preferably the one next to you.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   512,
-   2,
-   398,
-   460
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Messages",
-  "name": "One more kiss",
-  "copy": "I appear to have left without enough kisses.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   1022,
-   2,
-   474,
-   378
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Messages",
-  "name": "Dinner vote",
-  "copy": "I vote for takeaway and your company.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   2,
-   504,
-   476,
-   467
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Messages",
-  "name": "Your move",
-  "copy": "I’ve made tea. You pick the film.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   512,
-   504,
-   489,
-   484
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Messages",
-  "name": "Open invitation",
-  "copy": "Come bother me any time.",
-  "sheet": "assets/post/messages-05.png",
-  "rect": [
-   1022,
-   504,
-   469,
-   498
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Jokes",
-  "name": "Special delivery",
-  "copy": "What’s a pigeon’s favourite font? Wingdings.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   2,
-   2,
-   461,
-   452
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Jokes",
-  "name": "Table for two",
-  "copy": "I booked us a table by the window. Excellent crumbs.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   507,
-   2,
-   439,
-   429
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Jokes",
-  "name": "Night shift",
-  "copy": "Why did the owl miss the morning post? Wrong shift.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   1012,
-   2,
-   501,
-   455
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Jokes",
-  "name": "The bill",
-  "copy": "A duck bought lip balm. Put it on my bill, it said.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   2,
-   477,
-   464,
-   453
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Jokes",
-  "name": "Air mail",
-  "copy": "I sent you a breeze. It was the lightest parcel I had.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   507,
-   477,
-   486,
-   471
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
- },
- {
-  "category": "Jokes",
-  "name": "Paperwork",
-  "copy": "My paper plane got a desk job. Too much paperwork.",
-  "sheet": "assets/post/jokes-01.png",
-  "rect": [
-   1012,
-   477,
-   476,
-   457
-  ],
-  "sheetWidth": 1515,
-  "sheetHeight": 950
+   375,
+   736,
+   333,
+   354
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Moving day",
-  "copy": "My houseplant moved out. It needed room to grow.",
-  "sheet": "assets/post/jokes-02.png",
+  "category": "Reminders",
+  "name": "Water the plants",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
    2,
    2,
-   379,
-   523
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   359,
+   374
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Birdwatching",
-  "copy": "I tried birdwatching. The pigeon stared back. Awkward.",
-  "sheet": "assets/post/jokes-02.png",
+  "category": "Reminders",
+  "name": "Buy groceries",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   520,
+   368,
    2,
-   514,
-   301
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   343,
+   331
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Hot date",
-  "copy": "I took a calendar to dinner. It had plenty of dates.",
-  "sheet": "assets/post/jokes-02.png",
+  "category": "Reminders",
+  "name": "Take the bins out",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   1038,
+   734,
    2,
-   451,
-   367
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   315,
+   356
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "At the gym",
-  "copy": "I asked for a light workout. They handed me a lamp.",
-  "sheet": "assets/post/jokes-02.png",
+  "category": "Reminders",
+  "name": "Hang the laundry",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
    2,
-   529,
-   486,
-   392
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Jokes",
-  "name": "New leaf",
-  "copy": "My salad promised to change. It turned over a new leaf.",
-  "sheet": "assets/post/jokes-02.png",
-  "rect": [
-   520,
-   529,
-   489,
-   428
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
- },
- {
-  "category": "Jokes",
-  "name": "Phone call",
-  "copy": "My phone needed space. I deleted a picture of the moon.",
-  "sheet": "assets/post/jokes-02.png",
-  "rect": [
-   1038,
-   529,
-   496,
-   418
-  ],
-  "sheetWidth": 1554,
-  "sheetHeight": 1054
+   380,
+   362,
+   295
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Shelf life",
-  "copy": "My library book got a promotion. It’s on the top shelf.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Feed the cat",
+  "sheet": "assets/guest/R15.svg",
+  "master": "assets/guest/R15.svg",
+  "sheetWidth": 397,
+  "sheetHeight": 396,
   "rect": [
-   2,
-   2,
-   409,
-   435
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   0,
+   0,
+   397,
+   396
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Baking news",
-  "copy": "The bakery has gossip. Someone spilled the beans on toast.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Pack your lunch",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   512,
-   2,
-   506,
-   466
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   368,
+   380,
+   340,
+   354
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "The pecking order",
-  "copy": "I let the pigeon order dinner. It picked everything.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Pay the bill",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   1022,
-   2,
-   496,
-   242
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   734,
+   380,
+   324,
+   355
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Slow post",
-  "copy": "My snail mail arrived tired. The stamp was uphill.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Post the parcel",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
    2,
-   507,
-   414,
-   464
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   758,
+   350,
+   332
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Magic trick",
-  "copy": "I made a biscuit disappear. The trick required tea.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Return your book",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   512,
-   507,
-   489,
-   417
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   368,
+   758,
+   347,
+   313
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Big break",
-  "copy": "My mug started acting. Its first role was a breakable extra.",
-  "sheet": "assets/post/jokes-03.png",
+  "category": "Reminders",
+  "name": "Check the oven",
+  "sheet": "assets/post/reminders-02.png",
+  "sheetWidth": 1098,
+  "sheetHeight": 1134,
   "rect": [
-   1022,
-   507,
-   314,
-   501
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1010
+   734,
+   758,
+   327,
+   364
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Fine print",
-  "copy": "I read the small print. It said: move closer.",
-  "sheet": "assets/post/jokes-04.png",
+  "category": "Reminders",
+  "name": "Birthday today",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
    2,
    2,
-   479,
-   474
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
+   361,
+   353
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "A good fit",
-  "copy": "My sock joined a dating app. Still looking for its match.",
-  "sheet": "assets/post/jokes-04.png",
+  "category": "Reminders",
+  "name": "Happy anniversary",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   529,
+   394,
    2,
-   458,
-   453
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
+   362,
+   322
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Movie night",
-  "copy": "We watched a film about glue. I was stuck to my seat.",
-  "sheet": "assets/post/jokes-04.png",
+  "category": "Reminders",
+  "name": "Bring the tickets",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   1056,
+   786,
    2,
-   418,
-   496
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
+   343,
+   298
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Room service",
-  "copy": "The pigeon ordered breakfast in bed. Crumbs, obviously.",
-  "sheet": "assets/post/jokes-04.png",
+  "category": "Reminders",
+  "name": "Call your friend",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
    2,
-   502,
-   504,
-   464
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
- },
- {
-  "category": "Jokes",
-  "name": "Bad timing",
-  "copy": "My clock quit work. It wanted its own time back.",
-  "sheet": "assets/post/jokes-04.png",
-  "rect": [
-   529,
-   502,
-   523,
-   471
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
+   359,
+   363,
+   310
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Undercover",
-  "copy": "My duvet became a detective. It loves undercover work.",
-  "sheet": "assets/post/jokes-04.png",
+  "category": "Reminders",
+  "name": "Time for class",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   1056,
-   502,
-   479,
-   430
-  ],
-  "sheetWidth": 1581,
-  "sheetHeight": 1000
+   394,
+   359,
+   381,
+   320
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Short story",
-  "copy": "A pencil wrote its memoir. It had a good point.",
-  "sheet": "assets/post/jokes-05.png",
+  "category": "Reminders",
+  "name": "Pack your swim kit",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   2,
-   2,
-   506,
-   329
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
- },
- {
-  "category": "Jokes",
-  "name": "In training",
-  "copy": "I taught my pigeon to fetch. It brought me an invoice.",
-  "sheet": "assets/post/jokes-05.png",
-  "rect": [
-   512,
-   2,
-   398,
-   460
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
+   786,
+   359,
+   363,
+   337
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Tall tale",
-  "copy": "My ladder tells stories. Each one has another step.",
-  "sheet": "assets/post/jokes-05.png",
+  "category": "Reminders",
+  "name": "Book your appointment",
+  "sheet": "assets/guest/R27.svg",
+  "master": "assets/guest/R27.svg",
+  "sheetWidth": 388,
+  "sheetHeight": 397,
   "rect": [
-   1022,
-   2,
-   474,
-   378
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
+   0,
+   0,
+   388,
+   397
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Flower power",
-  "copy": "I told my bouquet a secret. The tulips stayed sealed.",
-  "sheet": "assets/post/jokes-05.png",
+  "category": "Reminders",
+  "name": "Print the form",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
    2,
-   504,
-   476,
-   467
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
+   716,
+   337,
+   335
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Sign here",
-  "copy": "My parcel asked for my autograph. Fame at last.",
-  "sheet": "assets/post/jokes-05.png",
+  "category": "Reminders",
+  "name": "Send the photos",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   512,
-   504,
-   489,
-   484
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
+   394,
+   716,
+   345,
+   342
+  ]
  },
  {
-  "category": "Jokes",
-  "name": "Grounded",
-  "copy": "Why was the paper plane grounded? Too many flights of fancy.",
-  "sheet": "assets/post/jokes-05.png",
+  "category": "Reminders",
+  "name": "Leave on time",
+  "sheet": "assets/post/reminders-03.png",
+  "sheetWidth": 1176,
+  "sheetHeight": 1071,
   "rect": [
-   1022,
-   504,
-   469,
-   498
-  ],
-  "sheetWidth": 1530,
-  "sheetHeight": 1004
+   786,
+   716,
+   388,
+   345
+  ]
  }
 ]
