@@ -1,0 +1,62 @@
+@font-face{font-family:PostalBaloo;src:url(../assets/home/baloo.woff) format('woff');font-weight:400 800;font-display:swap}
+:root{--forest-banner:#20302b;--friend-ink:#deecdd;--shop-banner:#0c1512;--shop-card:#9eafa1;--shop-ink:#1a3227;--nav-shadow:#050e08}
+:root[data-theme=light]{--forest-banner:#85ada1;--friend-ink:#294f43;--shop-banner:#85ada1;--shop-card:#e4f1e9;--shop-ink:#294639;--nav-shadow:#6f9282}
+#app .postal-header{display:flex;align-items:center;gap:8px;margin:0 0 16px;color:var(--mm-text)}
+.postal-header>strong,.postal-hero h1,.postal-label h2,.postal-kiosk h2,.postal-receiving strong,#social-flow h2{font-family:PostalBaloo,'Arial Rounded MT Bold',sans-serif;font-weight:800}
+.postal-header>strong{flex:1;font-size:clamp(18px,5vw,24px);line-height:1}
+.profile-link,.postal-label button,.postal-person,.postal-cat,.add-pill,.quick-post,.postal-arrow{background:none;border:0;color:inherit;cursor:pointer}
+.profile-link{display:grid;justify-items:center;font-size:10px;font-weight:800;gap:2px}
+.profile-link img{width:31px;height:31px;border:1.5px solid var(--mm-edge);background:var(--mm-panel);border-radius:50%;object-fit:contain}
+.postal-theme{position:relative;display:flex;background:var(--mm-panel);border-radius:20px;padding:2px;cursor:pointer}
+.postal-theme input,.postal-switch input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.postal-theme:focus-within,.postal-switch:focus-within{outline:2px solid var(--mm-text);outline-offset:2px}
+.postal-theme span{width:24px;height:24px;display:block;background-image:url('../assets/home/sky.webp');border-radius:50%}
+.postal-theme .sun{background-size:253% 126%;background-position:10% 48%}
+.postal-theme .moon{background-size:266% 133%;background-position:89% 53%}
+[data-theme=dark] .sun,[data-theme=light] .moon{opacity:.35;filter:grayscale(1)}
+.postal-hero{display:flex;align-items:center;gap:10px;background:var(--forest-banner);border-radius:46px 46px 46px 10px;padding:12px 9px;color:#fff9ef;min-height:185px}
+.postal-hero img{width:45%;height:auto;max-height:195px;object-fit:contain;transform:scale(1.08)}
+.postal-hero h1{font-size:clamp(24px,6.5vw,31px);line-height:1.07;margin:0 0 10px}
+.postal-hero p{margin:0;color:#e6f3e1;font-size:14px;font-weight:750;line-height:1.4}
+.postal-receiving{display:flex;align-items:center;justify-content:space-between;gap:3px;margin:18px 0 24px;border:2px solid #174c29;box-shadow:0 3px #164725;border-radius:20px;background:#206e3c;color:#fff7eb;text-align:center;padding:8px 5px;cursor:pointer}
+.postal-receiving.closed{background:#ad3548;border-color:#732438;box-shadow:0 3px #732438}
+.postal-receiving strong,.postal-receiving small{display:block;line-height:1.25}
+.postal-receiving strong{font-size:18px}.postal-receiving small{font-size:11px}
+.postal-envelope{display:grid;place-items:center;width:46px;height:43px;background:url('../assets/home/envelope.webp') center/contain no-repeat}
+.closed .postal-envelope{background:none;font-size:26px}
+.postal-switch{position:relative;flex:0 0 74px;height:34px;border:2px solid #174c29;border-radius:22px;background:#a0c5a8;color:#17452c}
+.postal-switch b{position:absolute;left:10px;top:7px;font:900 12px system-ui}
+.postal-switch i{position:absolute;top:1px;right:1px;width:28px;height:28px;border-radius:50%;overflow:hidden;background:#fcd479 url('../assets/home/on.webp') 50% 50%/400% 133% no-repeat}
+.closed .postal-switch{background:#dba5a8;border-color:#762032;color:#762032}.closed .postal-switch i{right:auto;left:1px;background-position:95% 50%}.closed .postal-switch b{left:auto;right:8px}
+.postal-label{position:relative;text-align:center;margin:0 0 8px}.postal-label h2,.postal-kiosk h2{margin:0;font-size:22px}.postal-label button{position:absolute;right:0;top:50%;transform:translateY(-50%);text-decoration:underline;font-size:11px;font-weight:bold}
+.postal-track{display:grid;grid-template-columns:29px minmax(0,1fr) 29px;align-items:center;border-radius:24px;overflow:hidden}.postal-track.people{background:var(--forest-banner)}
+.postal-row{display:flex;align-items:stretch;overflow-x:auto;scrollbar-width:none;gap:4px;scroll-snap-type:x proximity}.postal-row button{scroll-snap-align:start}
+.postal-arrow{align-self:stretch;display:grid;place-items:center;padding:0}.postal-arrow span{display:grid;place-items:center;border-radius:50%;width:26px;height:26px;background:#274438;color:#fff6e4;font:600 23px/1 Arial}.postal-arrow:disabled{opacity:.28}
+.postal-person{display:grid;justify-items:center;align-content:start;gap:5px;flex:0 0 calc(50% - 2px);min-width:0;padding:12px 1px;background:var(--mm-panel);color:var(--friend-ink)}.portrait-ring{position:relative;display:block;width:68px;aspect-ratio:1;border:3px solid #35bd66;border-radius:50%;background:var(--mm-bg);box-shadow:0 0 9px #47d37488;overflow:hidden}
+.portrait-ring img{width:100%;height:100%;object-fit:contain}.unavailable .portrait-ring{border-color:#df6870;box-shadow:none}.unavailable img{filter:grayscale(1);opacity:.55}.unavailable .portrait-ring:after{content:'';position:absolute;top:calc(50% - 2px);left:-5%;width:110%;height:5px;transform:rotate(-45deg);background:#df6870}
+.availability{font-size:11px;font-weight:850;background:#206e3c;color:white;border-radius:12px;padding:5px 7px;box-shadow:0 2px #164725}.unavailable .availability{background:#ad3548;box-shadow:0 2px #732438}
+.add-pill{display:block;margin:11px auto 17px;padding:7px 16px;border-radius:22px;background:color-mix(in srgb,var(--mm-text) 7%,transparent);font-weight:bold;color:var(--mm-text)}
+.postal-shop{margin-inline:-12px;padding:17px 12px;background:var(--shop-banner);border-top:3px solid var(--mm-edge);border-radius:20px 20px 0 0}
+.postal-kiosk{background:var(--shop-card);color:var(--shop-ink);border:2px solid #58745e;border-radius:18px;box-shadow:3px 4px #56725c}
+.postal-kiosk header{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 4px;border-bottom:2px solid #67816d}.postal-kiosk h2{transform:rotate(-2deg)}.postal-kiosk header button{background:#c3d4c1;border:1px solid #607a66;border-radius:10px;padding:5px 8px;color:#203e30;font-weight:bold}
+.postal-cat{display:grid;justify-items:center;gap:3px;align-content:start;flex:0 0 62px;font-size:11px;font-weight:bold;padding:8px 0}.postal-cat img{width:44px;height:44px;background:#f3edde;border:1.5px solid #617b67;border-radius:50%;object-fit:contain}
+.quick-post{display:block;margin:10px auto 0;text-decoration:underline;font-size:12px}
+#app .draft-label{font-size:10px;margin:6px 0;color:var(--mm-sub);text-align:center}
+#social-flow{box-sizing:border-box;margin:auto;inset:0;width:min(90vw,355px);max-height:85dvh;overflow:auto;background:var(--mm-panel);border:2px solid var(--mm-edge);border-radius:22px;padding:14px 18px;color:var(--mm-text);text-align:center}
+.social-head{display:flex;justify-content:space-between}.social-head button{background:none;border:none;color:inherit;font-size:25px;min-width:35px;min-height:35px;cursor:pointer}
+#social-flow h2{margin:2px 0 14px;font-size:25px}.social-main,.social-quiet,.social-pill{cursor:pointer;font-family:inherit}
+.social-main{display:block;width:100%;border:2px solid #416c51;background:#b8e7bd;color:#153b28;border-radius:14px;font-weight:bold;padding:10px}
+.social-quiet{display:block;margin:4px auto;background:none;border:0;color:var(--mm-sub);font-size:12px;text-decoration:underline;padding:9px}
+.social-pill{padding:5px 11px;margin:5px;border:1px solid var(--mm-edge);background:color-mix(in srgb,var(--mm-text) 6%,transparent);color:var(--mm-text);border-radius:18px;font-weight:700}
+.photo-booth{width:min(166px,78%);margin:4px auto 18px;padding:7px;background:#fcf4de;box-shadow:2px 3px var(--mm-edge);transform:rotate(-4deg);color:#294b3c}
+.photo-booth img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#9dbbab}.photo-booth figcaption{font:italic bold 22px Georgia,serif;margin-top:4px}
+.profile-number{padding-top:10px;border-top:1px dashed var(--mm-edge)}.profile-number strong,.profile-number small{display:block}.profile-number strong{font:700 clamp(22px,6.4vw,32px)/1.4 monospace;user-select:all;overflow-wrap:anywhere}
+.bird-wall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:42dvh;overflow:auto;margin-bottom:10px}.bird-choice{display:grid;justify-items:center;background:var(--mm-bg);color:var(--mm-text);border:2px solid transparent;border-radius:10px;font:700 11px system-ui;padding:4px}.bird-choice[aria-pressed=true]{border-color:var(--mm-text)}
+.bird-choice span{width:100%;max-width:73px;aspect-ratio:1;background:url('../assets/home/portraits.webp') 0 0 / 600% 500% no-repeat}
+#social-flow h2.stamp-title{width:fit-content;border:2px dashed var(--mm-edge);padding:3px 12px;margin:4px auto 18px;transform:rotate(-2deg);border-radius:8px}
+.code-form{border-radius:16px;background:var(--mm-bg);padding:12px;text-align:left}.code-wrap{position:relative;display:block}.social-input{display:block;width:100%;background:var(--mm-panel);color:var(--mm-text);border:1px solid var(--mm-edge);border-radius:10px;padding:10px 35px 10px 10px;margin:6px 0 10px}
+.code-wrap i{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:none}.code-form[data-found=true] i{display:block}.code-form[data-found=true] :is(input,i){color:#ace9b5}:root[data-theme=light] .code-form[data-found=true] :is(input,i){color:#35784c}
+.match-bird{width:77px;height:77px;object-fit:contain;border:2px solid var(--mm-edge);border-radius:50%;display:block;margin:6px auto;background:var(--mm-bg)}
+.royal-card{background:#456453;border:4px double #c4b082;border-radius:22px 22px 7px 7px;padding:13px 8px;margin-bottom:10px;color:white;text-align:center}
+:root[data-theme=light] .royal-card{background:#fff4dc;color:#49654e}.royal-card em,.royal-card h3{font-family:Georgia,serif}.royal-card h3{margin:7px 0;font-size:24px}.royal-card p{font-weight:bold;margin:6px 0}
+.result-bird{width:125px;height:125px;object-fit:contain}.local-note{display:block;margin:8px 0 0;color:var(--mm-sub);font-size:11px}.social-alert:empty{display:none}

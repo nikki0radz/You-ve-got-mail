@@ -6,14 +6,14 @@ A tiny pigeon. A minor inconvenience. A playful first draft of an opt-in friend 
 
 ## This draft
 
-- Muted Lagoon light/dark palettes, pigeon 5 and the Status Stripe friend layout (Your people option 8).
+- Pale Forest / Forest Night home, illustrated receiving switch, swipeable pigeon portraits and availability badges.
 - **Pick & post** on the home screen, alongside **Quick message** and labelled navigation icons.
 - Guided pop-ups: recipient → content type → message/picture/gift → frame → colour → optional scheduling → preview.
 - Saved theme, receiving state, local profile, per-friend loud-ring preferences and message defaults.
 - Send test, local inbox, replies, swipe/dismiss and five-minute snooze.
 - Frame and colour editing happens one step at a time. Back preserves inputs; Cancel confirms before abandoning a multi-step edit.
 
-This is a browser prototype. Owen and Sophie are demo friends. All receipts, replies and scheduled tests stay on this device. The UI labels this explicitly. Accounts, remote delivery, friend-code linking, globally single-use test links and native Android permissions are not implemented. The browser cannot display pop-ups over other apps or override silent/DND.
+This is a browser prototype. The people shown on the home screen are demo friends. The Add a friend flow accepts OWEN-27 for a local round trip (lookup, outgoing request, invitation and response). My profile saves a Photo booth portrait, a choice of 30 pigeons or a custom photo, and the device’s existing friend code. All receipts, replies and scheduled tests stay on this device. The UI labels this explicitly. Accounts, remote delivery, friend-code linking, globally single-use test links and native Android permissions are not implemented. The browser cannot display pop-ups over other apps or override silent/DND.
 
 Scheduled tests and snoozes are checked while the page is open and catch up when reopened. They are not background push notifications. Images are limited to 2 MB and saved only in browser storage; storage errors are shown rather than reported as successful receipts.
 
