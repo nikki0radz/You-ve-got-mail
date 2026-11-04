@@ -1,3 +1,4 @@
+import {calendarPreview} from './schedule-review.mjs';
 import {readLook} from './parcel-round.mjs';
 import {appearance} from './appearance.mjs';
 import {extraCSS} from './templates.mjs';
@@ -24,6 +25,7 @@ function reviewNode(node,id){
   const value=reviewStyles[id]?.reviewLook, look=readLook(value);
   if(!look&&!node.hasAttribute('data-review-look'))return;
   if(look)node.dataset.reviewLook=value;else delete node.dataset.reviewLook;
+  if(node.matches('#when-label'))calendarPreview(node,look?.group==='calendar'?value:null);
   if(node.matches('.decline-pigeon')){
     if(!originals.has(node))originals.set(node,node.getAttribute('src'));
     const src=look?.entry[1]??originals.get(node);

@@ -88,3 +88,19 @@ html[data-workroom=home] #app:has(.courier-stand[data-review-look=header-1]) #ho
 
 .guest .dispatch-timing[data-review-look="timing-1"]{--active:#bbd2bd}
 .guest .dispatch-timing[data-review-look="timing-1"] button:is(#now,#later)[aria-pressed=true]{color:#203c2b}
+
+.guest #when-label[data-review-look] #when{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.guest .schedule-review{display:block;margin:6px 0;padding:10px;border:1px solid #91a68d;border-radius:16px;background:#f7f0dd;color:#263f31;text-align:center}
+.guest .schedule-review .calendar-nav{display:flex;justify-content:space-between;align-items:center;gap:5px}
+.guest .schedule-review .calendar-nav button{width:36px;min-height:34px;padding:2px;background:#dce8d5;color:#294938}
+.guest .schedule-review .calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin-top:5px}
+.guest .schedule-review .calendar-days span{font:700 11px system-ui;color:#415e4b}
+.guest .schedule-review .calendar-days button{min-width:0;min-height:32px;padding:2px;border:1px solid transparent;box-shadow:none;background:transparent;color:#294938;font:600 13px system-ui}
+.guest .schedule-review .calendar-days button[aria-pressed=true]{background:#365a40;color:#fff9e8;border-color:#264631}
+.guest .schedule-review .calendar-days button:disabled{opacity:.35}
+.guest .schedule-review .calendar-time{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:9px;font:700 13px system-ui}
+.guest .schedule-review select{width:auto;min-width:57px;border:1px solid #aab7a3;border-radius:9px;padding:5px;color:#294938;background:#fffdf6;font:600 14px system-ui}
+.guest [data-review-look=calendar-2] .schedule-review{border:5px solid transparent;border-radius:4px;background:linear-gradient(#fff8e9,#fff8e9) padding-box,repeating-linear-gradient(135deg,#a9504a 0 8px,#fff9ed 8px 16px,#648b8a 16px 24px,#fff9ed 24px 32px) border-box}
+.guest [data-review-look=calendar-3] .schedule-review{background:#e5efe1;border-radius:24px;border:2px solid #718c75}
+.guest [data-review-look=calendar-4] .schedule-review{background:#f3dfb9;border:2px dashed #a78b5b;border-radius:6px}
+.guest [data-review-look=calendar-5] .schedule-review{background:#eee5eb;border:2px solid #a68196;border-radius:18px 4px 18px 4px}

@@ -12,6 +12,7 @@ export const looks = {
     ['Pocket postcard', 'Hello from HQ', 'Your courier is standing by.'],
     ['Station board', 'Pigeon arrivals', 'Tap the sign to change your status.']
   ],
+  calendar: [['Postmark calendar'],['Airmail diary'],['Pocket planner'],['Ticket to tomorrow'],['Garden journal']],
   decline: [['Tearful courier','assets/home/sad.webp'],['Crybaby','assets/guest/decline-crybaby.png'],['Sad pigeon','assets/guest/decline-sad.png'],['Furious pigeon','assets/guest/decline-furious.png'],['Unimpressed pigeon','assets/guest/decline-unimpressed.png']],
   background: [['Mist'],['Pale sage'],['Soft lagoon'],['Ivory green'],['Sea glass'],['Gentle mint']],
   title: [['Two lines']],

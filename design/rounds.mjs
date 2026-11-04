@@ -17,7 +17,8 @@ rounds.home.groups.push(reviewGroup('background','Home background','#app'),revie
 rounds.dispatch=reviewGroup('heading','Delivery heading','#steps > h2');
 rounds.dispatch.groups=[
   reviewGroup('name','Sender name','.sender-label'),
-  reviewGroup('timing','Delivery timing','.dispatch-timing')
+  reviewGroup('timing','Delivery timing','.dispatch-timing'),
+  reviewGroup('calendar','Date selector','#when-label')
 ];
 
 rounds.decline=reviewGroup('decline','Pigeon choice','.decline-pigeon');
