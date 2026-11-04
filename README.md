@@ -2,10 +2,12 @@
 
 A tiny pigeon. A minor inconvenience. A playful first draft of an opt-in friend messaging app.
 
+[Open the live app](https://nikki0radz.github.io/You-ve-got-mail/) and tap **Pick & post** to try the PNG collections. **Postcards → Milk carton** lets you add a photo and a message, then save or share the result.
+
 ## This draft
 
 - Muted Lagoon light/dark palettes, pigeon 5 and the Status Stripe friend layout (Your people option 8).
-- Small, subtle **Annoy someone** button and labelled navigation icons.
+- **Pick & post** on the home screen, alongside **Quick message** and labelled navigation icons.
 - Guided pop-ups: recipient → content type → message/picture/gift → frame → colour → optional scheduling → preview.
 - Saved theme, receiving state, local profile, per-friend loud-ring preferences and message defaults.
 - Send test, local inbox, replies, swipe/dismiss and five-minute snooze.
