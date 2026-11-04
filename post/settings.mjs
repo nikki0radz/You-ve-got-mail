@@ -18,6 +18,7 @@ export function settingsPage(){
   section('phone','Phone & appearance','Check permissions and try the frosted pop-up.',
     '<p data-blur class="blur-readout"></p>'+(native?'<button class="setting-pill" data-action="test">Test over another app</button><p class="setting-hint">Tap Test, then go to your home screen. Use Full pop-up and switch Open to mail on first.</p><div class="permission-list">'+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to test a parcel over another app.</p>'))+
   section('account','Profile & invitations','Your pigeon, message style and one-time links.',link('profile','Your profile','Change your name or pigeon.')+link('defaults','Message style','Set your default frame and colour.')+link('test-link','One-time link','Invite someone to send you a parcel.'))+
+  (native?section('design','Design Mode','Try your laptop layout on this phone.',action('design','Open Design Mode')+'<p class="setting-hint">Open the laptop editor, copy its pairing key, then enter it here.</p><span data-forget>'+action('designForget','Disconnect laptop')+'</span>'):'')+
   section('about','Testing & updates','App version and delivery checks.',(native?action('updates','Check for updates')+action('listen','Listen for 30 minutes'):link('schedule-setting','Test scheduling','Set a time for a local test.'))+link('about','About Pigeon Post','About this test edition.'))+'</section>';
 }
 export function wireSettings(root){
@@ -30,6 +31,7 @@ export function wireSettings(root){
     }
     panel.querySelector('[data-blur]').textContent=({enabled:'Android reports that cross-app blur is enabled.',off:'Android currently has cross-app blur turned off. Pop-ups use a translucent tint.',unsupported:'System blur requires Android 12 or later.'})[s.blur]||'Cross-app blur is checked on your phone.';
     if(native){
+      panel.querySelector('[data-forget]').hidden=!Pigeon.designPaired?.();
       for(const [key,caption,ok] of [['overlay','Display over apps',s.overlay],['notifications','Phone notifications',s.notifications],['precise','Precise schedules',s.precise]]){
         panel.querySelector('[data-platform='+key+']').textContent=caption+' · '+(ok?'On':'Set up');
       }

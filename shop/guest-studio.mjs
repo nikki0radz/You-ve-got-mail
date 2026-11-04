@@ -205,7 +205,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       if(item.textBox&&!state.words.trim()){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
       busy=true;const ready=tool('ready');ready.disabled=true;
-      try{const canvas=await renderParcel(item,state);await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);}
+      try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);}
       catch(e){grabError(e);}finally{busy=false;ready.disabled=false;}
     };
     dialog.scrollTop=0;

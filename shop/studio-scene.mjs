@@ -45,12 +45,13 @@ export function banner(style,text,width=360,height=108,colours={}){
   const [x,y,w,h]=noteBox(style);
   writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30',colours.font);return c;
 }
-export async function renderParcel(item,state){
+export async function renderParcel(item,state,design=null){
   const canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=H*2;
   const ctx=canvas.getContext('2d');ctx.scale(2,2);ctx.imageSmoothingQuality='high';
-  const paint=(img,l)=>ctx.drawImage(img,l.x,l.y,l.width,l.width*l.ratio);
-  paint(await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},state.words),state.art);
-  if(state.second)paint(state.second.image,state.second);
+  const paint=(img,l)=>{ctx.globalAlpha=l.opacity??1;ctx.drawImage(img,l.x,l.y,l.width,l.width*l.ratio);ctx.globalAlpha=1;};
+  paint(await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},state.words),design?.art||state.art);
+  if(state.second)paint(state.second.image,design?.second||state.second);
+  for(const copy of design?.copies||[]){await copy.image.decode();paint(copy.image,copy);}
   if(state.note)await document.fonts.load(fontSpec(state.note.font,20));
   if(state.note)paint(banner(state.note.style,state.note.text,state.note.width,state.note.width*state.note.ratio,state.note),state.note);
   return canvas;

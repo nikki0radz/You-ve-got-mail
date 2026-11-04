@@ -1,0 +1,141 @@
+import {screen,appVersion,elements,numbers,choices,colours,stickerIds,empty,cleanLayout,current,newBook,record} from './model.mjs';
+const $=id=>document.getElementById(id),frames=[...document.querySelectorAll('iframe')];
+const KEY='pigeon.design.workroom.key.v1',CACHE='pigeon.design.workroom.cache.v1';
+const cached=()=>{try{return JSON.parse(localStorage.getItem(CACHE))||{}}catch{return {}}};
+const initial=cached();let key=localStorage.getItem(KEY)||'',book=initial.book||newBook(),version=initial.version||0,profile=initial.profile||null;
+let layout=cleanLayout(initial.working||current(book)?.revisions.at(-1)?.layout),dirty=!!initial.dirty,selected='row',editing=true,grid=0,locked=false,conflict=false;
+$('name').value=initial.name||current(book)?.name||'Postcard layout';
+const ids=['All in','Bad beat','I’m horny','Unimpressed','I’m tired','I miss you'];
+const status=msg=>$('status').textContent=msg;
+const surface=f=>f.contentWindow?.designSurface;
+function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
+function dimensions(){
+  const fits=p=>Number.isFinite(p?.width)&&p.width>=150&&p.width<=1600&&Number.isFinite(p.height)&&p.height>=200&&p.height<=2400;
+  const main=fits(profile)?profile:{width:390,height:780,insets:{top:24,bottom:24}};
+  const available=window.innerHeight-$('bench').getBoundingClientRect().top-window.scrollY-82;
+  const zoom=$('zoom').value==='fit'?Math.max(.45,Math.min(1,available/(main.height+(main.insets?.top||0)+(main.insets?.bottom||0)+10))):Number($('zoom').value);
+  frames.forEach((f,i)=>{
+    const width=i?Math.max(160,Math.min(320,main.width-40)):main.width,height=main.height;
+    const clamp=n=>Math.max(0,Math.min(160,Number(n)||0));
+    const t=clamp(main.insets?.top),b=clamp(main.insets?.bottom),l=clamp(main.insets?.left),r=clamp(main.insets?.right);
+    const device=f.closest('.device'),shell=f.closest('.shell'),foot=f.closest('.footprint');
+    device.hidden=i===1&&!$('compare').checked;f.style.width=width+'px';f.style.height=height+'px';f.style.marginInline=l+'px '+r+'px';
+    shell.querySelector('.top').style.height=t+'px';shell.querySelector('.nav').style.height=b+'px';shell.style.transform='scale('+zoom+')';
+    foot.style.width=(width+l+r+10)*zoom+'px';foot.style.height=(height+t+b+10)*zoom+'px';
+    device.querySelector('small').textContent=width+' × '+height+' CSS px';
+  });
+  $('device-name').textContent=fits(profile)?'My phone':'Reference phone';
+  $('device-name').title=fits(profile)?'Measured on Android · font scale '+main.fontScale+' · WebView text '+(main.textZoom||100)+'%':'Pair your phone to replace these example measurements.';
+}
+function renderFrames(){
+  for(const f of frames){
+    const view=surface(f);if(!view)continue;
+    view.configure({layout,selected,editing,grid,textScale:profile?Math.min(3,Math.max(.5,(profile.textZoom??(100*profile.fontScale))/100||1)):1});
+    requestAnimationFrame(()=>{const badge=f.closest('.device').querySelector('.fit-report');badge.textContent=view.toolbarReport();badge.classList.toggle('warning',/wrap|clip/.test(badge.textContent));});
+  }
+}
+function update(){dirty=true;cache();renderFrames();bookUI();status('Unsaved changes · Save draft to make this layout available on your phone.');}
+function setValue(prop,value){const obj=layout.styles[selected]||={};if(value===null)delete obj[prop];else obj[prop]=value;update();}
+function option(value,label){return new Option(label,value)}
+const nice=id=>elements[id]?.[0]||'Sticker · '+(ids[stickerIds.indexOf(layout.copies.find(c=>c.id===id)?.asset)]||'copy');
+function elList(){
+  const el=$('element');el.replaceChildren(...[...Object.keys(elements),...layout.copies.map(c=>c.id)].map(id=>option(id,nice(id))));el.value=selected;
+}
+function select(id){if(!elements[id]&&!layout.copies.some(c=>c.id===id))return;selected=id;elList();renderFrames();inspector();}
+function label(text,child){const el=document.createElement('label');el.append(text,child);return el}
+function btn(title,fn){const b=document.createElement('button');b.type='button';b.textContent=title;b.onclick=fn;return b}
+const labels={width:'Width · px',height:'Height · px',margin:'Outer spacing · px',padding:'Padding · px',gap:'Button gap · px',radius:'Corner radius · px',fontSize:'Font size · px',borderWidth:'Border · px',opacity:'Opacity · %',x:'Left · %',y:'Top · %',background:'Fill',color:'Text colour',borderColor:'Border colour',font:'Font',align:'Alignment'};
+function inspector(){
+  const holder=$('inspector');holder.replaceChildren();const saved=layout.styles[selected]||{},measure=surface(frames[0])?.inspect(selected)||{};
+  const layer=['extra','banner','art'].includes(selected)||selected.startsWith('copy-');
+  $('scope').textContent=selected==='pocket'?'Shared style · affects Add note and Add sticker on this screen.':selected==='row'?'Row only · affects the two toolbar buttons together.':'Element only · affects '+nice(selected)+'.';
+  const fields=document.createElement('div');fields.className='fields';
+  function field(prop){
+    let input;
+    if(choices[prop]){
+      input=document.createElement('select');input.append(option('','Original'),...choices[prop].map(v=>option(v,v)));input.value=saved[prop]||'';
+    }else{
+      input=document.createElement('input');input.type=colours.includes(prop)?'color':'number';
+      if(numbers[prop]){const [min,max]=numbers[prop];input.min=min;input.max=max;input.step=prop==='x'||prop==='y'?'.1':'1';input.placeholder=measure[prop]===undefined?'Auto':String(Math.round(measure[prop]));}
+      input.value=saved[prop]??(input.type==='color'?measure[prop]||'#365a40':'');
+    }
+    input.dataset.prop=prop;
+    input.onchange=()=>{if(!input.reportValidity())return;setValue(prop,input.value===''?null:input.type==='number'?Number(input.value):input.value);};
+    return label(labels[prop]||prop,input);
+  }
+  if(selected==='row'){
+    fields.append(field('gap'));const equal=document.createElement('select');equal.append(option('equal','Equal widths'),option('content','Fit labels'));equal.value=saved.equal||'equal';equal.onchange=()=>setValue('equal',equal.value);fields.append(label('Button widths',equal));
+    holder.append(fields);const order=document.createElement('div');order.className='stack';const reverse=saved.order==='sticker-first';
+    const swap=()=>{setValue('order',reverse?'note-first':'sticker-first');inspector();};
+    for(const text of reverse?['Add sticker','Add note']:['Add note','Add sticker']){
+      const chip=btn(text,swap);chip.className='orderchip';chip.draggable=true;chip.title='Drag to reorder, or click to swap';chip.ondragstart=e=>e.dataTransfer.setData('text/plain',text);chip.ondragover=e=>e.preventDefault();chip.ondrop=e=>{e.preventDefault();if(e.dataTransfer.getData('text/plain')!==text)swap()};order.append(chip);
+    }
+    holder.append(order);const hint=document.createElement('p');hint.textContent='Drag the labels to reorder, or click either to swap.';holder.append(hint);
+  }
+  const basics=document.createElement('div');basics.className='fields';
+  if(layer)basics.append(field('x'),field('y'));
+  for(const p of ['width','height','padding','margin','fontSize','font','align','opacity','background','color','borderWidth','borderColor','radius'])basics.append(field(p));
+  if(selected==='row'){const details=document.createElement('details');details.append(Object.assign(document.createElement('summary'),{textContent:'Size & appearance'}),basics);holder.append(details);}else holder.append(basics);
+  if(['note','second','pocket'].includes(selected))holder.append(btn(selected==='pocket'?'Edit Add note only':'Edit both toolbar buttons',()=>select(selected==='pocket'?'note':'pocket')));
+  holder.append(btn('Reset element',()=>{delete layout.styles[selected];update();inspector()}));
+  const section=document.createElement('details');section.open=layer;section.append(Object.assign(document.createElement('summary'),{textContent:'Sticker placement'}));const pick=document.createElement('select');pick.append(...stickerIds.map((v,i)=>option(v,ids[i])));section.append(label('Sticker to add',pick));
+  function add(asset,source={}){
+    if(layout.copies.length>=16){status('This screen supports up to 16 design stickers.');return;}
+    const id='copy-'+crypto.randomUUID();layout.copies.push({id,asset});layout.styles[id]={x:58,y:60,...source};
+    selected=id;update();select(id);
+  }
+  section.append(btn('Add design sticker',()=>add(Number(pick.value))));
+  const cp=layout.copies.find(c=>c.id===selected);
+  if(cp||selected==='extra'){
+    section.append(btn('Duplicate sticker',()=>{
+      const asset=cp?.asset||surface(frames[0])?.addedSticker();if(!stickerIds.includes(asset)){status('Add a sticker in Try screen first.');return;}
+      add(asset,{...saved,x:Math.min(90,(saved.x??measure.x??50)+5),y:Math.min(90,(saved.y??measure.y??50)+5)});
+    }));
+  }
+  if(cp)section.append(btn('Remove design sticker',()=>{layout.copies=layout.copies.filter(c=>c.id!==selected);delete layout.styles[selected];selected='row';update();select('row');}));
+  const snap=document.createElement('select');for(const n of [0,4,8,16])snap.append(option(n,n?n+' px':'Off'));snap.value=grid;snap.onchange=()=>{grid=Number(snap.value);renderFrames()};section.append(label('Snap when dragging',snap));holder.append(section);
+}
+function bookUI(){
+  const d=current(book),latest=d?.revisions.at(-1);$('revision').textContent=latest?(d.name+' · Revision '+d.revisions.length+' · '+latest.id.slice(0,8)+' · App '+latest.appVersion+(dirty?' · Edited':'')):'Original layout · App '+appVersion+(dirty?' · Edited':'');
+  $('drafts').replaceChildren(...(book.drafts.length?book.drafts.map(x=>option(x.id,x.name)):[option('','No saved drafts')]));$('drafts').value=book.active||'';
+  const prior=$('history').value;$('history').replaceChildren(...(d?.revisions||[]).map((r,i)=>option(r.id,'Revision '+(i+1)+' · '+r.id.slice(0,8)+(d.approved===r.id?' · Approved':''))).reverse());
+  if(d?.revisions.some(r=>r.id===prior))$('history').value=prior;
+  $('approval').textContent=d?.approved?'Approved revision '+d.approved.slice(0,8)+'. Publishing is separate.':'Approval records your choice. Live app publishing is separate.';
+  $('restore').disabled=!d;$('approve').disabled=!d;$('duplicate').disabled=!d;
+}
+async function api(action,payload){
+  const r=await fetch('https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/design/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),referrerPolicy:'no-referrer',cache:'no-store'});
+  let data;try{data=await r.json()}catch{throw Error('The workspace service is unavailable. Your local edits are still here.')}
+  if(!r.ok){if(r.status===409)conflict=true;throw Error(r.status===409?'Another session saved first. Reconnect to load its changes before saving.':data.error||'Workspace request failed.');}return data;
+}
+async function ensureKey(){if(!key){const r=await api('create',{});key=r.key;localStorage.setItem(KEY,key);}return key;}
+async function read(k,replace){
+  const data=await api('read',{key:k});
+  if(data.book&&(data.book.schema!==1||data.book.screen!==screen||!Array.isArray(data.book.drafts)))throw Error('This workspace uses a different screen or format.');
+  profile=data.profile;
+  if(replace){book=data.book||newBook();version=data.version;const d=current(book);layout=cleanLayout(d?.revisions.at(-1)?.layout);$('name').value=d?.name||'Postcard layout';dirty=false;conflict=false;selected='row';}
+  dimensions();renderFrames();bookUI();elList();inspector();cache();
+}
+async function commit(next){if(conflict)throw Error('Reconnect to load the latest workspace first.');await ensureKey();const r=await api('save',{key,version,book:next});book=next;version=r.version;cache();}
+function action(fn){return async()=>{if(locked)return;locked=true;document.querySelector('main').inert=true;try{await fn()}catch(e){status(e.message);$('pair-status').textContent=e.message;}finally{locked=false;document.querySelector('main').inert=false}}}
+async function save(copy=false){
+  const name=$('name').value.trim();if(!name)throw Error('Give your draft a name first.');
+  const next=structuredClone(book),dname=copy?name+' (copy)':name;
+  const rev=record(next,dname,layout,copy);await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
+  status('Saved '+dname+' · '+rev.id.slice(0,8)+'. On your phone, tap Refresh draft.');
+}
+$('save').onclick=action(()=>save());$('duplicate').onclick=action(()=>save(true));
+$('restore').onclick=()=>{const r=current(book)?.revisions.find(r=>r.id===$('history').value);if(r){layout=cleanLayout(r.layout);selected='row';update();select('row');status('Revision '+r.id.slice(0,8)+' restored locally. Save draft to create a new revision.');}};
+$('approve').onclick=action(async()=>{const next=structuredClone(book),d=current(next);d.approved=$('history').value;await commit(next);bookUI();status('Approval recorded for '+d.approved.slice(0,8)+'.');});
+$('drafts').onchange=action(async()=>{const id=$('drafts').value;if(dirty&&!confirm('Discard unsaved edits and switch drafts?')){bookUI();return;}const next=structuredClone(book);next.active=id;try{await commit(next)}catch(e){bookUI();throw e}const d=current(book);layout=cleanLayout(d.revisions.at(-1).layout);dirty=false;$('name').value=d.name;selected='row';cache();bookUI();select('row');status('Active draft changed. Refresh draft on your phone to follow it.');});
+$('name').oninput=()=>{dirty=true;cache();bookUI()};
+$('pair').onclick=action(async()=>{$('pairDialog').showModal();$('key').value=await ensureKey();$('pair-status').textContent=profile?'Phone measurements received.':'Waiting for your phone to report its measurements.'});
+$('copy').onclick=action(async()=>{await navigator.clipboard.writeText($('key').value);$('pair-status').textContent='Key copied.'});
+$('connect').onclick=action(async()=>{const k=$('key').value.trim().toLowerCase();if(!/^[a-f0-9]{32}$/.test(k))throw Error('Enter the 32-character workspace key.');if(dirty&&!confirm('Replace local edits with this saved workspace?'))return;await read(k,true);key=k;localStorage.setItem(KEY,k);$('pair-status').textContent='Connected.';status('Workspace loaded.');});
+$('measure').onclick=action(async()=>{await read(await ensureKey(),false);$('pair-status').textContent=profile?'My phone measurements updated.':'Pair your installed app and tap Refresh draft first.';});
+$('element').onchange=e=>select(e.target.value);
+function mode(edit){editing=edit;$('edit').setAttribute('aria-pressed',String(edit));$('try').setAttribute('aria-pressed',String(!edit));renderFrames();$('bench-hint').textContent=edit?'Click an element to inspect it. Drag a selected sticker to position it.':'Try the composer in either phone. Preview deliveries stay in Design Mode.';}
+$('edit').onclick=()=>mode(true);$('try').onclick=()=>mode(false);$('compare').onchange=$('zoom').onchange=dimensions;
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!frames.some(f=>f.contentWindow===e.source)||e.data?.app!=='pigeon-studio')return;const m=e.data;if(m.type==='ready'){renderFrames();inspector()}else if(m.type==='select'&&editing)select(m.key);else if(m.type==='move'&&editing&&m.key===selected){const obj=layout.styles[selected]||={};obj.x=Math.round(m.x*10)/10;obj.y=Math.round(m.y*10)/10;update();inspector();}});
+window.addEventListener('resize',dimensions);dimensions();elList();inspector();bookUI();
+if(key)action(async()=>{if(dirty){await read(key,false);status('Local edits restored.');}else{await read(key,true);status('Saved workspace loaded.');}})();

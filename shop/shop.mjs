@@ -53,7 +53,7 @@ export function openReplyShop(onReady,initialCategory='Stickers',onCancel){
   return openShop(onReady,initialCategory,{curated:true,wheel:true,studio:true,onCancel});
 }
 
-export async function openShop(onTest, initialCategory, options={}){
+export async function openShop(onTest, initialCategory, options={}, initialDesign=null){
   // Existing guest links call openShop with true.
   const guest=options===true || Boolean(options.curated);
   const studio=guest || Boolean(options.studio);
@@ -260,7 +260,7 @@ export async function openShop(onTest, initialCategory, options={}){
   }
   try{catalog=await getCatalog();availableCategories=categories;
     if(guest){catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
-    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(options.wheel)wheel();else library();}
+    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(catalog.find(it=>it.category===group&&it.name===initialDesign));}else if(options.wheel)wheel();else library();}
   }
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }

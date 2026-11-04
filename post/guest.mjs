@@ -1,7 +1,8 @@
 import {scaled} from '../shop/transport-image.mjs';
 import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=glide-1';
 import {openShop} from '../shop/shop.mjs?guest-library=4';
-const preview=!location.hash && new URLSearchParams(location.search).get('preview')==='1';
+const designPreview=document.documentElement.dataset.screen==='postcard-composer';
+const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
 const token=location.hash.slice(1);
 const steps=document.getElementById('steps'),status=document.getElementById('status');
@@ -23,13 +24,14 @@ function invitation(){
 let lastCategory='Photos';
 function choose(){
   status.textContent='';
-  mountCategoryWheel(steps,{initialCategory:lastCategory,onBack:invitation,onBrowse:category=>{
-    lastCategory=category;
-    openShop(async(image,name,group,reopen)=>{
-      draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};
-      review();
-    },category,true);
-  }});
+  mountCategoryWheel(steps,{initialCategory:lastCategory,onBack:invitation,onBrowse:category=>browse(category)});
+}
+function browse(category,initialDesign=null){
+  lastCategory=category;
+  return openShop(async(image,name,group,reopen)=>{
+    draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};
+    review();
+  },category,true,initialDesign);
 }
 let preparedKey='', pollTimer;
 const storageKey='pigeon-receipt:'+token;
@@ -143,6 +145,7 @@ function showReceipt(key){
   check.onclick=()=>refresh(true);refresh();
 }
 async function start(){
+  if(designPreview){lastCategory="Postcards";choose();await browse(lastCategory,"Open scrapbook");return;}
   if(preview){invitation();return;}
   if(/^reply-[a-f0-9]{64}$/.test(token)){showReceipt(token.slice(6));return;}
   if(!/^[a-f0-9]{64}$/.test(token)){status.textContent='Open the full invitation link your friend shared with you.';return;}

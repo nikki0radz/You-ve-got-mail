@@ -104,6 +104,8 @@ public class Main extends Activity {
             break;
         case "warningChannel":startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT));break;
         case "precise":if(Build.VERSION.SDK_INT>=31)startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName())));else toast("Precise schedules are available.");break;
+        case "design":startActivity(new Intent(this,DesignMode.class).putExtra("textZoom",web.getSettings().getTextZoom()));break;
+        case "designForget":DesignMode.forget(this);break;
         case "updates":checkUpdates();break;
         case "listen":listen();toast("Listening for mail for 30 minutes.");break;
         }
@@ -186,6 +188,7 @@ public class Main extends Activity {
             if(!on&&("fullPopup".equals(key)||"onUnlock".equals(key)))runOnUiThread(()->UnlockQueue.reset(Main.this));
             if("closedInbox".equals(key))PostOffice.syncSoon(Main.this);
         }
+        @JavascriptInterface public boolean designPaired(){return DesignMode.paired(Main.this);}
         @JavascriptInterface public void settingsAction(String key){runOnUiThread(()->openSetting(key));}
         @JavascriptInterface public void settings(){runOnUiThread(Main.this::settings);}
         @JavascriptInterface public void invite(){runOnUiThread(Main.this::invite);}
