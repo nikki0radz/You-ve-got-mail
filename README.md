@@ -2,7 +2,9 @@
 
 A pigeon delivers transparent PNGs. The Android test edition receives real parcels from one-use invitations. The [web preview](https://nikki0radz.github.io/You-ve-got-mail/) also supports local design tests.
 
-## [Open Design Mode](https://nikki0radz.github.io/You-ve-got-mail/design/index.html)
+## [Open Design Mode](https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/design/index.html?page=home)
+
+[GitHub Pages workspace](https://nikki0radz.github.io/You-ve-got-mail/design/index.html) · Each host keeps its own laptop-only drafts. For an existing paired postcard workspace, enter its private key under **Pair phone**.
 
 On a laptop, use the page picker to open the home screen, mailbox, profile, settings, reply screens and guest delivery flow. The inspector scrolls independently. Click a control to see its rendered size, apply a button or layout preset, or copy a button style and paste it onto a different control. Additional page drafts save in this browser and can be exported for chat. Android 0.1.9 refreshes the postcard composer using the visual properties supported by that version.
 
