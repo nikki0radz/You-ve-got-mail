@@ -24,6 +24,12 @@ function reviewNode(node,id){
   const value=reviewStyles[id]?.reviewLook, look=readLook(value);
   if(!look&&!node.hasAttribute('data-review-look'))return;
   if(look)node.dataset.reviewLook=value;else delete node.dataset.reviewLook;
+  if(node.matches('.decline-pigeon')){
+    if(!originals.has(node))originals.set(node,node.getAttribute('src'));
+    const src=look?.entry[1]??originals.get(node);
+    if(node.getAttribute('src')!==src)node.setAttribute('src',src);
+    node.alt=look?look.entry[0]:'A tearful pigeon';
+  }
   if(node.matches('.postal-header > strong')){
     if(!originals.has(node))originals.set(node,node.textContent);
     const title=look?'You’ve Got\nMail!':originals.get(node);

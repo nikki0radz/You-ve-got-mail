@@ -17,7 +17,7 @@ function invitation(){
   status.textContent='';
   steps.querySelector('#accept').onclick=choose;
   steps.querySelector('#decline').onclick=()=>{
-    steps.innerHTML='<h2>The pigeon will be discreet.</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
+    steps.innerHTML='<img class="decline-pigeon" src="assets/home/sad.webp" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
     steps.querySelector('#back').onclick=invitation;
   };
 }

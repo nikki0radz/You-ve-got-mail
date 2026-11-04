@@ -19,3 +19,5 @@ rounds.dispatch.groups=[
   reviewGroup('name','Sender name','.sender-label'),
   reviewGroup('timing','Delivery timing','.dispatch-timing')
 ];
+
+rounds.decline=reviewGroup('decline','Pigeon choice','.decline-pigeon');

@@ -53,3 +53,5 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .guest #steps .dispatch-actions #send{display:flex;align-items:center;justify-content:center;margin:0;text-align:center}
 .guest #steps .edit-parcel#back{display:flex;align-items:center;justify-content:center;gap:.4em;margin:5px auto 0;padding:7px 14px;line-height:1.2}
 .guest #steps .edit-parcel#back span{display:inline-flex;align-items:center;line-height:1}
+
+.guest .decline-pigeon{display:block;width:min(70%,220px);height:200px;object-fit:contain;margin:8px auto 12px}
