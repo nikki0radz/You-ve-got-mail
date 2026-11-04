@@ -25,10 +25,10 @@
 .move-layer:not(.picked):not(:focus-within) .corner{visibility:hidden}
 #parcel-shop .inline-words{display:block;position:absolute;border:0;outline:1px dotted #416b4c;background:#fff8e226;margin:0;padding:0;min-height:0;border-radius:0;resize:none;overflow:hidden;box-sizing:border-box;text-align:center;font:bold 16px/1.23 system-ui,sans-serif;touch-action:auto;user-select:text}
 .studio-tools{flex-wrap:wrap;margin:10px 0 5px}.banner-options{text-align:center;margin:6px 0}.banner-options[hidden]{display:none}
-.banner-options>div{margin:5px 0}.banner-options button{font-size:12px}
-#parcel-shop.guest-studio .banner-options [data-style]{flex:1;min-width:0;max-width:118px;display:grid;justify-items:center;gap:4px;background:#f8f3e5;color:#314d38;padding:8px 5px}
-.banner-options [data-style] canvas{display:block;width:100%;max-width:88px;height:auto}
-#parcel-shop.guest-studio .banner-options [aria-pressed=true]{border-color:#405a44;box-shadow:inset 0 0 0 1px #405a44}
+.banner-options>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;max-width:354px;margin:5px auto}.banner-options button{font-size:12px}
+#parcel-shop.guest-studio .banner-options button[data-style]{display:grid;grid-template-rows:30px 1fr;justify-items:center;align-items:start;gap:5px;min-width:0;min-height:64px;padding:5px 2px;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:#314d38;line-height:1.2}
+.banner-options [data-style] canvas{width:100%;height:30px;max-width:88px;object-fit:contain}
+#parcel-shop.guest-studio .banner-options button[aria-pressed=true]{border-bottom-color:#365a40}
 .studio-extras{text-align:center;margin:4px auto 9px;color:#42583f;font-size:12px}.studio-extras summary{cursor:pointer}
 .crop-window{position:relative;width:min(100%,350px);max-height:57dvh;overflow:hidden;margin:12px auto;background:#e4e9dc;border:1px solid #bcbaa6;border-radius:12px;touch-action:none}
 .crop-window canvas{width:100%;height:100%;display:block;pointer-events:none}.crop-tools{margin-bottom:10px}.crop-tools output{min-width:42px;text-align:center}
@@ -46,12 +46,16 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 .ink-disc i{position:absolute;width:14px;height:14px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #202d25;transform:translate(-50%,-50%);pointer-events:none}
 .ink-picker label{display:grid;gap:5px;margin:10px 0 0;font:600 13px system-ui}.ink-picker input[type=range]{width:100%;accent-color:#41664c}.ink-picker output{display:inline-flex;align-items:center;gap:8px;margin:8px auto;font:600 12px monospace}.ink-picker output::before{background:var(--ink)}
 .ink-actions button,#parcel-shop button:is([data-prev],[data-keep],[data-discard],.frame-use,.wheel-back,.browse),#parcel-shop.guest-studio button:not(.corner),#parcel-shop.guest-studio .studio-tools button{border-radius:30px;min-height:44px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;box-shadow:0 1px 4px #172d282b;font-weight:700}
-#parcel-shop.guest-studio .studio-tools button,#parcel-shop.guest-studio .studio-tools:has(+.banner-options:not([hidden])) button{background:#faf4e5;border:1px solid #a6b39b;box-shadow:0 1px 4px #172d282b}
+#parcel-shop.guest-studio .studio-tools button{background:#faf4e5;border:1px solid #a6b39b;box-shadow:0 1px 4px #172d282b}
+#parcel-shop.guest-studio .studio-tools button[aria-expanded=true]{background:#bfd2b9;border-color:#648066;color:#203e2c;box-shadow:inset 0 2px 3px #365a4038}
 #parcel-shop.guest-studio .studio-tools{gap:5px}#parcel-shop.guest-studio .studio-back,#parcel-shop.guest-studio .studio-link{text-decoration:none}
 #parcel-shop .ink-row .colour-chip{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:5px 12px;border-radius:30px;background:#faf4e5;color:#294938;border:1px solid #9aa68c}
 .ink-picker input[type=range]{appearance:none;border-radius:18px;height:12px;margin:7px 0;background:linear-gradient(to right,#000,var(--bright));border:1px solid #88947f}
 .ink-picker input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border:2px solid #faf4e5;border-radius:50%;background:#48664c;box-shadow:0 0 0 1px #314338}
-.ink-actions button{flex:1}#parcel-shop button:is(.primary,.secondary,.studio-link){border-radius:30px}
+.ink-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.ink-actions button{min-height:52px;margin:0;padding:8px 6px;font:800 18px/1.25 PostalBaloo,system-ui}
+.ink-actions button[data-apply]{background:#365a40;color:#fff9e8;border-color:#234532;box-shadow:0 3px 0 #243e2d}
+#parcel-shop button:is(.primary,.secondary,.studio-link){border-radius:30px}
 .zoom-strip{box-sizing:border-box;display:flex;align-items:center;gap:9px;width:min(100%,340px);background:#e0eadb;border:1px solid #9bab90;border-radius:28px;padding:6px 12px;color:#34513d;font-weight:650}.zoom-strip input[type=range]{min-width:40px;flex:1;accent-color:#476a4d;min-height:32px}.zoom-strip output{font-variant-numeric:tabular-nums}
 .ink-row{flex-wrap:wrap}.ink-row .note-font{max-width:125px;border:1px solid #9aa68c;border-radius:20px;background:#faf4e5;color:#294938;padding:7px;font-size:14px}
 
