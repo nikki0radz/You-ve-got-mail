@@ -18,6 +18,6 @@
 - Before releasing any shared CSS or guest welcome changes, run scripts/check-invitation.cjs against the release candidate at 320px and 430px. Keep the approved reference images separate from candidate renders. Update a reference only when the user approves that screen. Verify cross-app glass on a real phone over another app separately from browser or in-app previews.
 
 - For design reviews, use the workroom board and the actual interactive screen at the paired phone size. Implement feedback from the exported review against the identified screen and working layout. Preserve unrelated screens and return a refreshed review link.
-- When Nicole requests alternatives, put the requested number in a versioned round in design/rounds.mjs. If no count is specified, default to six (within five to ten). Show numbered controls above the complete phone preview even for a one-element change. Use a fresh round ID for new alternatives so past exports can identify the chosen option.
+- When Nicole requests alternatives, put the requested number in a versioned round in design/rounds.mjs. If no count is specified, default to six (within five to ten). Place numbered controls outside the primary phone beside the element they change. Track that element as the preview scrolls or zooms. Use a fresh round ID for new alternatives so past exports can identify the chosen option.
 
-- For multiple review targets, label each row with its element name and a letter, and prefix its numbered choices (A1, A2; B1, B2). Preserve independent choices in the full-screen preview and include them in the exported review.
+- For multiple review targets, use plain numbers beside each element. Keep the target name accessible and preserve group IDs and independent choices in exports.

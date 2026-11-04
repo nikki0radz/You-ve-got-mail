@@ -1,3 +1,4 @@
+import {anchorOptions} from './option-anchors.mjs';
 import {rounds} from './rounds.mjs';
 import {phoneProfile,phoneSize,frameURL} from './phone.mjs';
 import {pages} from './pages.mjs';
@@ -31,6 +32,9 @@ let basedOnOption=initial.basedOnOption||current(book)?.revisions.at(-1)?.review
 const round=Object.hasOwn(rounds,screen)?rounds[screen]:null;
 let comparison=round&&initial.comparison?.id===round.id?initial.comparison:{id:round?.id,active:0,states:{}};
 const optionGroups=round?[round,...(round.groups||[])]:[];
+const anchors=round&&anchorOptions($('round'),frames[0],optionGroups.map(group=>{
+  const first=group.options[0].changes[0];return first.selector||composerElements[first.element]?.[1];
+}));
 const prefix=i=>optionGroups.length>1?String.fromCharCode(65+i):'';
 function picks(){return optionGroups.map((g,i)=>i===0?comparison.active||0:comparison.picks?.[g.id]||0);}
 function stateKey(values){
@@ -46,7 +50,7 @@ function optionInfo(){
 function clearRound(revision){basedOnOption=revision?.reviewOption||null;comparison={id:round?.id,active:0,states:{}};renderOptions();}
 function switchOption(groupIndex,number){
   const values=picks(),group=optionGroups[groupIndex];if(number===values[groupIndex])return;
-  const view=surface(activeFrame);if(!view)return;
+  const view=surface(frames[0]);if(!view)return;
   comparison.states[stateKey(values)]={layout:structuredClone(layout),comments:structuredClone(comments),option:optionInfo(),dirty};
   values[groupIndex]=number;
   let next=comparison.states[stateKey(values)];
@@ -76,17 +80,19 @@ function renderOptions(){
   const bar=$('round');bar.hidden=!round;if(!round)return;bar.replaceChildren();
   optionGroups.forEach((group,index)=>{
     const row=document.createElement('div');row.className='option-row';row.setAttribute('role','group');row.setAttribute('aria-label',group.title);
-    const title=document.createElement('strong');title.textContent=(prefix(index)?prefix(index)+' · ':'')+group.title;row.append(title);
+    row.title=group.title;row.hidden=true;
     const selected=picks()[index];
     for(const [i,name] of ['Current',...group.options.map(o=>o.name)].entries()){
-      const code=i?prefix(index)+i:'Current';const button=btn(code,()=>switchOption(index,i));button.title=name;
+      const code=i?String(i):'↶';const button=btn(code,()=>switchOption(index,i));button.title=group.title+' · '+(i?name:'Original layout');
       button.setAttribute('aria-label',group.title+' · '+code+(i?' · '+name:''));button.setAttribute('aria-pressed',String(i===selected));row.append(button);
     }
-    const caption=document.createElement('span');caption.textContent=group.options[selected-1]?.name||'Current layout';row.append(caption);bar.append(row);
+    bar.append(row);
   });
+  anchors.schedule();
 }
 function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,comments,comparison,basedOnOption,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
 function dimensions(){
+  anchors?.schedule();
   const main=phoneSize(profile);
   const available=window.innerHeight-$('bench').getBoundingClientRect().top-window.scrollY-82;
   const zoom=$('zoom').value==='fit'?Math.max(.45,Math.min(1,available/(main.height+(main.insets?.top||0)+(main.insets?.bottom||0)+10))):Number($('zoom').value);
@@ -104,6 +110,7 @@ function dimensions(){
   $('device-name').title=main.measured?'Measured on Android · font scale '+main.fontScale+' · WebView text '+(main.textZoom||100)+'%':'Pair your phone to replace these example measurements.';
 }
 function renderFrames(){
+  anchors?.schedule();
   for(const f of frames){
     const view=surface(f);if(!view)continue;
     view.configure({layout,selected,editing,grid,textScale:profile?Math.min(3,Math.max(.5,(profile.textZoom??(100*profile.fontScale))/100||1)):1});

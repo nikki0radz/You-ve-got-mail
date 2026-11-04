@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Design workroom · You've Got Mail</title><link rel="stylesheet" href="editor.css?v=toolbar-contrast-1"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Design workroom · You've Got Mail</title><link rel="stylesheet" href="editor.css?v=side-options-1"></head>
 <body>
 <header class="mast"><div class="brand"><span class="mark">✉</span><div><small>PIGEON POST</small><b>Design workroom</b></div></div><div class="header-tools"><a class="board-link" href="board.html">Screen board</a><button class="primary" id="export-comments">Export comments</button><button id="export">Export full design</button><button id="pair">Pair phone</button><button id="save">Save draft</button></div></header>
 <main>
@@ -7,8 +7,8 @@
 <div class="intro"><div><small>YOU’VE GOT MAIL &nbsp; / &nbsp; DESIGN MODE</small><h1>Postcard composer</h1><label class="screen-picker">Page <select id="page" aria-label="Choose page"></select></label><p id="revision">Original layout · App 0.1.9</p></div><img src="../assets/home/mascot.webp" alt=""></div>
 <div class="devices"><div class="mode" aria-label="Interaction mode"><button id="edit" aria-pressed="true">↖ Edit elements</button><button id="try" aria-pressed="false">▷ Try screen</button></div><label><input type="checkbox" id="compare" checked> Compare phones</label><label>Zoom <select id="zoom"><option value="fit" selected>Fit</option><option value=".65">65%</option><option value=".8">80%</option><option value="1">100%</option><option value="1.25">125%</option></select></label></div>
 <div class="status" role="status" id="status">Ready to edit.</div>
-<section id="round" aria-label="Design options" hidden></section>
 <div id="bench"><div class="device" id="main-device"><header><b id="device-name">Reference phone</b><small></small></header><div class="fit-report"></div><div class="footprint"><div class="shell"><div class="bar top">09:41 <span>▮▮ ▰</span></div><iframe title="Primary composer" ></iframe><div class="bar nav"><i></i></div></div></div></div>
+<section id="round" aria-label="Design options" hidden></section>
 <div class="device" id="narrow-device"><header><b>Narrow phone</b><small></small></header><div class="fit-report"></div><div class="footprint"><div class="shell"><div class="bar top">09:41 <span>▮▮ ▰</span></div><iframe title="Narrow composer" ></iframe><div class="bar nav"><i></i></div></div></div></div></div>
 <p class="hint" id="bench-hint">Click inside a phone to select an element. Use Try screen to upload a photo or write on the postcard.</p>
 </section>
@@ -19,4 +19,4 @@
 
 <dialog id="commentDialog"><form id="commentForm"><small>DESIGN REVIEW</small><header class="comment-position"><button id="commentGrip" type="button" title="Drag to move. Use arrow keys when focused." aria-label="Move comment box">⠿ Move</button><button id="commentSide" type="button">Switch side</button></header><h2>Leave a comment</h2><label>Comment on<select id="commentTarget"></select></label><p id="commentDevice"></p><label>Your feedback<textarea id="commentText" required maxlength="2000" rows="4" placeholder="What would you change here?"></textarea></label><div class="stack"><button type="button" id="commentCancel">Cancel</button><button type="submit">Keep comment</button></div></form></dialog>
 <dialog id="pairDialog"><form method="dialog"><button class="close" aria-label="Close">×</button></form><small>DEVICE PAIRING</small><h2>Connect your phone</h2><p>Install the test update. In Settings → Design Mode, enter this private key and refresh your draft. Anyone with this key can access the workspace.</p><a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.9.apk">Download Android 0.1.9</a><label>Workspace key<input id="key" autocomplete="off" spellcheck="false" placeholder="32-character pairing key"></label><div class="stack"><button id="copy">Copy key</button><button id="connect">Connect to this workspace</button><button id="measure">Refresh phone measurements</button></div><p id="pair-status" role="status"></p></dialog>
-<script type="module" src="editor.mjs?v=comments-export-1"></script></body></html>
+<script type="module" src="editor.mjs?v=side-options-1"></script></body></html>
