@@ -1,0 +1,34 @@
+// Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
+export const looks = {
+  header: [
+    ['Counter welcome', 'Your post office', 'The courier is at the counter.'],
+    ['Return address', 'Pigeon Post HQ', 'Set your sign for incoming mail.'],
+    ['Hanging placard', 'The mail window', 'Flip the sign when you need a break.'],
+    ['Airmail envelope', 'Incoming airmail', 'Special deliveries land here.'],
+    ['Counter ticket', 'Delivery desk', 'One pigeon, reporting for duty.'],
+    ['Round postmark', 'Postmarked here', 'Your own little sorting office.'],
+    ['Signal box', 'Mail signal', 'Green for deliveries. Red for a break.'],
+    ['Dispatch ledger', 'Today’s post', 'Set your mail status below.'],
+    ['Pocket postcard', 'Hello from HQ', 'Your courier is standing by.'],
+    ['Station board', 'Pigeon arrivals', 'Tap the sign to change your status.']
+  ],
+  heading: [
+    ['Plain and personal', 'You’re sending Nicole a parcel'],
+    ['Address label', 'To Nicole, from you'],
+    ['Parcel tag', 'Your parcel for Nicole'],
+    ['Little delivery', 'A little something for Nicole'],
+    ['Mailroom', 'You’re posting to Nicole'],
+    ['Handwritten', 'Something for you, Nicole']
+  ],
+  name: ['Postage dashes','Letter underline','Airmail stripe','Soft capsule','Double rule','Sender slip'].map(x=>[x]),
+  timing: ['Sliding capsule','Ticket tabs','Ink underline','Signal switch','Postage stamp','Sorting tray'].map(x=>[x])
+};
+export function readLook(value){
+  if(typeof value!=='string')return;
+  const [group,num]=value.split('-'),i=Number(num)-1;
+  if(!Object.hasOwn(looks,group)||value!==group+'-'+(i+1)||!looks[group][i])return;
+  return {group,entry:looks[group][i]};
+}
+export function reviewGroup(group,title,selector){
+  return {id:'parcel-review-'+group+'-01',title,options:looks[group].map(([name],i)=>({name,changes:[{selector,style:{reviewLook:group+'-'+(i+1)}}]}))};
+}

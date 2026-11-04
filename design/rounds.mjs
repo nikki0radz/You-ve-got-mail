@@ -10,3 +10,11 @@ rounds.home.groups=[{id:'home-invite-button-01',title:'One-time link button',opt
   ['Pocket dock','dock'],['Forest submit','submit'],['Postage stamp','stamp'],
   ['Airmail label','airmail'],['Wax seal','wax'],['Ink underline','inkline']
 ].map(([name,skin])=>({name,changes:[{selector:'.home-actions [data-action="test-link"]',style:propsForSkin(skin)}]}))}];
+
+import {reviewGroup} from './parcel-round.mjs';
+rounds.home.groups.push(reviewGroup('header','Pigeon and mail status','.courier-stand'));
+rounds.dispatch=reviewGroup('heading','Delivery heading','#steps > h2');
+rounds.dispatch.groups=[
+  reviewGroup('name','Sender name','.sender-label'),
+  reviewGroup('timing','Delivery timing','.dispatch-timing')
+];

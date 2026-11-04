@@ -47,3 +47,9 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 
 :is(#parcel-shop .frame-use,#parcel-shop.guest-studio button.studio-primary,.guest .dispatch-actions #send){display:block;width:100%;min-height:52px;margin:10px 0 2px;padding:10px 18px;border:1px solid #234532;border-radius:28px;background:#365a40;color:#fff9e8;box-shadow:0 3px 0 #243e2d;font:800 20px/1.3 PostalBaloo,system-ui}
 :is(#parcel-shop .frame-use,#parcel-shop.guest-studio button.studio-primary,.guest .dispatch-actions #send):active{transform:translateY(2px);box-shadow:0 1px 0 #243e2d}
+
+/* Keep the posting action close to its timing choice and balance the pencil with the label. */
+.guest #steps .dispatch-actions{display:flex;justify-content:center;margin:8px 0 0}
+.guest #steps .dispatch-actions #send{display:flex;align-items:center;justify-content:center;margin:0;text-align:center}
+.guest #steps .edit-parcel#back{display:flex;align-items:center;justify-content:center;gap:.4em;margin:5px auto 0;padding:7px 14px;line-height:1.2}
+.guest #steps .edit-parcel#back span{display:inline-flex;align-items:center;line-height:1}

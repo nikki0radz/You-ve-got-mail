@@ -1,3 +1,4 @@
+import {readLook} from './parcel-round.mjs';
 import {appearance} from './appearance.mjs';
 import {extraCSS} from './templates.mjs';
 const defs=new Map(),sheet=document.createElement('style');document.head.append(sheet);let editing=true,selected='',stamp='';
@@ -8,7 +9,7 @@ function locate(n){
   const parts=[];
   while(n&&n!==document.body){
     if(n.id){parts.unshift('#'+CSS.escape(n.id));break;}
-    const attrs=[...n.attributes].filter(a=>a.name.startsWith('data-')&&!['data-work-id','data-layout','data-open','data-design-selected'].includes(a.name));
+    const attrs=[...n.attributes].filter(a=>a.name.startsWith('data-')&&!['data-work-id','data-layout','data-open','data-design-selected','data-review-look'].includes(a.name));
     let part=n.localName;
     if(attrs.length)part+=attrs.map(a=>'['+a.name+'='+JSON.stringify(a.value)+']').join('');
     else if(n.classList.length)part+='.'+CSS.escape(n.classList[0]);
@@ -17,12 +18,38 @@ function locate(n){
     parts.unshift(part);n=n.parentElement;
   }return parts.join(' > ');
 }
+let reviewStyles={};
+const originals=new WeakMap();
+function reviewNode(node,id){
+  const value=reviewStyles[id]?.reviewLook, look=readLook(value);
+  if(!look&&!node.hasAttribute('data-review-look'))return;
+  if(look)node.dataset.reviewLook=value;else delete node.dataset.reviewLook;
+  if(node.matches('#steps > h2')){
+    if(!originals.has(node))originals.set(node,node.textContent);
+    const title=look?.entry[1]??originals.get(node);
+    if(node.textContent!==title)node.textContent=title;
+  }
+  if(node.matches('.sender-label')){
+    const input=node.querySelector('input');
+    if(!originals.has(input))originals.set(input,input.placeholder);
+    input.placeholder=look?'Your name':originals.get(input);
+  }
+  if(node.matches('.courier-stand')){
+    let copy=node.querySelector('.counter-copy');
+    if(!look){copy?.remove();return;}
+    if(!copy){
+      copy=document.createElement('div');copy.className='counter-copy';
+      copy.append(document.createElement('b'),document.createElement('small'));node.append(copy);
+    }
+    for(const [i,el] of [...copy.children].entries())if(el.textContent!==look.entry[i+1])el.textContent=look.entry[i+1];
+  }
+}
 function scan(){
   const root=[...document.querySelectorAll('dialog[open]')].at(-1)||document.body;defs.clear();
   for(const n of root.querySelectorAll(candidates)){
     if(!n.getClientRects().length||n.closest('[aria-hidden=true]')||n.matches('input[type=hidden]'))continue;
     const path=locate(n);let hash=2166136261;for(const c of path)hash=Math.imul(hash^c.charCodeAt(0),16777619);
-    const id='view-'+(hash>>>0).toString(36);n.dataset.workId=id;
+    const id='view-'+(hash>>>0).toString(36);n.dataset.workId=id;reviewNode(n,id);
     const label=(n.getAttribute('aria-label')||n.alt||(['BUTTON','A','H1','H2','H3','SUMMARY','LABEL','P','SMALL','STRONG'].includes(n.tagName)?n.textContent.trim():'')||n.classList[0]||n.id||n.tagName.toLowerCase()).replace(/\s+/g,' ').slice(0,52);
     defs.set(id,{n,label,path,type:n.matches('button,a,summary')?'button':n.matches('h1,h2,h3')?'heading':n.children.length>1?'group':'element'});
   }
@@ -31,6 +58,8 @@ function scan(){
 let raf;new MutationObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(scan)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden']});
 const propMap={radius:'borderRadius',font:'fontFamily',align:'textAlign'};
 function configure(config){
+  reviewStyles=config.layout.styles;
+  for(const [id,{n}] of defs)reviewNode(n,id);
   editing=config.editing;selected=config.selected;let css='';
   for(const el of document.querySelectorAll('select[data-style-key]')){
     const v=config.layout.variants?.[el.dataset.styleKey]??0;

@@ -8,6 +8,9 @@ const html=new DOMParser().parseFromString(await (await fetch(guest?'guest.html'
 const css=[...html.querySelectorAll('link[rel=stylesheet]')].map(link=>new Promise(ok=>{const el=document.createElement('link');el.rel='stylesheet';el.onload=ok;el.onerror=ok;el.href=link.getAttribute('href');document.head.append(el);}));
 html.querySelectorAll('script').forEach(n=>n.remove());document.body.replaceChildren(...html.body.childNodes);
 await Promise.all(css);
+if(key==='home'||key==='dispatch'){
+  const review=document.createElement('link');review.rel='stylesheet';review.href='design/parcel-round.css';document.head.append(review);
+}
 const click=s=>document.querySelector(s)?.click();
 if(guest){
   document.documentElement.dataset.workroom=key;document.documentElement.dataset.theme='light';

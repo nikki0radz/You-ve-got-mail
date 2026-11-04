@@ -1,3 +1,4 @@
+import {readLook} from './parcel-round.mjs';
 import {safeAppearance} from './appearance.mjs';
 import {buttons,layouts} from './templates.mjs';
 export const screen='postcard-composer', appVersion='0.1.9';
@@ -31,6 +32,7 @@ export function cleanLayout(data){
     for(const [key,[min,max]] of Object.entries(numbers))if(Number.isFinite(raw[key]))styles[key]=Math.max(min,Math.min(max,Math.round(raw[key]*10)/10));
     for(const key of colours)if(/^#[0-9a-f]{6}$/i.test(raw[key]))styles[key]=raw[key];
     for(const [key,values] of Object.entries(choices))if(values.includes(raw[key]))styles[key]=raw[key];
+    if(readLook(raw.reviewLook))styles.reviewLook=raw.reviewLook;
     if(raw.decor)styles.decor=safeAppearance(raw.decor);
     if(Object.hasOwn(buttons,raw.skin))styles.skin=raw.skin;
     if(Object.hasOwn(layouts,raw.arrangement))styles.arrangement=raw.arrangement;

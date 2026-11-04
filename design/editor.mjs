@@ -33,7 +33,11 @@ let comparison=round&&initial.comparison?.id===round.id?initial.comparison:{id:r
 const optionGroups=round?[round,...(round.groups||[])]:[];
 const prefix=i=>optionGroups.length>1?String.fromCharCode(65+i):'';
 function picks(){return optionGroups.map((g,i)=>i===0?comparison.active||0:comparison.picks?.[g.id]||0);}
-function stateKey(values){return values.slice(1).some(Boolean)?values.join('-'):String(values[0]||0);}
+function stateKey(values){
+  // Appending a review group must preserve saved combinations from earlier rounds.
+  const last=values.findLastIndex(Boolean);
+  return last>0?values.slice(0,last+1).join('-'):String(values[0]||0);
+}
 function optionInfo(){
   const values=picks();if(!values.some(Boolean)&&basedOnOption)return basedOnOption;
   const groups=optionGroups.map((g,i)=>({roundId:g.id,title:g.title,number:values[i],label:prefix(i)+(values[i]||' Current'),name:g.options[values[i]-1]?.name||'Current layout'}));
