@@ -43,10 +43,16 @@ public class Delivery extends BroadcastReceiver {
             ui.postDelayed(()->{try{JSONObject fresh=Mail.meta(c,id);if("warning".equals(fresh.optString("status"))){Mail.state(c,fresh,"received");n.cancel(id,1);if(allowed(c))show(c,fresh);else if(Mail.prefs(c).getBoolean("open",true)||Mail.prefs(c).getBoolean("quiet",true))notice(c,fresh,false);}}finally{pending.finish();}},3000);
         }else {notice(c,m,false);show(c,m);}
     }
+    static void closeActivityWindow(Main c){if(visible!=null&&visible.getContext()==c)clear(c);}
     static void clear(Context c){
         if(visible!=null){try{c.getSystemService(WindowManager.class).removeViewImmediate(visible);}catch(IllegalArgumentException ignored){}visible=null;visibleId="";}
     }
-    static void show(Context c,JSONObject m){
+    static void showOpened(Main activity,JSONObject m){
+        if(Settings.canDrawOverlays(activity)){show(activity,m);return;}
+        present(activity,m,activity.getWindow().getDecorView().getWindowToken());
+    }
+    static void show(Context c,JSONObject m){present(c,m,null);}
+    static void present(Context c,JSONObject m,android.os.IBinder appToken){
         String id=m.optString("id");if(visible!=null){notice(c,m,false);return;}
         try{
             WindowManager wm=c.getSystemService(WindowManager.class);
@@ -54,13 +60,14 @@ public class Delivery extends BroadcastReceiver {
             art.setImageBitmap(BitmapFactory.decodeFile(Mail.image(c,id).getPath()));art.setScaleType(ImageView.ScaleType.FIT_CENTER);
             art.setContentDescription(Mail.label(m));root.addView(art,new FrameLayout.LayoutParams(-1,-1));
             WindowManager.LayoutParams lp=new WindowManager.LayoutParams(-1,-1,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,PixelFormat.TRANSLUCENT);
+            if(appToken!=null){lp.type=WindowManager.LayoutParams.TYPE_APPLICATION_PANEL;lp.token=appToken;}
             if(Build.VERSION.SDK_INT>=31){lp.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;lp.setBlurBehindRadius(48);}
             int dp=(int)(c.getResources().getDisplayMetrics().density*12);
             LinearLayout actions=new LinearLayout(c);actions.setPadding(dp,dp,dp,dp);actions.setGravity(Gravity.CENTER);
             Button dismiss=new Button(c);dismiss.setText("×  Dismiss");Button reply=new Button(c);reply.setText("Reply");
             for(Button button:new Button[]{dismiss,reply}){GradientDrawable bg=new GradientDrawable();bg.setColor(0xff254939);bg.setCornerRadius(dp*3);button.setTextColor(-1);button.setBackground(bg);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-2,-2);bp.setMargins(dp/2,0,dp/2,0);actions.addView(button,bp);}
             root.addView(actions,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));actions.setVisibility(View.INVISIBLE);
-            dismiss.setOnClickListener(v->clear(c));reply.setOnClickListener(v->{try{Mail.action(c,id,"reply",true).send();}catch(Exception ignored){}clear(c);});
+            dismiss.setOnClickListener(v->clear(c));reply.setOnClickListener(v->{try{c.startActivity(new Intent(c,Main.class).setAction("reply").putExtra("id",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}catch(Exception ignored){notice(c,m,false);}clear(c);});
             wm.addView(root,lp);visible=root;visibleId=id;
             root.postDelayed(()->actions.setVisibility(View.VISIBLE),1000);
         }catch(Exception e){clear(c);notice(c,m,false);}

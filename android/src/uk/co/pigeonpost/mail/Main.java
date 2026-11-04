@@ -24,7 +24,9 @@ public class Main extends Activity {
         web.setWebViewClient(new WebViewClient(){
             public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){return true;}
             public WebResourceResponse shouldInterceptRequest(WebView w,WebResourceRequest req){
-                Uri uri=req.getUrl();String path=uri.getPath();
+                Uri uri=req.getUrl();
+                if(!req.isForMainFrame()&&"data".equals(uri.getScheme())&&uri.toString().startsWith("data:image/"))return null;
+                String path=uri.getPath();
                 if("https".equals(uri.getScheme())&&HOST.equals(uri.getHost())&&path!=null&&path.startsWith("/")&&!path.contains("..")&&!path.contains("\\")){
                     try{String mime=path.endsWith(".mjs")||path.endsWith(".js")?"text/javascript":path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".json")?"application/json":path.endsWith(".png")?"image/png":path.endsWith(".webp")?"image/webp":"application/octet-stream";
                         return new WebResourceResponse(mime,null,getAssets().open("site"+path));
@@ -49,12 +51,13 @@ public class Main extends Activity {
               .setPositiveButton("Set up delivery",(d,k)->settings()).setNegativeButton("Later",null).show();
         }
     }
+    protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     private void incoming(Intent i){String id=i.getStringExtra("id");if(id==null)return;
         JSONObject m=Mail.meta(this,id);if(!m.has("id"))return;
         if("warning".equals(m.optString("status")))Mail.state(this,m,"received");
         getSystemService(NotificationManager.class).cancel(id,1);Delivery.clear(this);
-        if("reply".equals(i.getAction()))reply(m);else if(Settings.canDrawOverlays(this))Delivery.show(this,m);else view(m);i.removeExtra("id");
+        if("reply".equals(i.getAction()))reply(m);else web.post(()->Delivery.showOpened(this,m));i.removeExtra("id");
     }
     protected void onResume(){super.onResume();if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}});}
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
