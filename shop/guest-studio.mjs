@@ -30,11 +30,11 @@ export function startGuestStudio(dialog,item,back,onReady){
   function setCanvas(el,c){if(el?.isConnected)el.querySelector('.layer-image').replaceChildren(c);}
   async function paintArt(){
     const id=++serial,el=dialog.querySelector('[data-layer=art]');try{
-      const c=await artwork(item,state.crop,editing==='art'?'':state.words);
+      const c=await artwork(item,{...state.crop,ink:state.ink,paper:state.paper},editing==='art'?'':state.words);
       if(id===serial)setCanvas(el,c);
     }catch(e){grabError(e);}
   }
-  function paintNote(){if(state.note)setCanvas(dialog.querySelector('[data-layer=note]'),banner(state.note.style,editing==='note'?'':state.note.text,state.note.width,state.note.width*state.note.ratio));}
+  function paintNote(){if(state.note)setCanvas(dialog.querySelector('[data-layer=note]'),banner(state.note.style,editing==='note'?'':state.note.text,state.note.width,state.note.width*state.note.ratio,state.note));}
   function startText(key){
     const el=dialog.querySelector('[data-layer='+key+']');if(!el||(key==='art'&&!item.textBox))return;
     const existing=el.querySelector('textarea');if(existing){existing.focus();return;}
@@ -44,7 +44,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     delete el.querySelector('.layer-image').dataset.hint;el.append(field);
     function fit(){
       const width=el.clientWidth*w,height=el.clientHeight*h;
-      Object.assign(field.style,{left:x*100+'%',width:width+'px',height:'1px',color:isNote?'#283c30':item.ink});
+      Object.assign(field.style,{left:x*100+'%',width:width+'px',height:'1px',color:isNote?(state.note.ink||'#283c30'):(state.ink||item.ink)});
       let font=Math.max(5,Math.min(30,Math.floor(el.clientWidth*(isNote?44/state.note.width:44/(574*Math.min(1,1/ratio))))));
       for(;font>4;font--){field.style.fontSize=font+'px';field.style.height='1px';if(field.scrollHeight<=height)break;}
       field.style.fontSize=font+'px';field.style.height='1px';const fitted=Math.min(height,field.scrollHeight);
@@ -114,6 +114,21 @@ export function startGuestStudio(dialog,item,back,onReady){
     if(item.textBox&&!state.words)artEl.querySelector('.layer-image').dataset.hint='Tap to write';
     if(state.note&&!state.note.text)stage.querySelector('[data-layer=note] .layer-image').dataset.hint='Tap to write';
     if(state.second){const image=state.second.image;image.alt='Added picture';stage.querySelector('[data-layer=second] .layer-image').append(image);}
+    if(item.textBox||state.note){
+      const controls=document.createElement('details');controls.className='studio-colours';controls.innerHTML='<summary>Colours</summary>';
+      const addColour=(label,object,key,initial,repaint)=>{
+        const row=document.createElement('label'),input=document.createElement('input');
+        input.type='color';input.value=object[key]||initial;row.append(label,input);controls.append(row);
+        input.oninput=()=>{object[key]=input.value;dirty=true;repaint();};
+      };
+      if(item.category==='Notes')addColour('Note paper',state,'paper','#fff1cd',paintArt);
+      if(item.textBox)addColour('Design text',state,'ink',item.ink,paintArt);
+      if(state.note){
+        addColour('Banner paper',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote);
+        addColour('Banner text',state.note,'ink','#283c30',paintNote);
+      }
+      dialog.querySelector('.studio-extras').before(controls);
+    }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]'),extra=dialog.querySelector('[data-file=second]');

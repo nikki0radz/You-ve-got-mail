@@ -87,7 +87,7 @@ function rememberKey(){
   }return preparedKey;
 }
 function loading(){
-  steps.innerHTML='<section class="flight"><img src="assets/home/mascot.webp" alt=""><h2>One moment. Tiny satchel.</h2><p>Your pigeon is getting the parcel ready for its flight to Nicole’s phone.</p></section>';
+  steps.innerHTML='<section class="flight"><img src="assets/home/mascot.webp" alt=""><h2>Preparing your delivery</h2><p>Your parcel is being prepared for Nicole.</p></section>';
   status.textContent=preview?'Preview flight · No parcel will be sent.':'Preparing your delivery…';
 }
 function openReceipt(key){
@@ -95,14 +95,14 @@ function openReceipt(key){
   showReceipt(key);
 }
 function review(){
-  steps.innerHTML='<h2>Ready for take-off?</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="back">‹ Edit parcel</button><button id="send"></button></div>';
+  steps.innerHTML='<h2>Your delivery to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
   function mode(scheduled){
     draft.later=scheduled;dateLabel.hidden=!scheduled;whenField.required=scheduled;
     now.setAttribute('aria-pressed',String(!scheduled));later.setAttribute('aria-pressed',String(scheduled));
-    send.textContent=scheduled?(preview?'Preview schedule':'Schedule delivery'):(preview?'Try the pigeon’s flight':'Hand it to the pigeon');
+    send.textContent=scheduled?(preview?'Preview schedule':'Schedule delivery'):(preview?'Preview delivery':'Send to Nicole');
     status.textContent=preview?'Preview only. No mail will be sent.':'';
   }
   now.onclick=()=>mode(false);later.onclick=()=>mode(true);mode(draft.later??Boolean(draft.time));
@@ -131,31 +131,52 @@ function review(){
 }
 function showReceipt(key){
   clearTimeout(pollTimer);let checking=false,confirmed=false;
-  steps.innerHTML='<article class="delivery-receipt"><img src="assets/home/mascot.webp" alt=""><div class="ticks" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Check for a reply</button><p class="smallprint">This link is good for one delivery. To send another, ask Nicole for a fresh link or <a download="Youve-Got-Mail-0.1.2.apk" href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.2.apk">download the Android test app</a>.</p><p class="smallprint">You’ve Got Mail is still in development. Thanks for taking our pigeon for a test flight.</p></article>';
-  const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),ticks=steps.querySelector('.ticks'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
-  function display(ack){
-    confirmed=ack;ticks.textContent=ack?'✓✓':'✓';
-    heading.textContent=ack?'Special delivery. It’s on her phone!':'In the pigeon’s postbag.';
-    detail.textContent=ack?'Nicole’s phone has received your parcel. It can pop up when her settings and delivery time allow. She can reply if she likes. Any reply will appear here.':'The post office has your parcel. We’re waiting for Nicole’s phone to collect it. You can come back to this receipt to check.';
+  const paths={
+    waiting:'<path d="M5 4h14v16H5z M8 8l4 3 4-3"/>',
+    scheduled:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',
+    locked_notification:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>',
+    screen:'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M9 6h6v9H9z M11 18h2"/>',
+    notification:'<path d="M4 17h16l-2-3V9a6 6 0 00-12 0v5z M10 20h4"/>',
+    inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
+    rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
+  };
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.3.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
+  function display(result){
+    confirmed=result.status==='acknowledged';
+    const scheduled=Number(result.when)>Date.now(),time=scheduled?new Date(result.when).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}):'';
+    const states={
+      waiting:['Waiting for Nicole’s phone',scheduled?'Requested delivery: '+time+'.':'Your parcel is at the post office.','The phone hasn’t collected it yet. It may be off, offline or between mailbox checks.'],
+      scheduled:['Scheduled for later',time,'Nicole’s phone has saved the parcel for the time you chose.'],
+      accepted:['Received by the app','Nicole’s app has saved your parcel.','The app has confirmed receipt. It hasn’t reported where the parcel appeared.'],
+      locked_notification:['Phone was locked','A notification was posted for Nicole.','Android received the notification while the phone was locked. Nicole’s settings control what appears on the lock screen.'],
+      screen:['Shown on screen','The parcel opened on Nicole’s unlocked screen.','The app displayed the pop-up. Only Nicole can tell you whether she saw it.'],
+      notification:['Sent to notifications','Nicole can tap the notification to open it.','Android received a regular notification. The parcel is also in the app inbox.'],
+      inbox:['In the app inbox','Nicole can open the parcel in You’ve Got Mail.','The app saved the parcel without posting a notification or displaying a pop-up.'],
+      rejected:['Pop-up declined','The parcel stayed in Nicole’s inbox.','The incoming warning was dismissed before the parcel appeared.']
+    };
+    const state=Object.hasOwn(paths,result.outcome)?result.outcome:!confirmed?'waiting':scheduled?'scheduled':'accepted';
+    const [title,summary,answer]=states[state];heading.textContent=title;detail.textContent=summary;where.textContent=answer;
+    sign.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[state]||paths.inbox)+'</svg>';
   }
-  if(!key){heading.textContent='Flight preview complete';detail.textContent='No parcel was sent. On a real receipt, one tick means queued and two mean Nicole’s phone has received it.';check.textContent='Back to the preview';check.onclick=choose;status.textContent='';return;}
-  heading.textContent='Checking the pigeon’s route…';status.textContent='';
+  if(!key){display({});heading.textContent='Delivery preview';detail.textContent=draft?.later&&draft.time?'Scheduled preview · '+new Date(draft.time).toLocaleString():'Immediate delivery preview';where.textContent='This preview stays in your browser. Use a one-time link to deliver a parcel.';check.textContent='Back to designs';check.onclick=choose;status.textContent='';return;}
+  heading.textContent='Checking delivery…';status.textContent='';
   async function refresh(manual=false){
     if(checking||!check.isConnected)return;checking=true;check.disabled=true;clearTimeout(pollTimer);
     let expired=false,hasReply=false;
     try{
       const result=await api('receipt',key);
       if(!check.isConnected)return;
-      display(result.status==='acknowledged');
-      hasReply=Boolean(result.reply);reply.textContent=hasReply?'Nicole replied: '+result.reply:confirmed?'No reply yet. Check back here whenever you like.':'';
+      display(result);
+      hasReply=Boolean(result.reply);reply.textContent=hasReply?'Nicole replied: '+result.reply:'';
       status.textContent=manual?'Receipt checked just now.':'';
     }catch(e){
       expired=e.status===404;
-      if(expired){ticks.textContent='';heading.textContent='Receipt unavailable';detail.textContent='This receipt may have expired. Ask Nicole for a fresh invitation.';}
+      if(expired){sign.replaceChildren();heading.textContent='Receipt unavailable';detail.textContent='This receipt may have expired. Ask Nicole for a fresh invitation.';}
       status.textContent=expired?'':'Couldn’t refresh the receipt. Try again when you’re connected.';
     }finally{
       checking=false;check.disabled=expired;
-      if(!expired&&!hasReply&&check.isConnected)pollTimer=setTimeout(()=>{if(!document.hidden)refresh();else pollTimer=setTimeout(()=>refresh(),30000);},confirmed?30000:7000);
+      if(!expired&&check.isConnected)pollTimer=setTimeout(()=>{if(!document.hidden)refresh();else pollTimer=setTimeout(()=>refresh(),30000);},confirmed?30000:7000);
     }
   }
   check.onclick=()=>refresh(true);refresh();

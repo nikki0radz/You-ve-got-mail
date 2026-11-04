@@ -89,7 +89,24 @@ final class Mail {
         List<JSONObject> results=new ArrayList<>();for(String k:prefs(c).getAll().keySet())if(k.startsWith("m:"))results.add(meta(c,k.substring(2)));
         results.sort((a,b)->Long.compare(b.optLong("when"),a.optLong("when")));return results;
     }
+    // Persist delivery outcomes separately from the parcel. Retry after a lost response or restart.
+    static synchronized void outcome(Context c,JSONObject parcel,String value){
+        if(!parcel.optBoolean("remote"))return;
+        String id=parcel.optString("id"),key="outcome:"+id;
+        if("screen".equals(prefs(c).getString(key,"")))return;
+        prefs(c).edit().putString(key,value).commit();
+        io.execute(()->{try{flushOutcome(c,key);}catch(Exception ignored){}});
+    }
+    private static void flushOutcome(Context c,String key)throws Exception{
+        String value=prefs(c).getString(key,"");
+        if(value.isEmpty())return;
+        request(c,"outcome",new JSONObject().put("id",key.substring(8)).put("outcome",value));
+        synchronized(Mail.class){if(value.equals(prefs(c).getString(key,"")))prefs(c).edit().remove(key).commit();}
+    }
     static void sync(Context c)throws Exception{
+        for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
+            try{flushOutcome(c,key);}catch(Exception ignored){}
+        }
         for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0)return;
             JSONObject m=arr.getJSONObject(0);accept(c,m,true);request(c,"ack",new JSONObject().put("id",m.getString("id")));}
     }

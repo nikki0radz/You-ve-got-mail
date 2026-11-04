@@ -107,6 +107,12 @@ export async function openShop(onTest, initialCategory, guest=false){
       if(page==='Finishing touches')controls='<label>Optional note<textarea data-text="extra" maxlength="180">'+esc(draft.extra)+'</textarea></label><label>Add another picture<input type="file" data-second accept="image/*"></label>'+(draft.second?'<label>Move<select data-layer><option value="framePos">Frame</option><option value="secondPos" '+(draft.layer==='secondPos'?'selected':'')+'>Extra picture</option></select></label><button data-remove>Remove extra picture</button>':'')+'<details><summary>Frame appearance</summary>'+selectControl('Background',palette)+selectControl('Shape',['Rounded','Oval','Square'].map(v=>[v,v]))+selectControl('Border',palette)+'</details>';
       controls='<p>Drag to place it on their screen. Pinch to resize.</p><label>Size<input type="range" data-size min=".12" max="1" step=".01" value="'+draft[draft.layer].size+'"></label>'+controls;
     }
+    const colourControl=(label,key,fallback)=>'<label>'+label+'<input type="color" data-setting="'+key+'" value="'+(draft[key]||fallback)+'"></label>';
+    if(page==='Write'){
+      if(current.category==='Notes')controls+=colourControl('Note paper','paper','#fff1cd');
+      controls+=colourControl('Text colour','ink',current.ink);
+    }
+    if(page==='Finishing touches')controls+=colourControl('Note background','noteFill','#fff4da')+colourControl('Note text','noteInk','#273d31');
     const exportButtons=guest?'<button class="primary" data-export="test" disabled>Use this parcel</button>':'<button class="secondary" data-export="save" disabled>Save PNG</button>'+(!window.Pigeon?'<button class="secondary" data-export="share" disabled>Share PNG</button>':'')+'<button class="primary" data-export="test" disabled>Send test</button>';
     const actions=page==='Ready'?exportButtons:'<button class="primary" data-next>Next</button>';
     shell(current.name,(step+1)+' of '+seq.length+' · '+page,'<div class="parcel-canvas" role="img" aria-label="Parcel preview"></div><div class="parcel-controls">'+controls+'</div><div class="parcel-actions">'+backButton+actions+'</div>',()=>{if(step){step--;if(stages()[step]==='Place on screen')draft.layer='framePos';edit();}else confirmExit(backFromItem);});

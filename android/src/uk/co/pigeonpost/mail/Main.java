@@ -75,12 +75,31 @@ public class Main extends Activity {
         button(panel,"Incoming warning banner settings",()->startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT)));
         button(panel,"Display over apps · "+(Settings.canDrawOverlays(this)?"on":"set up"),()->startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName()))));
         if(Build.VERSION.SDK_INT>=31)button(panel,"Precise schedules · "+(Mail.exact(this)?"on":"set up"),()->startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName()))));
+        button(panel,"Check for updates",this::checkUpdates);
         button(panel,"Listen for mail for 30 minutes",this::listen);
         TextView tip=new TextView(this);tip.setText("Allow notification pop-ups in the Incoming mail warnings channel to see Reject. When your phone is locked, mail waits in your inbox.");panel.addView(tip);
         ScrollView scroll=new ScrollView(this);scroll.addView(panel);new AlertDialog.Builder(this).setTitle("Delivery settings").setView(scroll).setPositiveButton("Done",null).show();
     }
     void option(LinearLayout parent,String title,String key,boolean initial){Switch sw=new Switch(this);sw.setText(title);sw.setPadding(0,dp(8),0,dp(8));sw.setChecked(Mail.prefs(this).getBoolean(key,initial));sw.setOnCheckedChangeListener((b,on)->Mail.prefs(this).edit().putBoolean(key,on).apply());parent.addView(sw);}
     void button(LinearLayout p,String title,Runnable action){Button b=new Button(this);b.setText(title);b.setOnClickListener(v->action.run());p.addView(b);}
+    void checkUpdates(){
+        toast("Checking for updates…");
+        Mail.io.execute(()->{
+            java.net.HttpURLConnection connection=null;
+            try{
+                connection=(java.net.HttpURLConnection)new java.net.URL("https://nikki0radz.github.io/You-ve-got-mail/latest.json").openConnection();
+                connection.setConnectTimeout(8000);connection.setReadTimeout(8000);connection.setUseCaches(false);
+                JSONObject latest=new JSONObject(new String(Mail.read(connection.getInputStream()),java.nio.charset.StandardCharsets.UTF_8));
+                String version=latest.getString("version");
+                if(!version.matches("[0-9]+[.][0-9]+[.][0-9]+"))throw new IOException();
+                boolean newer=latest.getInt("code")>getPackageManager().getPackageInfo(getPackageName(),0).getLongVersionCode();
+                runOnUiThread(()->{if(isFinishing()||isDestroyed())return;
+                    if(!newer){toast("You’re up to date.");return;}
+                    new AlertDialog.Builder(this).setTitle("Update to "+version+"?").setPositiveButton("Download",(d,k)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-"+version+".apk")))).setNegativeButton("Later",null).show();});
+            }catch(Exception e){runOnUiThread(()->toast("Couldn’t check for updates. Try again."));}
+            finally{if(connection!=null)connection.disconnect();}
+        });
+    }
     void listen(){startForegroundService(new Intent(this,Live.class));}
     void invite(){new AlertDialog.Builder(this).setTitle("Let a friend send one parcel").setMessage("Your friend can choose a sticker or frame in their browser. Sharing starts 30 minutes of live listening on this phone. After that Android checks periodically.").setPositiveButton("Create link",(d,k)->Mail.io.execute(()->{
         try{String token=Mail.request(this,"links",new JSONObject()).getString("token");if(!token.matches("[a-f0-9]{64}"))throw new IOException();

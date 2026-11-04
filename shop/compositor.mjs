@@ -73,16 +73,23 @@ export async function composePNG(item, draft, density = 1) {
     clip.addPath(new Path2D(item.artClip), new DOMMatrix().translate(x,y).scale(width/sw,height/sh));
     ctx.clip(clip,'evenodd');
   }
-  if (item.master) ctx.drawImage(sheet, x,y,width,height);
-  else ctx.drawImage(sheet, ...item.rect, x,y,width,height);
+  let source=sheet;
+  let region=item.master?[]:item.rect;
+  if(item.category==='Notes'&&draft.paper){
+    const tinted=document.createElement('canvas');tinted.width=Math.ceil(width*density);tinted.height=Math.ceil(height*density);
+    const ink=tinted.getContext('2d');ink.drawImage(sheet,...region,0,0,tinted.width,tinted.height);
+    ink.globalCompositeOperation='source-atop';ink.globalAlpha=.48;ink.fillStyle=draft.paper;ink.fillRect(0,0,tinted.width,tinted.height);
+    source=tinted;region=[];
+  }
+  ctx.drawImage(source,...region,x,y,width,height);
   ctx.restore();
   if (item.textBox) {
     const [l,t,r,b]=item.textBox;
-    writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],item.ink);
+    writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],draft.ink||item.ink);
   }
   if (draft.extra.trim()) {
-    ctx.fillStyle='#fff4da'; ctx.beginPath(); ctx.roundRect(10,643,620,116,18); ctx.fill();
-    writeText(ctx,draft.extra,[26,652,588,96],'#273d31');
+    ctx.fillStyle=draft.noteFill||'#fff4da'; ctx.beginPath(); ctx.roundRect(10,643,620,116,18); ctx.fill();
+    writeText(ctx,draft.extra,[26,652,588,96],draft.noteInk||'#273d31');
   }
   return canvas;
 }
