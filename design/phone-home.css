@@ -11,3 +11,7 @@
 #phone-studio .phone-design-row{display:flex;overflow-x:auto;gap:6px;padding:6px 0}
 #phone-studio .phone-design-row button{flex:0 0 44px}
 #phone-studio button[aria-pressed=true]{background:#365a40;color:#fff9e8}
+
+#phone-studio .phone-design-arrows{display:flex;justify-content:space-between;gap:8px}
+#phone-studio .phone-design-arrows button{flex:1}
+#phone-studio .phone-design-row{touch-action:pan-x;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}

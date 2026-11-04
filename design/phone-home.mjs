@@ -13,11 +13,14 @@ export function openPhoneStudio(){
   layer.innerHTML='<header><button data-close>← Back</button><strong>Design Home</strong><button data-export>Export</button></header><p>Tap an item for colours and alignment. Hold it to see designs.</p><iframe title="Home design preview" src="design/page.html?page=home"></iframe><div class="phone-design-colours" aria-label="Colours"></div><div class="phone-design-controls" hidden></div><div class="phone-design-choices" hidden></div>';
   document.body.append(layer);
   const frame=layer.querySelector('iframe'),controls=layer.querySelector('.phone-design-controls'),palette=layer.querySelector('.phone-design-colours'),choices=layer.querySelector('.phone-design-choices');
-  let target='header',timer=null,start=null,held=false;
+  let target='header',timer=null,start=null,held=false,swiped=false;
   const persist=()=>{try{localStorage.setItem(key,JSON.stringify(draft))}catch{}};
   function repaint(){
     const doc=frame.contentDocument;if(!doc?.querySelector('.courier-stand'))return;
     const stand=doc.querySelector('.courier-stand'),sign=doc.querySelector('.mail-sign'),wheel=doc.querySelector('#home-wheel .wheel-paper');
+    const surface=frame.contentWindow.designSurface;
+    const id=surface?.idFor('.courier-stand');
+    if(id)surface.configure({editing:false,selected:'',layout:{styles:{[id]:{reviewLook:'header-'+draft.header}}},textScale:1});
     stand.dataset.reviewLook='header-'+draft.header;
     let copy=stand.querySelector('.counter-copy');
     if(!copy){copy=doc.createElement('div');copy.className='counter-copy';copy.innerHTML='<b></b><small></small>';stand.append(copy)}
@@ -32,6 +35,7 @@ export function openPhoneStudio(){
     if(!style){
       style=doc.createElement('style');style.id='phone-design-style';
       style.textContent=`
+        .header-board .courier-stand{touch-action:pan-y}
         .header-board .courier-stand .mail-sign[data-phone-sign]{border-radius:var(--phone-radius,14px);border-style:var(--phone-border,solid);box-shadow:var(--phone-shadow,0 3px 0 var(--edge));transform:var(--phone-rotate,none)}
         .mail-sign[data-phone-sign="2"]{--phone-radius:3px;--phone-border:double}
         .mail-sign[data-phone-sign="3"]{--phone-radius:40px;--phone-shadow:0 0 0 4px #dfd1af}
@@ -60,12 +64,24 @@ export function openPhoneStudio(){
   }
   function variants(id){
     pick(id);choices.hidden=false;choices.replaceChildren();
-    const hint=document.createElement('strong');hint.textContent='Swipe to choose · '+groups[id].title;choices.append(hint);
+    const hint=document.createElement('strong');hint.textContent=groups[id].title+' · '+draft[id]+' of 10';choices.append(hint);
     const row=document.createElement('div');row.className='phone-design-row';
     for(let n=1;n<=10;n++){
       const b=document.createElement('button');b.textContent=String(n);b.setAttribute('aria-label',groups[id].title+' option '+n);b.setAttribute('aria-pressed',String(draft[id]===n));
-      b.onclick=()=>{draft[id]=n;persist();repaint();variants(id)};row.append(b);
-    }choices.append(row);
+      b.onclick=()=>choose(id,n);row.append(b);
+    }
+    choices.append(row);
+    const arrows=document.createElement('div');arrows.className='phone-design-arrows';
+    for(const [label,delta] of [['← Previous',-1],['Next →',1]]){
+      const button=document.createElement('button');button.textContent=label;
+      button.onclick=()=>choose(id,(draft[id]-1+delta+10)%10+1);
+      arrows.append(button);
+    }
+    choices.append(arrows);
+  }
+  function choose(id,n){
+    draft[id]=n;persist();repaint();variants(id);
+    choices.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
   }
   for(const colour of colours){
     const button=document.createElement('button');button.style.background=colour;button.title=colour;button.setAttribute('aria-label','Colour '+colour);
@@ -76,16 +92,24 @@ export function openPhoneStudio(){
     listen();
     doc.addEventListener('pointerdown',e=>{
       const found=e.target.closest('.mail-sign,.courier-stand,#home-wheel .wheel-paper');if(!found)return;
-      const id=found.matches('.mail-sign')?'sign':found.matches('.courier-stand')?'header':'carousel';start={id,x:e.clientX,y:e.clientY};held=false;
+      const id=found.matches('.mail-sign')?'sign':found.matches('.courier-stand')?'header':'carousel';start={id,x:e.clientX,y:e.clientY};held=false;swiped=false;
       timer=setTimeout(()=>{held=true;variants(id)},500);
     },true);
-    doc.addEventListener('pointermove',e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>12){clearTimeout(timer);start=null}},true);
-    doc.addEventListener('pointerup',()=>{clearTimeout(timer);if(start&&!held)pick(start.id);start=null},true);
+    doc.addEventListener('pointermove',e=>{
+      if(!start)return;
+      const dx=e.clientX-start.x,dy=e.clientY-start.y;
+      if(Math.hypot(dx,dy)>12)clearTimeout(timer);
+      if(!choices.hidden&&start.id===target&&Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.3){
+        swiped=true;choose(target,(draft[target]-1+(dx<0?1:-1)+10)%10+1);start=null;
+      }else if(Math.abs(dy)>20)start=null;
+    },true);
+    doc.addEventListener('pointerup',()=>{clearTimeout(timer);if(start&&!held&&!swiped)pick(start.id);start=null},true);
+    doc.addEventListener('pointercancel',()=>{clearTimeout(timer);start=null},true);
     doc.addEventListener('click',e=>{if(e.target.closest('.mail-sign,.courier-stand,#home-wheel .wheel-paper')){e.preventDefault();e.stopImmediatePropagation()}},true);
     doc.addEventListener('contextmenu',e=>e.preventDefault(),true);
   };
   layer.querySelector('[data-export]').onclick=()=>{
-    const payload=JSON.stringify({format:'pigeon-post.phone-home-design',version:1,screen:'home',appVersion:'0.1.10',exportedAt:new Date().toISOString(),draft},null,2);
+    const payload=JSON.stringify({format:'pigeon-post.phone-home-design',version:1,screen:'home',appVersion:'0.1.11',exportedAt:new Date().toISOString(),draft},null,2);
     if(window.Pigeon?.shareDesign)Pigeon.shareDesign(payload);
     else navigator.clipboard?.writeText(payload);
   };
