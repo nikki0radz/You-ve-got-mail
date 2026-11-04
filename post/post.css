@@ -60,3 +60,6 @@
 .royal-card{background:#456453;border:4px double #c4b082;border-radius:22px 22px 7px 7px;padding:13px 8px;margin-bottom:10px;color:white;text-align:center}
 :root[data-theme=light] .royal-card{background:#fff4dc;color:#49654e}.royal-card em,.royal-card h3{font-family:Georgia,serif}.royal-card h3{margin:7px 0;font-size:24px}.royal-card p{font-weight:bold;margin:6px 0}
 .result-bird{width:125px;height:125px;object-fit:contain}.local-note{display:block;margin:8px 0 0;color:var(--mm-sub);font-size:11px}.social-alert:empty{display:none}
+
+@font-face{font-family:PostalHand;src:url('../assets/post/satisfy.woff') format('woff');font-display:swap}
+#social-flow .social-name{padding:10px;text-align:center;font:400 22px/1.4 PostalHand,cursive}
