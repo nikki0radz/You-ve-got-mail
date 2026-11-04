@@ -33,3 +33,8 @@
 .post-home-items{display:flex;overflow-x:auto;scrollbar-width:none;gap:4px}
 .post-home-cat{flex:0 0 68px;display:grid;justify-items:center;gap:3px;background:transparent;color:inherit;border:0;font:700 11px system-ui;cursor:pointer;padding:5px 0}
 .post-home-cat b{width:37px;height:37px;display:grid;place-items:center;border-radius:50%;background:#faf0dc;font-size:21px}
+#parcel-shop.editing { width:min(100vw,520px); max-height:100dvh; border-radius:14px; }
+.editing .parcel-canvas { touch-action:none; background:repeating-conic-gradient(#a2b7a9 0 25%,#b8cabd 0 50%) 0 0 / 22px 22px; width:fit-content; max-width:100%; }
+.editing .parcel-canvas canvas { max-height:58dvh; width:auto; max-width:100%; display:block; }
+.editing .parcel-controls p { margin:.35rem 0; }
+.editing .parcel-controls label { margin-block:.2rem; }

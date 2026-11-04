@@ -1,0 +1,9 @@
+body {min-height:100dvh; background:#e3e9db; color:#243e32;}
+.guest {max-width:430px;margin:auto;padding:30px 20px;text-align:center;}
+.guest .bird {height:110px;display:block;margin:0 auto 12px;}
+.guest small {font-weight:800;letter-spacing:.14em;}
+.guest h1 {font-size:2.4rem;line-height:1.04;margin:.5em;}
+.guest button,.guest input {margin:5px;padding:12px;border-radius:16px;border:1px solid #54715f;}
+.guest button {color:#fff;background:#325541;}
+.guest label {display:grid;text-align:left;margin:.5em;}
+.guest .proof {max-height:32dvh;max-width:90%;background:#c7d5c5;border-radius:12px;}
