@@ -51,7 +51,7 @@ function choose(){
   const stage=steps.querySelector('.wheel-paper'),orbs=[...stage.querySelectorAll('.wheel-orbs button')];
   function offset(n){return (position+n+categories.length)%categories.length;}
   function move(n){position=offset(n);paint();}
-  function browse(){openShop(async(image,name,group,reopen)=>{draft={sender:draft?.sender||'',time:draft?.time||'',image:await scaled(image),kind:kinds[group],reopen};review();},categories[position],true);}
+  function browse(){openShop(async(image,name,group,reopen)=>{draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};review();},categories[position],true);}
   function paint(){
     const category=categories[position],label=collectionName(category);
     stage.querySelector('small').textContent=(position+1)+' / '+categories.length;
@@ -95,14 +95,22 @@ function openReceipt(key){
   showReceipt(key);
 }
 function review(){
-  steps.innerHTML='<h2>Ready for take-off?</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><label>Delivery time (leave blank for now)<input id="when" type="datetime-local"></label><button class="quiet" id="back">‹ Edit parcel</button><button class="accept" id="send"></button>';
+  steps.innerHTML='<h2>Ready for take-off?</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="back">‹ Edit parcel</button><button id="send"></button></div>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
-  sender.value=draft.sender||'';whenField.value=draft.time||'';send.textContent=preview?'Try the pigeon’s flight':'Hand it to the pigeon';
-  status.textContent=preview?'Preview only. No mail will be sent.':'Delivery times use your local time.';
+  sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
+  dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
+  function mode(scheduled){
+    draft.later=scheduled;dateLabel.hidden=!scheduled;whenField.required=scheduled;
+    now.setAttribute('aria-pressed',String(!scheduled));later.setAttribute('aria-pressed',String(scheduled));
+    send.textContent=scheduled?(preview?'Preview schedule':'Schedule delivery'):(preview?'Try the pigeon’s flight':'Hand it to the pigeon');
+    status.textContent=preview?'Preview only. No mail will be sent.':'';
+  }
+  now.onclick=()=>mode(false);later.onclick=()=>mode(true);mode(draft.later??Boolean(draft.time));
   steps.querySelector('img').src=draft.image;steps.querySelector('#back').onclick=()=>{draft.sender=sender.value;draft.time=whenField.value;draft.reopen();};
   send.onclick=async()=>{
-    const name=sender.value.trim(),value=whenField.value,when=value?new Date(value).getTime():Date.now();
+    const name=sender.value.trim(),value=draft.later?whenField.value:'',when=value?new Date(value).getTime():Date.now();
     if(!preview&&!name){status.textContent='Add your name first.';sender.focus();return;}
+    if(draft.later&&!value){status.textContent='Choose a delivery date and time.';whenField.focus();return;}
     if(value&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000)){status.textContent='Choose a future time within 30 days.';return;}
     draft.sender=name;draft.time=value;loading();
     const wait=new Promise(resolve=>setTimeout(resolve,5000));

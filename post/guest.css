@@ -32,3 +32,10 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .delivery-receipt .ticks{font:bold 25px/1.2 system-ui;color:#3b6547}.delivery-receipt .reply{white-space:pre-wrap;overflow-wrap:anywhere}
 .guest .smallprint{font-size:13px}.guest .final-proof{position:relative;overflow:hidden;margin:8px auto;background:linear-gradient(145deg,#99b6aa,#9daab7,#c7b59f);width:min(100%,180px);aspect-ratio:600/1120;border-radius:14px}
 .guest .final-proof img{width:100%;height:100%;object-fit:contain}
+
+.dispatch-timing{border:0;padding:0;margin:12px 0;color:var(--heading)}
+.dispatch-timing legend{font-weight:650;margin-bottom:5px;padding:0}
+.guest .dispatch-dock{display:flex;align-items:stretch;gap:0;padding:3px;border:1px solid #9aa68c;border-radius:32px;background:#dce8d5}
+.guest .dispatch-dock button{flex:1;min-width:0;margin:0;border:0;border-radius:28px;background:transparent;color:#294938;font:650 14px/1.2 system-ui}
+.guest .dispatch-dock [aria-pressed=true],.guest .dispatch-actions #send{background:#faf4e5;box-shadow:0 1px 4px #172d282b}
+.guest #when-label[hidden]{display:none}.guest #when-label small{font-weight:500}.guest .dispatch-actions{margin-top:16px}
