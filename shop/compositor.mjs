@@ -1,3 +1,4 @@
+import {fontSpec,writingBox} from './lettering.mjs';
 const sheets = new Map();
 
 function loadSheet(url) {
@@ -13,12 +14,12 @@ function loadSheet(url) {
   return sheets.get(url);
 }
 
-export function writeText(context, value, rect, colour) {
+export function writeText(context, value, rect, colour, font) {
   if (!value.trim()) return;
   const [x, y, width, height] = rect;
   let lines;
-  for (let size = Math.min(44, Math.floor(height * .85)); size >= 4; size--) {
-    context.font = 'bold ' + size + 'px system-ui, sans-serif';
+  for (let size = Math.min(180,Math.floor(height * .88)); size >= 4; size--) {
+    context.font = fontSpec(font,size);
     lines = [];
     for (const paragraph of value.split('\n')) {
       let line = '';
@@ -32,14 +33,16 @@ export function writeText(context, value, rect, colour) {
       }
       lines.push(line.trimEnd());
     }
-    if (lines.length * size * 1.23 > height) continue;
+    if (lines.length * size * 1.13 > height) continue;
     context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillStyle = colour;
-    lines.forEach((line, i) => context.fillText(line.trimEnd(), x + width / 2, y + height / 2 + (i - (lines.length - 1) / 2) * size * 1.23));
+    lines.forEach((line, i) => context.fillText(line.trimEnd(), x + width / 2, y + height / 2 + (i - (lines.length - 1) / 2) * size * 1.13));
     return;
   }
 }
 
 export async function composePNG(item, draft, density = 1) {
+  if(draft.words)await document.fonts.load(fontSpec(draft.font,20));
+  if(draft.extra)await document.fonts.load(fontSpec(draft.extraFont,20));
   const [sheet, mask] = await Promise.all([loadSheet(item.master || item.sheet), item.maskSheet && loadSheet(item.maskSheet)]);
   const canvas = document.createElement('canvas');
   canvas.width = 640 * density; canvas.height = (draft.extra.trim() ? 768 : 640) * density;
@@ -84,12 +87,12 @@ export async function composePNG(item, draft, density = 1) {
   ctx.drawImage(source,...region,x,y,width,height);
   ctx.restore();
   if (item.textBox) {
-    const [l,t,r,b]=item.textBox;
-    writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],draft.ink||item.ink);
+    const [l,t,r,b]=writingBox(item);
+    writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],draft.ink||item.ink,draft.font);
   }
   if (draft.extra.trim()) {
     ctx.fillStyle=draft.noteFill||'#fff4da'; ctx.beginPath(); ctx.roundRect(10,643,620,116,18); ctx.fill();
-    writeText(ctx,draft.extra,[26,652,588,96],draft.noteInk||'#273d31');
+    writeText(ctx,draft.extra,[26,652,588,96],draft.noteInk||'#273d31',draft.extraFont);
   }
   return canvas;
 }

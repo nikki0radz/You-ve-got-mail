@@ -60,3 +60,20 @@
 #parcel-shop .wheel-orbs button:nth-child(2) { background:#f4dda9; padding:13px; outline:2px dashed #b3a06f; outline-offset:-6px; }
 #parcel-shop .wheel-orbs img { display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; }
 #parcel-shop .wheel-paper .browse { width:calc(100% - 8px); min-height:44px; background:#40563e; color:#fff9e8; border:0; border-radius:12px; font-weight:bold; }
+
+.library-filter { margin:10px 0; }
+.library-filter-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; font-size:13px; font-weight:700; }
+.library-layout { display:inline-flex; padding:2px; background:var(--mm-bg); border:1px solid var(--mm-edge); border-radius:18px; }
+.library-layout button,.library-tabs button,.library-see-all { color:var(--mm-text); background:transparent; border:0; font:600 12px/1.2 system-ui; cursor:pointer; }
+.library-layout button { padding:5px 9px; border-radius:15px; }
+.library-tabs { position:relative; display:flex; gap:5px; overflow:auto; scrollbar-width:thin; padding:2px 1px 6px; }
+.library-tabs button { flex:none; padding:8px 12px; border:1px solid var(--mm-edge); border-radius:20px; }
+.library-tabs button[aria-pressed=true],.library-layout button[aria-pressed=true] { color:#fafff6; background:#405a44; border-color:#405a44; }
+.library-menu { display:block; width:100%; min-height:36px; padding:5px 10px; border:1px solid var(--mm-edge); border-radius:10px; background:var(--mm-bg); color:var(--mm-text); font:600 14px system-ui; }
+.frame-index { align-items:center; gap:6px; }
+.frame-index .frame-count { margin-left:auto; }
+.library-see-all { padding:6px 10px; border:1px solid var(--mm-edge); border-radius:14px; }
+.library-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:7px; }
+.library-grid button { display:grid; align-content:start; justify-items:center; gap:4px; min-width:0; padding:6px 4px; border:1px solid #d4c9ae; border-radius:12px; color:#294236; background:#f8f0dc; font:650 12px/1.25 system-ui; text-align:center; }
+.library-grid .grid-art { width:100%; aspect-ratio:1.2; }
+.library-grid .grid-art>img,.library-grid .grid-art>svg { display:block; width:100%; height:100%; object-fit:contain; }

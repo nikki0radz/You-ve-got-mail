@@ -9,8 +9,8 @@ export async function readPhoto(file){
 // A working copy keeps cancelled adjustments and replacement photos out of the parcel.
 export function fitPhoto(host,item,initial,onApply,onCancel){
   const work={...initial};let sequence=0,load=0;
-  host.innerHTML='<div class="studio-heading"><button class="studio-back" data-cancel>‹ Cancel</button><small>PHOTO STUDIO</small></div><h2>Fit your picture</h2><p class="studio-tip">The frame stays put. Drag your photo and pinch to zoom.</p><div class="crop-window" aria-label="Photo inside its fixed frame"></div><div class="crop-tools"><button data-minus aria-label="Zoom out">−</button><output></output><button data-plus aria-label="Zoom in">+</button></div><button class="studio-primary" data-ok>Happy with this ✓</button><button class="studio-link" data-replace>Replace photo</button><input type="file" accept="image/*" hidden><p role="alert" class="studio-error"></p>';
-  const box=host.querySelector('.crop-window'),file=host.querySelector('input'),ok=host.querySelector('[data-ok]'),error=host.querySelector('[role=alert]');
+  host.innerHTML='<div class="studio-heading"><button class="studio-back" data-cancel>‹ Cancel</button><small>PHOTO STUDIO</small></div><h2>Fit your picture</h2><p class="studio-tip">The frame stays put. Drag your photo and pinch to zoom.</p><div class="crop-window" aria-label="Photo inside its fixed frame"></div><div class="crop-tools"><label class="zoom-strip"><span>Photo zoom</span><input data-zoom type="range" min="100" max="600" step="1" aria-label="Photo zoom"><output></output></label></div><button class="studio-primary" data-ok>Happy with this ✓</button><button class="studio-link" data-replace>Replace photo</button><input type="file" accept="image/*" hidden><p role="alert" class="studio-error"></p>';
+  const box=host.querySelector('.crop-window'),file=host.querySelector('input[type=file]'),ok=host.querySelector('[data-ok]'),error=host.querySelector('[role=alert]');
   const g=geometry(item),[l,t,r,b]=item.opening;
   box.style.aspectRatio=g.width+'/'+g.height;
   box.style.width='min(100%,350px,'+(57*g.width/g.height)+'dvh)';
@@ -20,7 +20,7 @@ export function fitPhoto(host,item,initial,onApply,onCancel){
   }
   async function paint(){
     const ticket=++sequence;
-    try{const c=await artwork(item,work);if(ticket!==sequence||!box.isConnected)return;box.replaceChildren(c);host.querySelector('output').textContent=Math.round(work.zoom*100)+'%';}
+    try{const c=await artwork(item,work);if(ticket!==sequence||!box.isConnected)return;box.replaceChildren(c);host.querySelector('[data-zoom]').value=Math.round(work.zoom*100);host.querySelector('output').textContent=Math.round(work.zoom*100)+'%';}
     catch(e){if(ticket===sequence)error.textContent=e.message;}
   }
   function adjust(from,to,ratio){
@@ -39,7 +39,7 @@ export function fitPhoto(host,item,initial,onApply,onCancel){
   box.onpointermove=e=>{if(!points.has(e.pointerId))return;const from=metrics();points.set(e.pointerId,{x:e.clientX,y:e.clientY});const to=metrics();adjust(from,to,from.span&&to.span?to.span/from.span:1);};
   box.onpointerup=box.onpointercancel=box.onlostpointercapture=e=>points.delete(e.pointerId);
   box.onwheel=e=>{e.preventDefault();const pt={x:e.clientX,y:e.clientY};adjust(pt,pt,Math.exp(-e.deltaY*.002));};
-  host.querySelector('[data-minus]').onclick=()=>zoom(1/1.2);host.querySelector('[data-plus]').onclick=()=>zoom(1.2);
+  host.querySelector('[data-zoom]').oninput=e=>zoom(Number(e.target.value)/(100*work.zoom));
   host.querySelector('[data-cancel]').onclick=onCancel;ok.onclick=()=>onApply(work);
   host.querySelector('[data-replace]').onclick=()=>file.click();
   file.onchange=async()=>{if(!file.files[0])return;const ticket=++load;ok.disabled=true;

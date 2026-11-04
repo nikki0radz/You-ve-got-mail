@@ -1,3 +1,4 @@
+import {fonts,fontSpec,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
@@ -31,26 +32,34 @@ export function startGuestStudio(dialog,item,back,onReady){
   function setCanvas(el,c){if(el?.isConnected)el.querySelector('.layer-image').replaceChildren(c);}
   async function paintArt(){
     const id=++serial,el=dialog.querySelector('[data-layer=art]');try{
-      const c=await artwork(item,{...state.crop,ink:state.ink,paper:state.paper},editing==='art'?'':state.words);
+      const c=await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},editing==='art'?'':state.words);
       if(id===serial)setCanvas(el,c);
     }catch(e){grabError(e);}
   }
-  function paintNote(){if(state.note)setCanvas(dialog.querySelector('[data-layer=note]'),banner(state.note.style,editing==='note'?'':state.note.text,state.note.width,state.note.width*state.note.ratio,state.note));}
+  async function paintNote(){
+    if(!state.note)return;await document.fonts.load(fontSpec(state.note.font,20));
+    if(state.note)setCanvas(dialog.querySelector('[data-layer=note]'),banner(state.note.style,editing==='note'?'':state.note.text,state.note.width,state.note.width*state.note.ratio,state.note));
+  }
   function startText(key){
     const el=dialog.querySelector('[data-layer='+key+']');if(!el||(key==='art'&&!item.textBox))return;
     const existing=el.querySelector('textarea');if(existing){existing.focus();return;}
     document.activeElement?.blur();editing=key;select(key);
-    const isNote=key==='note', [x,y,w,h]=isNote?noteBox(state.note.style):[item.textBox[0],item.textBox[1],item.textBox[2]-item.textBox[0],item.textBox[3]-item.textBox[1]];
+    const isNote=key==='note';let box;
+    if(isNote)box=noteBox(state.note.style);
+    else{const [l,t,r,b]=writingBox(item);box=[l,t,r-l,b-t];}
+    const [x,y,w,h]=box;
     const field=document.createElement('textarea');field.maxLength=180;field.className='inline-words';field.setAttribute('aria-label',isNote?'Banner text':'Write on this design');field.placeholder='Type here';field.value=isNote?state.note.text:state.words;
     delete el.querySelector('.layer-image').dataset.hint;el.append(field);
     function fit(){
       const width=el.clientWidth*w,height=el.clientHeight*h;
       Object.assign(field.style,{left:x*100+'%',width:width+'px',height:'1px',color:isNote?(state.note.ink||'#283c30'):(state.ink||item.ink)});
-      let font=Math.max(5,Math.min(30,Math.floor(el.clientWidth*(isNote?44/state.note.width:44/(574*Math.min(1,1/ratio))))));
+      let font=Math.max(5,Math.floor(height*.88));
       for(;font>4;font--){field.style.fontSize=font+'px';field.style.height='1px';if(field.scrollHeight<=height)break;}
       field.style.fontSize=font+'px';field.style.height='1px';const fitted=Math.min(height,field.scrollHeight);
       field.style.height=fitted+'px';field.style.top=(y*el.clientHeight+(height-fitted)/2)+'px';
     }
+    const [family,weight]=fonts[(isNote?state.note:state).font]||fonts.Handwritten;
+    field.style.fontFamily=family;field.style.fontWeight=weight;field.style.lineHeight='1.13';
     field.oninput=()=>{if(isNote)state.note.text=field.value;else state.words=field.value;dirty=true;fit();};
     field.onblur=()=>{field.remove();editing='';if(!field.value.trim())el.querySelector('.layer-image').dataset.hint='Tap to write';if(isNote)paintNote();else paintArt();};
     if(isNote)paintNote();else paintArt();fit();field.focus();
@@ -122,7 +131,13 @@ export function startGuestStudio(dialog,item,back,onReady){
         for(const [label,accessible,object,key,initial,repaint] of fields){
           group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
         }
-        controls.append(group);
+        const object=fields[0][2],repaint=fields[0][5],picker=document.createElement('select');
+        picker.setAttribute('aria-label',object===state?'Note font':'Banner font');picker.className='note-font';
+        for(const [label,[family]] of Object.entries(fonts)){
+          const option=new Option(label,label);option.style.fontFamily=family;picker.append(option);
+        }
+        picker.value=object.font||'Handwritten';picker.onchange=()=>{object.font=picker.value;dirty=true;repaint();};
+        group.append(picker);controls.append(group);
       }
       if(item.textBox){
         const fields=[['Text','Design text colour',state,'ink',item.ink,paintArt]];

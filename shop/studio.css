@@ -52,3 +52,5 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 .ink-picker input[type=range]{appearance:none;border-radius:18px;height:12px;margin:7px 0;background:linear-gradient(to right,#000,var(--bright));border:1px solid #88947f}
 .ink-picker input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border:2px solid #faf4e5;border-radius:50%;background:#48664c;box-shadow:0 0 0 1px #314338}
 .ink-actions button{flex:1}#parcel-shop button:is(.primary,.secondary,.studio-link){border-radius:30px}
+.zoom-strip{box-sizing:border-box;display:flex;align-items:center;gap:9px;width:min(100%,340px);background:#e0eadb;border:1px solid #9bab90;border-radius:28px;padding:6px 12px;color:#34513d;font-weight:650}.zoom-strip input[type=range]{min-width:40px;flex:1;accent-color:#476a4d;min-height:32px}.zoom-strip output{font-variant-numeric:tabular-nums}
+.ink-row{flex-wrap:wrap}.ink-row .note-font{max-width:125px;border:1px solid #9aa68c;border-radius:20px;background:#faf4e5;color:#294938;padding:7px;font-size:14px}

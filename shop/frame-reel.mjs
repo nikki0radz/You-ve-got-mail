@@ -12,14 +12,26 @@ export function mountFrameReel(root,items,first,preview,onSelect,onUse) {
     rail.scrollTo({left:slot*step,behavior:'instant'});
     paint();
   }
+  // The combined catalogue has hundreds of designs. Load artwork as it approaches
+  // each strip so opening All does not decode every artwork sheet at once.
+  const observers=new Map([rail,thumbs].map(strip=>{
+    const observer=new IntersectionObserver(entries=>{
+      for(const {target,isIntersecting} of entries){
+        if(!isIntersecting)continue;
+        target.innerHTML=preview(items[Number(target.dataset.preview)]);
+        observer.unobserve(target);
+      }
+    },{root:strip,rootMargin:'0px 100%'});
+    return [strip,observer];
+  }));
   function add(parent,i,slot){
     const button=document.createElement('button');
     button.type='button';button.tabIndex=-1;
     if(parent===thumbs)button.setAttribute('aria-pressed','false');
     button.setAttribute('aria-label','Show '+items[i].name);
-    button.innerHTML=preview(items[i]);
+    button.dataset.preview=i;
     button.onclick=()=>move(slot);
-    parent.append(button);
+    parent.append(button);observers.get(parent).observe(button);
     return button;
   }
   for(const [slot,i] of slots.entries())cards.push(add(rail,i,slot));
@@ -81,5 +93,5 @@ export function mountFrameReel(root,items,first,preview,onSelect,onUse) {
   }
   const resize=new ResizeObserver(measure);
   resize.observe(rail);measure();
-  return ()=>{resize.disconnect();clearTimeout(timer);cancelAnimationFrame(frame);};
+  return ()=>{resize.disconnect();for(const observer of observers.values())observer.disconnect();clearTimeout(timer);cancelAnimationFrame(frame);};
 }

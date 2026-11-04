@@ -1,3 +1,5 @@
+import {dispatchControls,decorateReceipt} from './dispatch-controls.mjs';
+import {stylePicker} from './style-choices.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 import {openReplyShop,openShop} from '../shop/shop.mjs';
 import {scaled} from '../shop/transport-image.mjs';
@@ -16,7 +18,7 @@ function post(op,args={}){
 window.postOfficeResult=(id,raw)=>{const promise=pending.get(id);if(!promise)return;pending.delete(id);try{const r=JSON.parse(raw);if(r.error)throw Error(r.error);promise.resolve(r.data);}catch(e){promise.reject(e);}};
 const el=()=>document.querySelector('#mail-window');
 function page(title,body,back){
-  const d=el();if(!d.open)d.showModal();
+  const d=el();delete d.dataset.receipt;if(!d.open)d.showModal();
   d.innerHTML='<header><span>PIGEON POST</span><button data-x aria-label="Close">×</button></header><h2>'+esc(title)+'</h2>'+body+'<p class="mb-error" role="alert"></p>';
   d.querySelector('[data-x]').onclick=()=>d.close();
   if(back){d.insertAdjacentHTML('beforeend',button('back','‹ Back'));action('back',back);}
@@ -64,15 +66,20 @@ async function view(m,refresh){
 }
 export function friendsWindow(refresh){return friendsPage(refresh);}
 export function composeFrom(category,refresh){
+  const draft={later:false,day:'',clock:'',target:'self'};
   return openShop(async(png,name,group,reopen)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=snapshot.friends||[];const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a pigeon',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+image+'" alt="'+esc(name)+'"><label>Recipient<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="mail-dock">'+button('now','Send now')+button('later','Schedule for later')+'</div><label data-at hidden>Delivery time<input type="datetime-local"></label>'+button('send','Send parcel')+button('edit','✎ Edit parcel'));
-    const field=el().querySelector('[data-at]');let later=false;function mode(v){later=v;field.hidden=!v;for(const k of ['now','later'])el().querySelector('[data-mb='+k+']').setAttribute('aria-pressed',String((k==='later')===v));}
-    mode(false);action('now',()=>mode(false));action('later',()=>mode(true));action('edit',()=>{el().close();reopen();});
-    action('send',async()=>{const selected=el().querySelector('[data-target]').value,when=later?new Date(field.querySelector('input').value).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
+    page('Who is it for?','<img class="mail-proof small" src="'+image+'" alt="'+esc(name)+'"><label>Recipient<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel　✉</button>'+button('edit','✎ Edit parcel'));
+    const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
+    target.onchange=()=>draft.target=target.value;
+    dispatchControls(el().querySelector('.delivery-controls'),draft);
+    action('edit',()=>{el().close();reopen();});
+    action('send',async()=>{const selected=target.value,later=draft.later,when=later?new Date(draft.day+'T'+draft.clock).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
       if(selected==='self'){const result=Pigeon.queue(JSON.stringify({sender:'Myself',image,kind:kinds[group],text:name,when}));if(result!=='ok')throw Error(result);}
       else{const friend=people.find(f=>f.code===selected);await post('send',{code:friend.code,recipient:friend.name,kind:kinds[group],image,when,receiptSecret:key});}
-      page(later?'Delivery scheduled':'Parcel sent','<p>'+esc(later?date(when):name)+'</p>'+button('done','Done'));action('done',()=>{el().close();refresh();});});
+      const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
+      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong>'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+stylePicker('receipt','Receipt style',['Postcard','Flight ticket','Wax seal'])+button('done','Done'));
+      decorateReceipt(el(),later);action('done',()=>{el().close();refresh();});});
   },category,{studio:true});
 }

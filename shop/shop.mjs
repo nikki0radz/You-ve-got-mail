@@ -1,3 +1,4 @@
+import {fonts} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
 import {guestItems,guestSelection} from './guest-selection.mjs';
@@ -39,6 +40,15 @@ function reelPreview(item){
   return '<svg aria-hidden="true" viewBox="0 0 '+w+' '+h+'"><defs><mask id="'+key+'" maskUnits="userSpaceOnUse" x="0" y="0" width="'+w+'" height="'+h+'">'+crop(item.maskSheet)+'</mask></defs><g mask="url(#'+key+')">'+sample+'</g>'+foreground+'</svg>';
 }
 
+export function backInShop(){
+  const dialog=document.querySelector('#parcel-shop[open]');
+  if(!dialog)return false;
+  const colour=document.querySelector('.ink-picker[open]');
+  if(colour)colour.close();
+  else dialog.dispatchEvent(new Event('cancel',{cancelable:true}));
+  return true;
+}
+
 export function openReplyShop(onReady,initialCategory='Stickers',onCancel){
   return openShop(onReady,initialCategory,{curated:true,wheel:true,studio:true,onCancel});
 }
@@ -52,19 +62,26 @@ export async function openShop(onTest, initialCategory, options={}){
   const dialog=document.querySelector('#parcel-shop');
   let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
-  let returnScroll=0,previewURL,shopScroll=0,backFromItem;
+  let gridScroll=0,previewURL,backFromItem;
   let disposeReel;
   const chosenDesign=options.wheel?selections.reply:guest?selections.invitation:selections.app;
-  const stripOffsets=new Map();
+  const layoutKey='pigeon-library-category-layout';
+  let layout='tabs';
+  try{if(localStorage.getItem(layoutKey)==='menu')layout='menu';}catch{}
+
   const trigger=document.activeElement;
   if(dialog.open)return;
+  // A close event is queued by the browser. Finish the previous session before reopening.
+  dialog.onclose?.();
   dialog.showModal();
-  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
+  const cleanup=()=>{if(dialog.open)return;dialog.onclose=null;disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
-  dialog.oncancel=e=>{e.preventDefault();cancel();};
+  let navigateBack=()=>cancel();
+  dialog.oncancel=e=>{e.preventDefault();navigateBack();};
   const shell=(name,status,body,back)=>{
     disposeReel?.();disposeReel=null;
+    navigateBack=back||(()=>cancel());
     dialog.innerHTML='<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header><h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
     dialog.querySelector('.parcel-x').onclick=()=>cancel();
     const prev=dialog.querySelector('[data-prev]');if(prev)prev.onclick=back;
@@ -72,54 +89,83 @@ export async function openShop(onTest, initialCategory, options={}){
   };
   const report=e=>{const line=dialog.querySelector('.parcel-error');if(line)line.textContent=e.message||String(e);};
   const backButton='<button class="secondary" data-prev>‹ Back</button>';
-  const chooseItem=it=>{current=it;group=it.category;step=0;dirty=false;
+  const chooseItem=it=>{current=it;step=0;dirty=false;
     if(studio){
       disposeReel?.();disposeReel=null;
       startGuestStudio(dialog,it,backFromItem,async(image,name,category,reopen)=>{
-        await onTest(image,name,category,reopen);completed=true;dialog.close();
+        const resume=()=>{dialog.onclose=cleanup;reopen();};
+        await onTest(image,name,category,resume);completed=true;dialog.close();
       });
       return;
     }
     draft={words:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
-  const shelfButton=it=>'<button type="button" class="parcel-tile" data-item="'+catalog.indexOf(it)+'">'+miniature(it)+'<span>'+esc(it.name)+'</span></button>';
-  function rememberShop(){
-    shopScroll=dialog.scrollTop;
-    dialog.querySelectorAll('.postal-strip').forEach((strip,i)=>stripOffsets.set(i,strip.querySelector('.strip-items').scrollLeft));
-  }
-  const wireTiles=back=>dialog.querySelectorAll('[data-item]').forEach(btn=>btn.onclick=()=>{backFromItem=back;if(back===browse)rememberShop();else returnScroll=dialog.scrollTop;chooseItem(catalog[Number(btn.dataset.item)]);});
-  function browse(){
-    dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
-    shell('Pick & post','The parcel shop','<div class="postal-shelves">'+availableCategories.map(cat=>{
-      const items=catalog.filter(it=>it.category===cat);
-      return '<section><h3>'+displayName(cat)+'</h3><div class="postal-strip"><button class="bubble previous" aria-label="Previous '+displayName(cat)+'">‹</button><div class="strip-items">'+items.map(shelfButton).join('')+'</div><button class="bubble following" aria-label="More '+displayName(cat)+'">›</button></div><button class="seam" data-cat="'+cat+'" aria-label="See all '+displayName(cat)+'">See all ↓</button></section>';
-    }).join('')+'</div>');
-    wireTiles(browse);dialog.scrollTop=shopScroll;
-    dialog.querySelectorAll('[data-cat]').forEach(btn=>btn.onclick=()=>{rememberShop();group=btn.dataset.cat;returnScroll=0;gallery();});
-    dialog.querySelectorAll('.postal-strip').forEach((strip,i)=>{
-      const row=strip.querySelector('.strip-items'), prev=strip.querySelector('.previous'), next=strip.querySelector('.following');
-      row.scrollLeft=stripOffsets.get(i)||0;
-      const sync=()=>{prev.disabled=row.scrollLeft<2;next.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-2};
-      prev.onclick=()=>row.scrollBy({left:-row.clientWidth,behavior:'smooth'});next.onclick=()=>row.scrollBy({left:row.clientWidth,behavior:'smooth'});row.onscroll=sync;requestAnimationFrame(sync);
-    });
-  }
   function wheel(){
     disposeReel?.();disposeReel=null;
     mountCategoryWheel(dialog,{initialCategory:group,onBack:()=>dialog.close(),onBrowse:category=>{
-      group=category;returnScroll=0;gallery();
+      group=category;gridScroll=0;library();
     }});
-    cancel=()=>dialog.close();dialog.scrollTop=0;
+    cancel=()=>dialog.close();navigateBack=cancel;dialog.scrollTop=0;
   }
-  function gallery(){
+  const designKey=item=>item.category+'/'+item.name;
+  function controls(){
+    const keys=['All',...availableCategories];
+    const filter=layout==='tabs'
+      ? '<div class="library-tabs" role="group" aria-label="Categories">'+keys.map(key=>'<button type="button" data-category="'+esc(key)+'" aria-pressed="'+(key===group)+'">'+esc(displayName(key))+'</button>').join('')+'</div>'
+      : '<select class="library-menu" aria-label="Category">'+keys.map(key=>'<option value="'+esc(key)+'" '+(key===group?'selected':'')+'>'+esc(displayName(key))+'</option>').join('')+'</select>';
+    return '<section class="library-filter" aria-label="Library filters"><div class="library-filter-head"><span>Categories</span><div class="library-layout" role="group" aria-label="Category layout">'+['tabs','menu'].map(key=>'<button type="button" data-layout="'+key+'" aria-pressed="'+(key===layout)+'">'+(key==='tabs'?'Tabs':'Menu')+'</button>').join('')+'</div></div>'+filter+'</section>';
+  }
+  function library(grid=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
-    const items=catalog.filter(it=>it.category===group);
-    const back=options.wheel?wheel:guest?()=>dialog.close():browse;
+    const items=group==='All'?catalog:catalog.filter(item=>item.category===group);
     if(group==='Photos')items.sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
-    const label=displayName(group),unit=group==='Photos'?'frames':'designs';
-    shell(label,items.length+' '+unit,backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All '+unit+' <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>',back);
-    const first=Math.max(0,items.findIndex(item=>item.name===chosenDesign.get(group)));
-    disposeReel=mountFrameReel(dialog,items,first,reelPreview,item=>chosenDesign.set(group,item.name),item=>{
-      backFromItem=gallery;chooseItem(item);
+    const label=group==='All'?'All designs':displayName(group),unit=group==='Photos'?'frames':'designs';
+    const back=grid?()=>library():options.wheel?wheel:()=>dialog.close();
+    let content;
+    if(grid){
+      content='<div class="library-grid">'+items.map((item,i)=>'<button type="button" data-design="'+i+'" aria-label="Edit '+esc(item.name)+'"><span class="grid-art"></span><span>'+esc(item.name)+'</span></button>').join('')+'</div>';
+    }else{
+      content='<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index"><span>All '+unit+'</span><span class="frame-count"></span><button type="button" class="library-see-all" data-grid>See all</button></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>';
+    }
+    shell(label,items.length+' '+unit,backButton+controls()+content,back);
+    function filter(key){
+      if(group===key)return;
+      group=key;gridScroll=0;library(grid);
+      const destination=dialog.querySelector('.library-tabs [aria-pressed=true],.library-menu');
+      destination?.focus({preventScroll:true});
+    }
+    const menu=dialog.querySelector('.library-menu');if(menu)menu.onchange=()=>filter(menu.value);
+    dialog.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>filter(b.dataset.category));
+    const tab=dialog.querySelector('.library-tabs [aria-pressed=true]');
+    if(tab)tab.parentElement.scrollLeft=tab.offsetLeft-(tab.parentElement.clientWidth-tab.offsetWidth)/2;
+    dialog.querySelectorAll('[data-layout]').forEach(b=>b.onclick=()=>{
+      if(layout===b.dataset.layout)return;
+      layout=b.dataset.layout;try{localStorage.setItem(layoutKey,layout);}catch{}
+      if(grid)gridScroll=dialog.scrollTop;
+      library(grid);
+      dialog.querySelector('.library-layout [aria-pressed=true]').focus({preventScroll:true});
     });
+    const remember=item=>chosenDesign.set(group,designKey(item));
+    const pick=item=>{
+      remember(item);if(grid)gridScroll=dialog.scrollTop;
+      backFromItem=()=>library(grid);chooseItem(item);
+    };
+    if(grid){
+      const tiles=[...dialog.querySelectorAll('[data-design]')];
+      const paint=tile=>{tile.querySelector('.grid-art').innerHTML=reelPreview(items[Number(tile.dataset.design)]);};
+      const observer=new IntersectionObserver(entries=>{
+        for(const {target,isIntersecting} of entries)if(isIntersecting){paint(target);observer.unobserve(target);}
+      },{root:dialog,rootMargin:'300px'});
+      for(const tile of tiles){
+        observer.observe(tile);
+        tile.onclick=()=>pick(items[Number(tile.dataset.design)]);
+      }
+      disposeReel=()=>observer.disconnect();
+      dialog.scrollTop=gridScroll;
+    }else{
+      dialog.querySelector('[data-grid]').onclick=()=>{gridScroll=0;library(true);};
+      const first=Math.max(0,items.findIndex(item=>designKey(item)===chosenDesign.get(group)));
+      disposeReel=mountFrameReel(dialog,items,first,reelPreview,remember,pick);
+    }
   }
   function confirmExit(action){
     if(!dirty){action();return}
@@ -157,6 +203,13 @@ export async function openShop(onTest, initialCategory, options={}){
     shell(current.name,(step+1)+' of '+seq.length+' · '+page,'<div class="parcel-canvas" role="img" aria-label="Parcel preview"></div><div class="parcel-controls">'+controls+'</div><div class="parcel-actions">'+backButton+actions+'</div>',()=>{if(step){step--;if(stages()[step]==='Place on screen')draft.layer='framePos';edit();}else confirmExit(backFromItem);});
     for(const [label,accessible,key,fallback] of editableColours){
       dialog.querySelector('.ink-row').append(colourButton(label,accessible,draft[key]||fallback,value=>{draft[key]=value;dirty=true;paint();}));
+    }
+    if(editableColours.length){
+      const key=page==='Write'?'font':'extraFont',picker=document.createElement('select');
+      picker.className='note-font';picker.setAttribute('aria-label',page==='Write'?'Note font':'Banner font');
+      for(const label of Object.keys(fonts))picker.append(new Option(label,label));
+      picker.value=draft[key]||'Handwritten';picker.onchange=()=>{draft[key]=picker.value;dirty=true;paint();};
+      dialog.querySelector('.ink-row').append(picker);
     }
     dialog.querySelector('[data-next]')?.addEventListener('click',()=>{if(page==='Upload photo'&&!draft.photo)return report(new Error('Choose a picture first.'));if(page==='Write'&&!draft.words.trim())return report(new Error('Add a few words first.'));step++;edit()});
     dialog.querySelectorAll('[data-setting],[data-range],[data-text]').forEach(el=>el.oninput=()=>{const k=el.dataset.setting||el.dataset.range||el.dataset.text;draft[k]=el.dataset.range?Number(el.value):el.value;dirty=true;paint()});
@@ -203,6 +256,7 @@ export async function openShop(onTest, initialCategory, options={}){
   }
   try{catalog=await getCatalog();availableCategories=categories;
     if(guest){catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
-    if(dialog.open){if(options.wheel){group=initialCategory;wheel();}else if(availableCategories.includes(initialCategory)){group=initialCategory;gallery()}else browse()}}
+    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(options.wheel)wheel();else library();}
+  }
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }

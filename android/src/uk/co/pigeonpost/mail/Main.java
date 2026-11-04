@@ -28,6 +28,7 @@ public class Main extends Activity {
     private int dp(int n){return Math.round(getResources().getDisplayMetrics().density*n);}
     void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);
+        if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::handleBack);
         frame=new FrameLayout(this);web=new WebView(this);frame.addView(web);setContentView(frame);bars(Mail.prefs(this).getBoolean("night",true));
         frame.setOnApplyWindowInsetsListener((v,i)->{
             if(Build.VERSION.SDK_INT>=30){android.graphics.Insets bars=i.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);}
@@ -69,6 +70,11 @@ public class Main extends Activity {
               .setPositiveButton("Set up delivery",(d,k)->settings()).setNegativeButton("Later",null).show();
         }
     }
+    private void handleBack(){
+        if(!webReady){finish();return;}
+        web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
+    }
+    @Override public void onBackPressed(){handleBack();}
     protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){

@@ -2,7 +2,7 @@ import {mountCategoryWheel} from './shop/category-wheel.mjs';
 import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom} from './post/mailbox.mjs';
 import {header,home,wireRails,demoPeople} from './post/home.mjs';
 import {installSocial} from './post/social.mjs';
-import {openShop} from './shop/shop.mjs';
+import {openShop,backInShop} from './shop/shop.mjs';
 import{createId,STORAGE_KEY,FRAMES,COLOURS,loadState,validateMessage,makeMessage,escapeHtml as esc}from'./domain.mjs';
 const app=document.getElementById('app'),dialog=document.getElementById('flow'),notice=document.getElementById('notice');
 let raw=null;try{raw=localStorage.getItem(STORAGE_KEY)}catch{}
@@ -127,3 +127,18 @@ if(window.Pigeon){state.receiving=Pigeon.isOpen();
   let signature='';setInterval(()=>{if(document.hidden||tab!=='inbox'||document.querySelector('dialog[open]'))return;const next=Pigeon.mailbox()+Pigeon.friendsCached();if(next!==signature){signature=next;render();}},3000);
 }
 render();setTimeout(catchUp,600);setInterval(catchUp,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)catchUp()});
+
+window.pigeonBack=()=>{
+  const top=document.activeElement?.closest('dialog[open]');
+  if(top?.id==='mail-window'){
+    const back=top.querySelector('[data-mb=back],[data-mb=edit]');if(back)back.click();else top.close();return true;
+  }
+  if(backInShop())return true;
+  const mail=document.querySelector('#mail-window');
+  if(mail.open){mail.close();return true;}
+  const socialDialog=document.querySelector('#social-flow');
+  if(socialDialog.open){const back=socialDialog.querySelector('[data-prev]');if(back)back.click();else socialDialog.close();return true;}
+  if(dialog.open){const back=dialog.querySelector('[data-flow=back]');if(back)back.click();else cancel();return true;}
+  if(tab!=='home'){tab='home';render();return true;}
+  return false;
+};

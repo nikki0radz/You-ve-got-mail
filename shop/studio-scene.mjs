@@ -1,3 +1,4 @@
+import {fontSpec} from './lettering.mjs';
 import {composePNG,writeText} from './compositor.mjs';
 export const W=600,H=1120;
 export const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -22,7 +23,7 @@ export async function artwork(item,crop,words=''){
   return c;
 }
 export function noteBox(style){
-  return style===1?[.14,.10,.72,.80]:[.065,.10,.87,.80];
+  return style===1?[.075,.055,.85,.89]:[.042,.07,.916,.86];
 }
 export function banner(style,text,width=360,height=108,colours={}){
   const c=document.createElement('canvas');
@@ -42,14 +43,15 @@ export function banner(style,text,width=360,height=108,colours={}){
     ctx.roundRect(margin,margin,width-2*margin,height-2*margin,edge*.085);ctx.stroke();
   }
   const [x,y,w,h]=noteBox(style);
-  writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30');return c;
+  writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30',colours.font);return c;
 }
 export async function renderParcel(item,state){
   const canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=H*2;
   const ctx=canvas.getContext('2d');ctx.scale(2,2);ctx.imageSmoothingQuality='high';
   const paint=(img,l)=>ctx.drawImage(img,l.x,l.y,l.width,l.width*l.ratio);
-  paint(await artwork(item,{...state.crop,ink:state.ink,paper:state.paper},state.words),state.art);
+  paint(await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},state.words),state.art);
   if(state.second)paint(state.second.image,state.second);
+  if(state.note)await document.fonts.load(fontSpec(state.note.font,20));
   if(state.note)paint(banner(state.note.style,state.note.text,state.note.width,state.note.width*state.note.ratio,state.note),state.note);
   return canvas;
 }
