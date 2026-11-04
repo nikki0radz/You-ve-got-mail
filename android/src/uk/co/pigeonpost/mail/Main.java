@@ -38,7 +38,7 @@ public class Main extends Activity {
         WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(false);
         web.setWebViewClient(new WebViewClient(){
             public void onPageFinished(WebView v,String url){webReady=true;dispatchIntent();}
-            public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){return true;}
+            public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){Uri u=req.getUrl();return req.isForMainFrame()||!"https".equals(u.getScheme())||!HOST.equals(u.getHost());}
             public WebResourceResponse shouldInterceptRequest(WebView w,WebResourceRequest req){
                 Uri uri=req.getUrl();
                 if(!req.isForMainFrame()&&"data".equals(uri.getScheme())&&uri.toString().startsWith("data:image/"))return null;
