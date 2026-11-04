@@ -1,14 +1,17 @@
 import {screen,appVersion,elements,numbers,choices,colours,stickerIds,empty,cleanLayout,current,newBook,record} from './model.mjs';
+import {mountReview,exportReview} from './review.mjs';
 const $=id=>document.getElementById(id),frames=[...document.querySelectorAll('iframe')];
 const KEY='pigeon.design.workroom.key.v1',CACHE='pigeon.design.workroom.cache.v1';
 const cached=()=>{try{return JSON.parse(localStorage.getItem(CACHE))||{}}catch{return {}}};
 const initial=cached();let key=localStorage.getItem(KEY)||'',book=initial.book||newBook(),version=initial.version||0,profile=initial.profile||null;
 let layout=cleanLayout(initial.working||current(book)?.revisions.at(-1)?.layout),dirty=!!initial.dirty,selected='row',editing=true,grid=0,locked=false,conflict=false;
 $('name').value=initial.name||current(book)?.name||'Postcard layout';
+let comments=structuredClone(initial.comments??current(book)?.revisions.at(-1)?.comments??[]);
+const review=mountReview(frames,()=>comments,()=>update());
 const ids=['All in','Bad beat','I’m horny','Unimpressed','I’m tired','I miss you'];
 const status=msg=>$('status').textContent=msg;
 const surface=f=>f.contentWindow?.designSurface;
-function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
+function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,comments,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
 function dimensions(){
   const fits=p=>Number.isFinite(p?.width)&&p.width>=150&&p.width<=1600&&Number.isFinite(p.height)&&p.height>=200&&p.height<=2400;
   const main=fits(profile)?profile:{width:390,height:780,insets:{top:24,bottom:24}};
@@ -96,6 +99,7 @@ function inspector(){
   const snap=document.createElement('select');for(const n of [0,4,8,16])snap.append(option(n,n?n+' px':'Off'));snap.value=grid;snap.onchange=()=>{grid=Number(snap.value);renderFrames()};section.append(label('Snap when dragging',snap));holder.append(section);
 }
 function bookUI(){
+  review.render();
   const d=current(book),latest=d?.revisions.at(-1);$('revision').textContent=latest?(d.name+' · Revision '+d.revisions.length+' · '+latest.id.slice(0,8)+' · App '+latest.appVersion+(dirty?' · Edited':'')):'Original layout · App '+appVersion+(dirty?' · Edited':'');
   $('drafts').replaceChildren(...(book.drafts.length?book.drafts.map(x=>option(x.id,x.name)):[option('','No saved drafts')]));$('drafts').value=book.active||'';
   const prior=$('history').value;$('history').replaceChildren(...(d?.revisions||[]).map((r,i)=>option(r.id,'Revision '+(i+1)+' · '+r.id.slice(0,8)+(d.approved===r.id?' · Approved':''))).reverse());
@@ -113,7 +117,7 @@ async function read(k,replace){
   const data=await api('read',{key:k});
   if(data.book&&(data.book.schema!==1||data.book.screen!==screen||!Array.isArray(data.book.drafts)))throw Error('This workspace uses a different screen or format.');
   profile=data.profile;
-  if(replace){book=data.book||newBook();version=data.version;const d=current(book);layout=cleanLayout(d?.revisions.at(-1)?.layout);$('name').value=d?.name||'Postcard layout';dirty=false;conflict=false;selected='row';}
+  if(replace){book=data.book||newBook();version=data.version;const d=current(book);layout=cleanLayout(d?.revisions.at(-1)?.layout);comments=structuredClone(d?.revisions.at(-1)?.comments||[]);$('name').value=d?.name||'Postcard layout';dirty=false;conflict=false;selected='row';}
   dimensions();renderFrames();bookUI();elList();inspector();cache();
 }
 async function commit(next){if(conflict)throw Error('Reconnect to load the latest workspace first.');await ensureKey();const r=await api('save',{key,version,book:next});book=next;version=r.version;cache();}
@@ -121,13 +125,20 @@ function action(fn){return async()=>{if(locked)return;locked=true;document.query
 async function save(copy=false){
   const name=$('name').value.trim();if(!name)throw Error('Give your draft a name first.');
   const next=structuredClone(book),dname=copy?name+' (copy)':name;
-  const rev=record(next,dname,layout,copy);await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
+  const rev=record(next,dname,layout,copy);rev.comments=structuredClone(comments);await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
   status('Saved '+dname+' · '+rev.id.slice(0,8)+'. On your phone, tap Refresh draft.');
 }
+$('export').onclick=()=>{
+  const d=current(book),rev=d?.revisions.at(-1);
+  exportReview({name:$('name').value.trim()||'Postcard layout',draftId:d?.id||null,baseRevision:rev?.id||null,
+    state:dirty||!rev?'Working copy':'Saved revision',approved:!!rev&&!dirty&&d.approved===rev.id,
+    appVersion,screen,layout:cleanLayout(layout),comments,targets:Object.fromEntries(Object.keys(layout.styles).map(k=>[k,nice(k)]))});
+  status('Review file downloaded. Attach the .json file to this chat.');
+};
 $('save').onclick=action(()=>save());$('duplicate').onclick=action(()=>save(true));
-$('restore').onclick=()=>{const r=current(book)?.revisions.find(r=>r.id===$('history').value);if(r){layout=cleanLayout(r.layout);selected='row';update();select('row');status('Revision '+r.id.slice(0,8)+' restored locally. Save draft to create a new revision.');}};
+$('restore').onclick=()=>{const r=current(book)?.revisions.find(r=>r.id===$('history').value);if(r){layout=cleanLayout(r.layout);comments=structuredClone(r.comments||[]);selected='row';update();select('row');status('Revision '+r.id.slice(0,8)+' restored locally. Save draft to create a new revision.');}};
 $('approve').onclick=action(async()=>{const next=structuredClone(book),d=current(next);d.approved=$('history').value;await commit(next);bookUI();status('Approval recorded for '+d.approved.slice(0,8)+'.');});
-$('drafts').onchange=action(async()=>{const id=$('drafts').value;if(dirty&&!confirm('Discard unsaved edits and switch drafts?')){bookUI();return;}const next=structuredClone(book);next.active=id;try{await commit(next)}catch(e){bookUI();throw e}const d=current(book);layout=cleanLayout(d.revisions.at(-1).layout);dirty=false;$('name').value=d.name;selected='row';cache();bookUI();select('row');status('Active draft changed. Refresh draft on your phone to follow it.');});
+$('drafts').onchange=action(async()=>{const id=$('drafts').value;if(dirty&&!confirm('Discard unsaved edits and switch drafts?')){bookUI();return;}const next=structuredClone(book);next.active=id;try{await commit(next)}catch(e){bookUI();throw e}const d=current(book);layout=cleanLayout(d.revisions.at(-1).layout);comments=structuredClone(d.revisions.at(-1).comments||[]);dirty=false;$('name').value=d.name;selected='row';cache();bookUI();select('row');status('Active draft changed. Refresh draft on your phone to follow it.');});
 $('name').oninput=()=>{dirty=true;cache();bookUI()};
 $('pair').onclick=action(async()=>{$('pairDialog').showModal();$('key').value=await ensureKey();$('pair-status').textContent=profile?'Phone measurements received.':'Waiting for your phone to report its measurements.'});
 $('copy').onclick=action(async()=>{await navigator.clipboard.writeText($('key').value);$('pair-status').textContent='Key copied.'});

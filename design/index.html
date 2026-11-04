@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Postcard workroom · You've Got Mail</title><link rel="stylesheet" href="editor.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Postcard workroom · You've Got Mail</title><link rel="stylesheet" href="editor.css?v=review-1"></head>
 <body>
-<header class="mast"><div class="brand"><span class="mark">✉</span><div><small>PIGEON POST</small><b>Design workroom</b></div></div><div class="header-tools"><button id="pair">Pair phone</button><button id="save" class="primary">Save draft</button></div></header>
+<header class="mast"><div class="brand"><span class="mark">✉</span><div><small>PIGEON POST</small><b>Design workroom</b></div></div><div class="header-tools"><button id="export">Export for chat</button><button id="pair">Pair phone</button><button id="save" class="primary">Save draft</button></div></header>
 <main>
 <section class="workspace">
 <div class="intro"><div><small>YOU’VE GOT MAIL &nbsp; / &nbsp; DESIGN MODE</small><h1>Postcard composer</h1><p id="revision">Original layout · App 0.1.8</p></div><img src="../assets/home/mascot.webp" alt=""></div>
@@ -12,9 +12,10 @@
 <p class="hint" id="bench-hint">Click inside a phone to select an element. Use Try screen to upload a photo or write on the postcard.</p>
 </section>
 <aside><section><small>01 &nbsp; / &nbsp; INSPECTOR</small><h2>Element settings</h2><label>Selected element<select id="element"></select></label><p id="scope"></p><div id="inspector"></div></section>
-<section><small>02 &nbsp; / &nbsp; VERSION BOOK</small><h2>Drafts & approval</h2><label>Draft name<input id="name" maxlength="64" value="Postcard layout"></label>
+<section><small>DESIGN REVIEW</small><h2>Comments</h2><p>Right-click a control or box in either phone. Choose the element or its surrounding group.</p><div id="comments"></div></section><section><small>02 &nbsp; / &nbsp; VERSION BOOK</small><h2>Drafts & approval</h2><label>Draft name<input id="name" maxlength="64" value="Postcard layout"></label>
 <label>Saved drafts<select id="drafts"></select></label><label>Revision<select id="history"></select></label>
 <div class="stack"><button id="restore">Restore revision</button><button id="duplicate">Duplicate draft</button><button id="approve">Approve saved revision</button></div><p id="approval"></p></section></aside></main>
 
+<dialog id="commentDialog"><form id="commentForm"><small>DESIGN REVIEW</small><h2>Leave a comment</h2><label>Comment on<select id="commentTarget"></select></label><p id="commentDevice"></p><label>Your feedback<textarea id="commentText" required maxlength="2000" rows="4" placeholder="What would you change here?"></textarea></label><div class="stack"><button type="button" id="commentCancel">Cancel</button><button type="submit">Keep comment</button></div></form></dialog>
 <dialog id="pairDialog"><form method="dialog"><button class="close" aria-label="Close">×</button></form><small>DEVICE PAIRING</small><h2>Connect your phone</h2><p>Install the test update. In Settings → Design Mode, enter this private key and refresh your draft. Anyone with this key can access the workspace.</p><a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.8.apk">Download Android 0.1.8</a><label>Workspace key<input id="key" autocomplete="off" spellcheck="false" placeholder="32-character pairing key"></label><div class="stack"><button id="copy">Copy key</button><button id="connect">Connect to this workspace</button><button id="measure">Refresh phone measurements</button></div><p id="pair-status" role="status"></p></dialog>
-<script type="module" src="editor.mjs"></script></body></html>
+<script type="module" src="editor.mjs?v=review-1"></script></body></html>

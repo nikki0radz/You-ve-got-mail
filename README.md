@@ -8,6 +8,8 @@ Open the postcard composer on a laptop. **Edit elements** selects controls and *
 
 Install [Android 0.1.8](https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.8.apk). Choose **Pair phone** on the laptop, then open **Settings → Design Mode** on Android and enter the private workspace key. **Refresh draft** shows the saved revision in the app. On the laptop, **Pair phone → Refresh phone measurements** loads the usable viewport, system insets and text scale. The narrow comparison uses the same text scale. Browser rendering can differ from the Android WebView.
 
+Right-click a control or box in either laptop preview to comment on it or its surrounding group. **Export for chat** downloads the current layout and its comments as one JSON file you can attach in chat, including unsaved edits.
+
 Drafts contain versioned visual settings. Photos and typed test messages stay in each preview. Duplicating creates a separate draft. Restoring a revision brings its settings into the editor, and saving appends a revision. Approval records a choice for later publication. The main composer keeps its released design until a separate release.
 
 ## Try it on Android
