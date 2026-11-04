@@ -29,7 +29,7 @@ function friend(f){
 }
 export function home(state){
   const on=state.receiving;
-  return `<section class="postal-hero"><img src="${folder}mascot.webp" alt="Haloed pigeon holding a letter"><div><h1>Go on,<br>send them<br>something.</h1><p>How else will they know you're thinking about them?</p></div></section>
+  return `<section class="postal-hero"><img src="${folder}mascot.webp" alt="Pigeon wearing a messenger bag, perched on a green letterbox"><div><h1>Go on,<br>send them<br>something.</h1><p>How else will they know you're thinking about them?</p></div></section>
   <label class="postal-receiving ${on?'open':'closed'}"><span class="postal-envelope">${on?'':'🚫'}</span>
   <span><strong>${on?'Open to mail':'Closed to mail'}</strong><small>${on?'Interruptions welcome.':'Do not disturb.'}</small></span>
   <span class="postal-switch"><input id="receiving" type="checkbox" role="switch" aria-label="Receive mail" ${on?'checked':''}><b>${on?'ON':'OFF'}</b><i></i></span></label>

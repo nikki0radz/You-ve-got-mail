@@ -31,13 +31,13 @@ async function scaled(data){
   }
   return data;
 }
-function mission(){
-  steps.innerHTML='<div class="dossier"><div><b class="seal">CLASSIFIED</b>Recipient　Nicole<br>Allowance　1 parcel</div><img src="assets/home/mascot.webp" alt="Pigeon courier"></div><p class="eyebrow">PIGEON INTELLIGENCE BUREAU</p><h1>Operation: distract Nicole.</h1><p id="brief">Nicole has authorised one surprise on her phone. Your assignment is to choose what lands.</p><button class="mission-go" id="accept">Accept the mission</button><button class="quiet" id="decline">I was never here.</button>';
-  status.textContent=preview?'Design preview · Sending is disabled.':'';
+function invitation(){
+  steps.innerHTML='<section class="invitation"><img class="courier" src="assets/home/mascot.webp?v=satchel" alt="Pigeon with a messenger bag on a green letterbox"><p class="eyebrow">A PIGEON FROM NICOLE</p><h1>Got a minute for Nicole?</h1><p id="brief">She sent you a one-time link. Pick a little something and this pigeon will drop it onto her phone.</p><button class="accept" id="accept">Alright, pigeon. I’m in.</button><button class="quiet" id="decline">Tell her I’m out.</button></section>';
+  status.textContent='';
   steps.querySelector('#accept').onclick=choose;
   steps.querySelector('#decline').onclick=()=>{
-    steps.innerHTML='<h2>Your alibi checks out.</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to the briefing</button>';
-    steps.querySelector('#back').onclick=mission;
+    steps.innerHTML='<h2>The pigeon will be discreet.</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
+    steps.querySelector('#back').onclick=invitation;
   };
 }
 function choose(){
@@ -67,7 +67,7 @@ function showReceipt(key){
   const check=async()=>{try{const r=await api('receipt',key);status.textContent=r.reply?'Reply: '+r.reply:'No reply yet.';}catch(err){status.textContent=err.message;}};
   steps.querySelector('button').onclick=check;check();
 }
-if(preview)mission();
+if(preview)invitation();
 else if(/^reply-[a-f0-9]{64}$/.test(token))showReceipt(token.slice(6));
 else if(/^[a-f0-9]{64}$/.test(token)){try{await api('link',token);choose();}catch(e){status.textContent=e.message;}}
 else status.textContent='Open the full invitation link your friend shared with you.';
