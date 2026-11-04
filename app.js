@@ -153,3 +153,5 @@ window.pigeonBack=()=>{
   if(tab!=='home'){tab='home';render();return true;}
   return false;
 };
+
+if(document.documentElement.dataset.workroom==='arrival')window.previewArrival=()=>start({type:'arrival',message:{type:'picture',image:testPigeon,sender:'Sample sender',text:'Preview delivery'}});

@@ -12,6 +12,11 @@ function candidates(event,doc){
   const path=event.composedPath(),targets=[];
   for(const node of path){
     if(!node.matches)continue;
+    if(node.dataset.workId){
+      const entry=doc.defaultView.designSurface?.inventory?.()[node.dataset.workId];
+      if(entry)targets.push({id:node.dataset.workId,label:entry[0],selector:entry[1]});
+      continue;
+    }
     if(node.dataset.designCopy)targets.push({id:node.dataset.designCopy,label:'Placed sticker',selector:'[data-design-copy="'+node.dataset.designCopy+'"]'});
     for(const [id,[label,selector]] of Object.entries(registry)){
       if(!node.matches(selector)||id==='pocket'||targets.some(t=>t.id===id))continue;
@@ -42,7 +47,7 @@ export function mountReview(frames,getComments,change){
       const device=frame.closest('.device');
       const heading=e.target.closest('dialog,.guest')?.querySelector('h2');
       open(targets,{preset:device.querySelector('header b').textContent,width:frame.contentWindow.innerWidth,
-        height:frame.contentWindow.innerHeight,view:heading?.textContent||'Postcard composer'});
+        height:frame.contentWindow.innerHeight,view:heading?.textContent||document.querySelector('main h1')?.textContent||'Page'});
     },true);
   }
   frames.forEach(f=>{f.addEventListener('load',()=>attach(f));attach(f)});

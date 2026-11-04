@@ -4,6 +4,8 @@ A pigeon delivers transparent PNGs. The Android test edition receives real parce
 
 ## [Open Design Mode](https://nikki0radz.github.io/You-ve-got-mail/design/index.html)
 
+On a laptop, use the page picker to open the home screen, mailbox, profile, settings, reply screens and guest delivery flow. The inspector scrolls independently. Click a control to see its rendered size, apply a button or layout preset, or copy a button style and paste it onto a different control. Additional page drafts save in this browser and can be exported for chat. Android 0.1.9 refreshes the postcard composer using the visual properties supported by that version.
+
 Open the postcard composer on a laptop. **Edit elements** selects controls and **Try screen** uses the real composer. Select **Composer toolbar**, set its gap and choose **Save draft**. The reference phone uses example dimensions until paired.
 
 Install [Android 0.1.9](https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.9.apk). Choose **Pair phone** on the laptop, then open **Settings → Design Mode** on Android and enter the private workspace key. **Refresh draft** shows the saved revision in the app. On the laptop, **Pair phone → Refresh phone measurements** loads the usable viewport, system insets and text scale. The narrow comparison uses the same text scale. Browser rendering can differ from the Android WebView.

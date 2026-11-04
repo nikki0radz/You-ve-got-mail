@@ -1,3 +1,5 @@
+import {appearance} from './appearance.mjs';
+import {extraCSS} from './templates.mjs';
 import {elements,cleanLayout,empty,screen} from './model.mjs';
 import {W,H} from '../shop/studio-scene.mjs';
 const dialog=document.querySelector('#parcel-shop'),sheet=document.createElement('style');
@@ -11,10 +13,10 @@ function apply(){
   let css='';
   for(const key of ['pocket',...Object.keys(layout.styles).filter(k=>k!=='pocket')]){
     const s=layout.styles[key];if(!s)continue;
-    const d={};
+    const d=extraCSS(s);
     for(const k of ['width','height','padding','margin','gap','fontSize','borderWidth'])if(k in s)d[k]=s[k]+'px';
     if(s.width&&['note','second'].includes(key))d.flex='0 0 auto';
-    if(s.height)d.minHeight='0';
+    if(s.width||s.height)d.boxSizing='border-box';if(s.height)d.minHeight='0';
     if('radius'in s)d.borderRadius=s.radius+'px';
     if('borderWidth'in s)d.borderStyle='solid';
     if('opacity'in s)d.opacity=s.opacity/100;
@@ -63,7 +65,7 @@ function inspect(key){
   const el=target(key);if(!el)return null;
   const c=getComputedStyle(el),rect=el.getBoundingClientRect();
   const rgba=s=>{const rgb=s.match(/\d+/g);return rgb?'#'+rgb.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join(''):'#ffffff';};
-  const s={width:Math.round(rect.width),height:Math.round(rect.height),gap:parseFloat(c.gap)||0,padding:parseFloat(c.paddingTop)||0,margin:parseFloat(c.marginTop)||0,fontSize:parseFloat(c.fontSize),borderWidth:parseFloat(c.borderTopWidth),radius:parseFloat(c.borderTopLeftRadius),opacity:Math.round(c.opacity*100),color:rgba(c.color),background:rgba(c.backgroundColor),borderColor:rgba(c.borderTopColor)};
+  const s={align:c.textAlign,font:c.fontFamily.split(',')[0].replace(/[\"']/g,''),width:Math.round(rect.width),height:Math.round(rect.height),gap:parseFloat(c.gap)||0,padding:parseFloat(c.paddingTop)||0,margin:parseFloat(c.marginTop)||0,fontSize:parseFloat(c.fontSize),borderWidth:parseFloat(c.borderTopWidth),radius:parseFloat(c.borderTopLeftRadius),opacity:Math.round(c.opacity*100),color:rgba(c.color),background:rgba(c.backgroundColor),borderColor:rgba(c.borderTopColor)};
   if(el.closest('.sample-phone')){const g=geometry(el,el.closest('.sample-phone'));s.x=g.x/W*100;s.y=g.y/H*100;}
   return s;
 }
@@ -101,7 +103,7 @@ function changed(){
 }
 new MutationObserver(changed).observe(dialog,{childList:true,subtree:true});
 window.designSurface={
-  inspect, toolbarReport(){
+  inspect,appearance:key=>appearance(target(key)),toolbarReport(){
     const row=target('row'),a=target('note'),b=target('second');if(!row||!a||!b)return '';
     if(Math.abs(a.getBoundingClientRect().top-b.getBoundingClientRect().top)>2)return 'Buttons wrap';
     if([a,b].some(el=>el.scrollWidth>el.clientWidth+1)||row.scrollWidth>row.clientWidth+1)return 'Toolbar clips';

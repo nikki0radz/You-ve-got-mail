@@ -1,3 +1,5 @@
+import {safeAppearance} from './appearance.mjs';
+import {buttons,layouts} from './templates.mjs';
 export const screen='postcard-composer', appVersion='0.1.9';
 export const elements={
   row:['Composer toolbar','.studio-tools'],note:['Add note','[data-tool=note]'],second:['Add sticker','[data-tool=second]'],
@@ -17,15 +19,21 @@ export const stickerIds=[125,126,163,151,159,162];
 export const empty=()=>({styles:{},copies:[]});
 export function cleanLayout(data){
   const out=empty();
+  for(const [key,max] of Object.entries({header:3,timing:2,receipt:2,calendar:2})){
+    const n=data?.variants?.[key];if(Number.isInteger(n)&&n>=0&&n<=max)(out.variants??={})[key]=n;
+  }
   for(const cp of Array.isArray(data?.copies)?data.copies.slice(0,16):[]){
     if(!/^copy-[a-f0-9-]{36}$/.test(cp?.id)||!stickerIds.includes(cp.asset)||out.copies.some(c=>c.id===cp.id))continue;
     out.copies.push({id:cp.id,asset:cp.asset});
   }
-  for(const k of [...Object.keys(elements),...out.copies.map(c=>c.id)]){
+  for(const k of [...Object.keys(elements),...Object.keys(data?.styles||{}).filter(k=>/^view-[a-z0-9]+$/.test(k)),...out.copies.map(c=>c.id)]){
     const styles={},raw=data?.styles?.[k];if(!raw||typeof raw!=='object')continue;
     for(const [key,[min,max]] of Object.entries(numbers))if(Number.isFinite(raw[key]))styles[key]=Math.max(min,Math.min(max,Math.round(raw[key]*10)/10));
     for(const key of colours)if(/^#[0-9a-f]{6}$/i.test(raw[key]))styles[key]=raw[key];
     for(const [key,values] of Object.entries(choices))if(values.includes(raw[key]))styles[key]=raw[key];
+    if(raw.decor)styles.decor=safeAppearance(raw.decor);
+    if(Object.hasOwn(buttons,raw.skin))styles.skin=raw.skin;
+    if(Object.hasOwn(layouts,raw.arrangement))styles.arrangement=raw.arrangement;
     if(Object.keys(styles).length)out.styles[k]=styles;
   }
   return out;
@@ -35,6 +43,6 @@ export function current(book){return book.drafts.find(d=>d.id===book.active)}
 export function record(book,name,layout,newDraft=false){
   let d=current(book);
   if(!d||newDraft){d={id:crypto.randomUUID(),name,approved:null,revisions:[]};book.drafts.push(d);book.active=d.id;}
-  d.name=name;d.revisions.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),screen,appVersion,layout:cleanLayout(layout)});
+  d.name=name;d.revisions.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),screen:book.screen,appVersion,layout:cleanLayout(layout)});
   return d.revisions.at(-1);
 }

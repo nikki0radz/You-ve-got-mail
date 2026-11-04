@@ -11,7 +11,7 @@ const date=value=>new Date(value).toLocaleString(undefined,{month:'short',day:'n
 const modes={open:'Open to mail',inbox:'Inbox only',closed:'Closed to mail'};
 const bird='<img class="reply-bird" src="assets/home/mascot.webp" alt="Pigeon post courier">';
 const button=(key,label)=>'<button class="mb-button" type="button" data-mb="'+key+'">'+label+'</button>';
-const thumb=id=>'https://appassets.androidplatform.net/mail-art/'+encodeURIComponent(id)+'.png';
+const thumb=id=>document.documentElement.dataset.workroom?'assets/guest/105.svg':'https://appassets.androidplatform.net/mail-art/'+encodeURIComponent(id)+'.png';
 function post(op,args={}){
   return new Promise((resolve,reject)=>{const id=++sequence;pending.set(id,{resolve,reject});Pigeon.post(id,op,JSON.stringify(args));});
 }
@@ -65,9 +65,9 @@ async function view(m,refresh){
   refresh();
 }
 export function friendsWindow(refresh){return friendsPage(refresh);}
-export function composeFrom(category,refresh){
+export function composeFrom(category,refresh,example){
   const draft={later:false,day:'',clock:'',target:'self'};
-  return openShop(async(png,name,group,reopen)=>{
+  const review=async(png,name,group,reopen)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=snapshot.friends||[];const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a pigeon',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
     page('Who is it for?','<img class="mail-proof small" src="'+image+'" alt="'+esc(name)+'"><label>Recipient<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel　✉</button>'+button('edit','✎ Edit parcel'));
@@ -81,5 +81,7 @@ export function composeFrom(category,refresh){
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
       page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong>'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+stylePicker('receipt','Receipt style',['Postcard','Flight ticket','Wax seal'])+button('done','Done'));
       decorateReceipt(el(),later);action('done',()=>{el().close();refresh();});});
-  },category,{studio:true});
+  };
+  if(example)return review(example.image,example.name,category,()=>composeFrom(category,refresh));
+  return openShop(review,category,{studio:true});
 }
