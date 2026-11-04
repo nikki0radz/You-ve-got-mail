@@ -1,5 +1,5 @@
 import {fontSpec} from './lettering.mjs';
-import {composePNG,writeText} from './compositor.mjs';
+import {composePNG,writeText,loadSheet} from './compositor.mjs';
 export const W=600,H=1120;
 export const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 export const bannerNames=['Paper strip','Ribbon','Airmail label'];
@@ -16,10 +16,10 @@ export function contain(layer){
   layer.y=clamp(layer.y,0,H-layer.width*layer.ratio);
   return layer;
 }
-export async function artwork(item,crop,words=''){
-  const src=await composePNG(item,{...crop,words,extra:'',shape:'Square'},2);
-  const g=geometry(item),c=document.createElement('canvas');c.width=Math.round(2*g.width);c.height=Math.round(2*g.height);
-  c.getContext('2d').drawImage(src,2*g.x,2*g.y,2*g.width,2*g.height,0,0,c.width,c.height);
+export async function artwork(item,crop,words='',density=2){
+  const src=await composePNG(item,{...crop,words,extra:'',shape:'Square'},density);
+  const g=geometry(item),c=document.createElement('canvas');c.width=Math.round(density*g.width);c.height=Math.round(density*g.height);
+  c.getContext('2d').drawImage(src,density*g.x,density*g.y,density*g.width,density*g.height,0,0,c.width,c.height);
   return c;
 }
 export function noteBox(style){
@@ -46,10 +46,11 @@ export function banner(style,text,width=360,height=108,colours={}){
   writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30',colours.font);return c;
 }
 export async function renderParcel(item,state,design=null){
-  const canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=H*2;
-  const ctx=canvas.getContext('2d');ctx.scale(2,2);ctx.imageSmoothingQuality='high';
+  const canvas=document.createElement('canvas');canvas.width=W*2.4;canvas.height=H*2.4;
+  const ctx=canvas.getContext('2d');ctx.scale(2.4,2.4);ctx.imageSmoothingQuality='high';
   const paint=(img,l)=>{ctx.globalAlpha=l.opacity??1;ctx.drawImage(img,l.x,l.y,l.width,l.width*l.ratio);ctx.globalAlpha=1;};
-  paint(await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},state.words),design?.art||state.art);
+  const art=item.master&&!item.maskSheet&&!item.textBox?await loadSheet(item.master):await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},state.words,2.5);
+  paint(art,design?.art||state.art);
   if(state.second)paint(state.second.image,design?.second||state.second);
   for(const copy of design?.copies||[]){await copy.image.decode();paint(copy.image,copy);}
   if(state.note)await document.fonts.load(fontSpec(state.note.font,20));

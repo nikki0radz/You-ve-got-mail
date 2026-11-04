@@ -1,4 +1,4 @@
-export const screen='postcard-composer', appVersion='0.1.8';
+export const screen='postcard-composer', appVersion='0.1.9';
 export const elements={
   row:['Composer toolbar','.studio-tools'],note:['Add note','[data-tool=note]'],second:['Add sticker','[data-tool=second]'],
   ready:['Ready for post','[data-tool=ready]'],photo:['Upload photo','[data-tool=photo]'],back:['Designs','[data-tool=back]'],

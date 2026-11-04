@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 /** Isolated, read-only composer preview. The main mailbox bridge is never installed here. */
 public final class DesignMode extends Activity {
     static final String PAGE="https://"+Main.HOST+"/design/composer.html?phone=1";
-    static final String SCREEN="postcard-composer",VERSION="0.1.8";
+    static final String SCREEN="postcard-composer",VERSION="0.1.9";
     static final int LIMIT=1800000;
     private final ExecutorService io=Executors.newSingleThreadExecutor();
     private FrameLayout frame;
@@ -151,8 +151,9 @@ public final class DesignMode extends Activity {
             if(ds.length()==0){clearDraft();return;}
             for(int i=0;i<ds.length();i++){JSONObject doc=ds.getJSONObject(i);if(!active.equals(doc.getString("id")))continue;
                 JSONArray rs=doc.getJSONArray("revisions");if(rs.length()==0){clearDraft();return;}JSONObject rev=rs.getJSONObject(rs.length()-1);
-                if(!SCREEN.equals(rev.getString("screen"))||!VERSION.equals(rev.getString("appVersion")))throw new JSONException("version");
-                JSONObject next=new JSONObject().put("id",rev.getString("id")).put("name",doc.getString("name")).put("screen",SCREEN).put("appVersion",VERSION).put("layout",rev.getJSONObject("layout"));
+                String revisionVersion=rev.getString("appVersion");
+                if(!SCREEN.equals(rev.getString("screen"))||!("0.1.8".equals(revisionVersion)||VERSION.equals(revisionVersion)))throw new JSONException("version");
+                JSONObject next=new JSONObject().put("id",rev.getString("id")).put("name",doc.getString("name")).put("screen",SCREEN).put("appVersion",revisionVersion).put("layout",rev.getJSONObject("layout"));
                 draft=next;revision=next.getString("id");store(this).edit().putString("draft",next.toString()).apply();return;
             }throw new JSONException("active");
         }catch(Exception e){error="This draft doesn’t match this app version. The last compatible preview is kept."; }

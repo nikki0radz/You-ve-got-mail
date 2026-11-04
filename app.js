@@ -93,7 +93,16 @@ if(flow.type==='friend'){const f=state.friends.find(x=>x.id===flow.id);f.ring=!!
 if(flow.type==='schedule-setting'){state.scheduling=flow.enabled;persist();render();close();return}
 if(flow.type==='reply'){if(!flow.text?.trim())return error('Write a reply first.');const m=makeMessage({type:'message',text:flow.text,frame:flow.message.frame,colour:flow.message.colour});m.sender=state.profile.name;m.read=true;flow.message.read=true;delete flow.message.snoozeUntil;state.inbox.push(m);if(!persist()){state.inbox.pop();return}render();close();toast('Test reply saved here.');return}}
 async function deliver(draft){flow={type:'sending'};renderFlow();await new Promise(resolve=>setTimeout(resolve,650));if(!state.receiving){flow={type:'result',title:'Delivery paused.',message:'This device is not open to mail. Turn receiving on and try again.'};renderFlow();return}const message=makeMessage(draft);message.sender=state.friends.find(f=>f.id===draft.recipient)?.name||'Owen';state.inbox.push(message);if(!persist()){state.inbox.pop();flow={type:'result',title:'Could not save the test.',message:'Device storage is unavailable or full. No receipt was saved.'};renderFlow();return}render();flow=receive(message);renderFlow()}
-function test(){if(window.Pigeon){return nativeTest({recipient:'owen',image:testPigeon,text:'Your post pigeon',type:'picture',kind:'a sticker'});}if(!state.receiving){start({type:'blocked'});return}start({type:'sending'});deliver({recipient:'owen',type:'picture',image:testPigeon,text:'Your post pigeon',...state.defaults})}
+async function test(){if(window.Pigeon){
+  try{
+    const {loadSheet}=await import('./shop/compositor.mjs');
+    const art=await loadSheet('assets/guest/162.svg');
+    const canvas=document.createElement('canvas');canvas.width=1440;canvas.height=2688;
+    const width=1140,height=width*art.naturalHeight/art.naturalWidth;
+    canvas.getContext('2d').drawImage(art,(canvas.width-width)/2,(canvas.height-height)/2,width,height);
+    return await nativeTest({recipient:'owen',image:canvas.toDataURL('image/png'),text:'Your post pigeon',type:'picture',kind:'a sticker'});
+  }catch{toast('Could not prepare the test sticker. Try again.');return;}
+}if(!state.receiving){start({type:'blocked'});return}start({type:'sending'});deliver({recipient:'owen',type:'picture',image:testPigeon,text:'Your post pigeon',...state.defaults})}
 async function nativeTest(d){
   let image=d.image;
   if(!image||(!image.startsWith('data:image/png;')&&image!==testPigeon)){

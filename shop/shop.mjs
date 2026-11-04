@@ -2,7 +2,7 @@ import {fonts} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
 import {guestItems,guestSelection} from './guest-selection.mjs';
-import {startGuestStudio} from './guest-studio.mjs?v=visible-remove-1';
+import {startGuestStudio} from './guest-studio.mjs?v=editable-reminders';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
@@ -13,7 +13,7 @@ const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cc
 let appCatalog;
 async function getCatalog(){
   if(appCatalog)return appCatalog;
-  const response=await fetch('assets/post/catalog.json');
+  const response=await fetch('assets/post/catalog.json?v=editable-reminders');
   if(!response.ok)throw new Error('The shop could not load. Open it again to retry.');
   appCatalog=await response.json();return appCatalog;
 }
@@ -101,7 +101,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       });
       return;
     }
-    draft={words:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
+    draft={words:it.labelPatch?it.name:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
   function wheel(){
     disposeReel?.();disposeReel=null;
     mountCategoryWheel(dialog,{initialCategory:group,onBack:()=>dialog.close(),onBrowse:category=>{
@@ -180,7 +180,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   function selectControl(key,opts){return '<label>'+key+'<select data-setting="'+key.toLowerCase()+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(draft[key.toLowerCase()]===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
   async function paint(){
     const token=++latest,slot=dialog.querySelector('.parcel-canvas');
-    try{const density=guest&&stages()[step]==='Ready'?2:1;const art=await composePNG(current,draft,density);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft,density):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
+    try{const density=stages()[step]==='Ready'?2:1;const art=await composePNG(current,draft,density);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft,density):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
     catch(e){if(token===latest)report(e)}
   }
   function edit(){

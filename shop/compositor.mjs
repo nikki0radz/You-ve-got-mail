@@ -1,7 +1,8 @@
+import {reminderRepair} from './reminder-label.mjs';
 import {fontSpec,writingBox} from './lettering.mjs';
 const sheets = new Map();
 
-function loadSheet(url) {
+export function loadSheet(url) {
   if (!sheets.has(url)) {
     const promise = new Promise((resolve, reject) => {
       const image = new Image();
@@ -86,7 +87,9 @@ export async function composePNG(item, draft, density = 1) {
   }
   ctx.drawImage(source,...region,x,y,width,height);
   ctx.restore();
-  if (item.textBox) {
+  const originalLabel=item.labelPatch&&draft.words===item.name&&!draft.font&&!draft.ink;
+  if(item.labelPatch&&!originalLabel)ctx.drawImage(reminderRepair(item,sheet),x,y,width,height);
+  if (item.textBox&&!originalLabel) {
     const [l,t,r,b]=writingBox(item);
     writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],draft.ink||item.ink,draft.font);
   }

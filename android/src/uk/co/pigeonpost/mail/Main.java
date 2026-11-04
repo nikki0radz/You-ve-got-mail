@@ -173,12 +173,21 @@ public class Main extends Activity {
             SharedPreferences p=Mail.prefs(Main.this);JSONObject data=new JSONObject();
             try{
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
+                data.put(ParcelFrost.MODE,ParcelFrost.mode(Main.this)).put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("blur",ParcelFrost.systemState(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();
         }
         @JavascriptInterface public void deliverySetting(String key,String value){
             SharedPreferences.Editor change=Mail.prefs(Main.this).edit();
+            if(ParcelFrost.MODE.equals(key)){
+                if("blur".equals(value)||"black".equals(value))change.putString(key,value).apply();
+                return;
+            }
+            if(ParcelFrost.OPACITY.equals(key)){
+                try{change.putInt(key,Math.max(0,Math.min(100,Integer.parseInt(value)))).apply();}catch(NumberFormatException ignored){}
+                return;
+            }
             if("warningSeconds".equals(key)){
                 if(!Arrays.asList("3","10","15").contains(value))return;
                 change.putInt(key,Integer.parseInt(value)).apply();return;
