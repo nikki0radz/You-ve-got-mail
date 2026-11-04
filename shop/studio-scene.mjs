@@ -24,17 +24,25 @@ export async function artwork(item,crop,words=''){
 export function noteBox(style){
   return style===1?[.14,.10,.72,.80]:[.065,.10,.87,.80];
 }
-export function banner(style,text){
-  const c=document.createElement('canvas');c.width=1200;c.height=360;
-  const ctx=c.getContext('2d');ctx.scale(2,2);ctx.lineWidth=3;
-  ctx.fillStyle=['#fff1cd','#c7ddcb','#fff9e9'][style];ctx.strokeStyle=['#a18b69','#537760','#456957'][style];
+export function banner(style,text,width=360,height=108){
+  const c=document.createElement('canvas');
+  c.width=Math.round(2*width);c.height=Math.round(2*height);
+  const ctx=c.getContext('2d');ctx.scale(2,2);
+  const edge=Math.min(width,height), inset=Math.max(1,edge*.017);
+  ctx.lineWidth=inset;ctx.fillStyle=['#fff1cd','#c7ddcb','#fff9e9'][style];ctx.strokeStyle=['#a18b69','#537760','#456957'][style];
   ctx.beginPath();
-  if(style===1){const pts=[[2,9],[598,9],[565,90],[598,171],[2,171],[35,90]];pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();}
-  else ctx.roundRect(2,3,596,174,style===2?25:8);
+  if(style===1){
+    const fold=Math.min(width*.065,height*.2);
+    const points=[[inset,inset],[width-inset,inset],[width-fold,height/2],[width-inset,height-inset],[inset,height-inset],[fold,height/2]];
+    points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();
+  }else ctx.roundRect(inset,inset,width-2*inset,height-2*inset,edge*(style===2?.14:.045));
   ctx.fill();ctx.stroke();
-  if(style===2){ctx.strokeStyle='#a45c50';ctx.lineWidth=3;ctx.setLineDash([12,9]);ctx.beginPath();ctx.roundRect(13,14,574,152,15);ctx.stroke();}
+  if(style===2){
+    const margin=edge*.08;ctx.strokeStyle='#a45c50';ctx.setLineDash([inset*4,inset*3]);ctx.beginPath();
+    ctx.roundRect(margin,margin,width-2*margin,height-2*margin,edge*.085);ctx.stroke();
+  }
   const [x,y,w,h]=noteBox(style);
-  writeText(ctx,text,[600*x,180*y,600*w,180*h],'#283c30');return c;
+  writeText(ctx,text,[width*x,height*y,width*w,height*h],'#283c30');return c;
 }
 export async function renderParcel(item,state){
   const canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=H*2;
@@ -42,6 +50,6 @@ export async function renderParcel(item,state){
   const paint=(img,l)=>ctx.drawImage(img,l.x,l.y,l.width,l.width*l.ratio);
   paint(await artwork(item,state.crop,state.words),state.art);
   if(state.second)paint(state.second.image,state.second);
-  if(state.note)paint(banner(state.note.style,state.note.text),state.note);
+  if(state.note)paint(banner(state.note.style,state.note.text,state.note.width,state.note.width*state.note.ratio),state.note);
   return canvas;
 }

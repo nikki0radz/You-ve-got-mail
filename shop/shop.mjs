@@ -15,7 +15,8 @@ async function getCatalog(){
 }
 function miniature(item){
   const [x,y,w,h]=item.rect;
-  return '<svg viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'" overflow="hidden"><image href="'+esc(item.sheet)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg></svg>';
+  const clip=item.artClip?' style="clip-path:path(evenodd, &quot;'+esc(item.artClip)+'&quot;)"':'';
+  return '<svg viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><g'+clip+'><svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'" overflow="hidden"><image href="'+esc(item.sheet)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg></g></svg>';
 }
 export async function openShop(onTest, initialCategory, guest=false){
   const dialog=document.querySelector('#parcel-shop');

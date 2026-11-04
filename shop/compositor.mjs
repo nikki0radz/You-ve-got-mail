@@ -67,8 +67,15 @@ export async function composePNG(item, draft, density = 1) {
     layer.drawImage(mask, ...item.rect, x,y,width,height);
     ctx.drawImage(photo,0,0,640,640);
   }
+  ctx.save();
+  if (item.artClip && !item.master) {
+    const clip = new Path2D();
+    clip.addPath(new Path2D(item.artClip), new DOMMatrix().translate(x,y).scale(width/sw,height/sh));
+    ctx.clip(clip,'evenodd');
+  }
   if (item.master) ctx.drawImage(sheet, x,y,width,height);
   else ctx.drawImage(sheet, ...item.rect, x,y,width,height);
+  ctx.restore();
   if (item.textBox) {
     const [l,t,r,b]=item.textBox;
     writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],item.ink);
