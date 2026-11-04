@@ -89,45 +89,29 @@ public class Main extends Activity {
         else startActivity(new Intent(this,OpenParcel.class).putExtra("id",id));
         i.removeExtra("id");
     }
-    protected void onResume(){super.onResume();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
+    protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
         if(req==41&&photo!=null){Uri u=res==RESULT_OK&&data!=null?data.getData():null;photo.onReceiveValue(u!=null&&"content".equals(u.getScheme())?new Uri[]{u}:null);photo=null;}
         if(req==42&&saveData!=null){String png=saveData;saveData=null;if(res==RESULT_OK&&data!=null&&data.getData()!=null)try(OutputStream out=getContentResolver().openOutputStream(data.getData())){out.write(android.util.Base64.decode(png.substring(22),0));toast("PNG saved");}catch(Exception e){toast("Could not save PNG");}}
     }
-    void settings(){
-        LinearLayout panel=new LinearLayout(this);panel.setOrientation(1);panel.setPadding(dp(18),dp(8),dp(18),dp(8));
-        RadioGroup openMode=choice(panel,"When open","fullPopup","Full pop-up","Notification only",true);
-        Switch unlock=option(panel,"Pop up 1 second after unlock","onUnlock",true);
-        unlock.setEnabled(Mail.prefs(this).getBoolean("fullPopup",true));
-        openMode.setOnCheckedChangeListener((group,id)->{boolean full=id==group.getChildAt(0).getId();Mail.prefs(this).edit().putBoolean("fullPopup",full).apply();unlock.setEnabled(full);if(!full)UnlockQueue.reset(this);});
-        choice(panel,"When closed","closedInbox","Inbox only","Completely closed",Mail.prefs(this).getBoolean("quiet",true));
-        option(panel,"Warn before a pop-up","warning",true);
-        Button delayButton=new Button(this);delayButton.setText("Warning time · "+Mail.delay(this)+" seconds");panel.addView(delayButton);
-        delayButton.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Warning time").setItems(new String[]{"3 seconds","10 seconds","15 seconds"},(dialog,i)->{
-            int seconds=new int[]{3,10,15}[i];Mail.prefs(this).edit().putInt("warningSeconds",seconds).apply();delayButton.setText("Warning time · "+seconds+" seconds");
-        }).show());
-        option(panel,"Notify me when friends change status","friendAlerts",false);
-        button(panel,"Phone notifications · "+(Mail.enabled(this,Mail.ALERT)?"on":"set up"),()->{
+    void settings(){pendingReply="@settings";dispatchIntent();}
+    void openSetting(String key){
+        switch(key){
+        case "overlay":startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));break;
+        case "notifications":
             if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=0)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},9);
             else startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()));
-        });
-        button(panel,"Incoming warning banner settings",()->startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT)));
-        button(panel,"Display over apps · "+(Settings.canDrawOverlays(this)?"on":"set up"),()->startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName()))));
-        if(Build.VERSION.SDK_INT>=31)button(panel,"Precise schedules · "+(Mail.exact(this)?"on":"set up"),()->startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName()))));
-        button(panel,"Check for updates",this::checkUpdates);
-        button(panel,"Listen for mail for 30 minutes",this::listen);
-        TextView tip=new TextView(this);tip.setText("Display over apps lets a parcel appear above your current screen. Notification only lets you open it when you choose.");panel.addView(tip);
-        ScrollView scroll=new ScrollView(this);scroll.addView(panel);new AlertDialog.Builder(this).setTitle("Notification settings").setView(scroll).setPositiveButton("Done",null).show();
+            break;
+        case "warningChannel":startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT));break;
+        case "precise":if(Build.VERSION.SDK_INT>=31)startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName())));else toast("Precise schedules are available.");break;
+        case "updates":checkUpdates();break;
+        case "listen":listen();toast("Listening for mail for 30 minutes.");break;
+        }
     }
-    RadioGroup choice(LinearLayout panel,String title,String key,String first,String second,boolean fallback){
-        TextView heading=new TextView(this);heading.setText(title);panel.addView(heading);
-        RadioGroup group=new RadioGroup(this);panel.addView(group);
-        for(String text:new String[]{first,second}){RadioButton radio=new RadioButton(this);radio.setId(View.generateViewId());radio.setText(text);group.addView(radio);}
-        group.check(group.getChildAt(Mail.prefs(this).getBoolean(key,fallback)?0:1).getId());
-        group.setOnCheckedChangeListener((g,id)->{Mail.prefs(this).edit().putBoolean(key,id==g.getChildAt(0).getId()).apply();PostOffice.syncSoon(this);});return group;
+    @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){
+        super.onRequestPermissionsResult(code,permissions,results);
+        if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);
     }
-    Switch option(LinearLayout parent,String title,String key,boolean initial){Switch sw=new Switch(this);sw.setText(title);sw.setPadding(0,dp(8),0,dp(8));sw.setChecked(Mail.prefs(this).getBoolean(key,initial));sw.setOnCheckedChangeListener((b,on)->{Mail.prefs(this).edit().putBoolean(key,on).apply();if("onUnlock".equals(key)&&!on)UnlockQueue.reset(this);});parent.addView(sw);return sw;}
-    void button(LinearLayout p,String title,Runnable action){Button b=new Button(this);b.setText(title);b.setOnClickListener(v->action.run());p.addView(b);}
     void checkUpdates(){
         toast("Checking for updates…");
         Mail.io.execute(()->{
@@ -183,6 +167,26 @@ public class Main extends Activity {
         }
         @JavascriptInterface public void cancelScheduled(String id){JSONObject m=Mail.meta(Main.this,id);if("scheduled".equals(m.optString("status"))){getSystemService(AlarmManager.class).cancel(Mail.action(Main.this,id,"arrive",false));Mail.state(Main.this,m,"cancelled");}}
 
+        @JavascriptInterface public String deliveryPrefs(){
+            SharedPreferences p=Mail.prefs(Main.this);JSONObject data=new JSONObject();
+            try{
+                for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
+                data.put("warningSeconds",Mail.delay(Main.this)).put("blur",ParcelFrost.systemState(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
+            }catch(JSONException ignored){}
+            return data.toString();
+        }
+        @JavascriptInterface public void deliverySetting(String key,String value){
+            SharedPreferences.Editor change=Mail.prefs(Main.this).edit();
+            if("warningSeconds".equals(key)){
+                if(!Arrays.asList("3","10","15").contains(value))return;
+                change.putInt(key,Integer.parseInt(value)).apply();return;
+            }
+            if(!Arrays.asList("fullPopup","onUnlock","warning","friendAlerts","closedInbox").contains(key))return;
+            boolean on="true".equals(value);change.putBoolean(key,on).apply();
+            if(!on&&("fullPopup".equals(key)||"onUnlock".equals(key)))runOnUiThread(()->UnlockQueue.reset(Main.this));
+            if("closedInbox".equals(key))PostOffice.syncSoon(Main.this);
+        }
+        @JavascriptInterface public void settingsAction(String key){runOnUiThread(()->openSetting(key));}
         @JavascriptInterface public void settings(){runOnUiThread(Main.this::settings);}
         @JavascriptInterface public void invite(){runOnUiThread(Main.this::invite);}
         @JavascriptInterface public void history(){runOnUiThread(Main.this::history);}

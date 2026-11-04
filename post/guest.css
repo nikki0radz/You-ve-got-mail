@@ -13,7 +13,7 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .guest p,.guest label{color:var(--copy)}
 .guest p{margin:0 0 16px}.guest #status{font-size:14px;margin:12px 0 0}.guest #status:empty{display:none}
 .guest button,.guest input{font:inherit;border-radius:12px;min-height:44px;padding:9px 12px}.guest button{background:var(--button);color:#fff9e8;border:1px solid var(--button);font-weight:700;margin:4px}
-.guest .accept{width:100%;margin:12px 0 0}.guest .quiet{display:block;margin:3px auto;background:var(--paper);color:var(--button);border-color:transparent;text-decoration:underline;text-underline-offset:3px}
+.guest .invitation .accept{width:100%;margin:12px 0 0}.guest .invitation .quiet{display:block;margin:3px auto;background:var(--paper);color:var(--button);border-color:transparent;text-decoration:underline;text-underline-offset:3px}
 .guest label{display:grid;margin:12px 0;font-weight:600}.guest input{background:#fffaf0;border:1px solid #7f846e;color:var(--heading)}
 .guest input::placeholder{color:#5d6859}.guest .proof{display:block;margin:auto;max-height:32dvh;max-width:90%;background:#c7d5c5;border-radius:12px}
 .guest .invitation .courier{display:block;margin-inline:auto;object-position:center;float:none}
@@ -40,7 +40,7 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .receipt-label{font:700 11px monospace;letter-spacing:.13em;color:#526a55}
 .receipt-sign{display:grid;place-items:center;background:#dce8d5;color:#355b43;width:58px;height:58px;margin:12px auto;border-radius:50%}.receipt-sign svg{width:32px;height:32px}
 .guest .delivery-receipt h2{font-size:clamp(25px,6vw,32px);margin:8px auto}.guest .delivery-receipt p{font-size:15px;margin:6px 0 12px}.receipt-faq{margin-top:18px;text-align:left;border-top:1px solid #c6c8b4}.receipt-faq details{border-bottom:1px solid #c6c8b4}.receipt-faq summary{padding:12px 2px;cursor:pointer;color:#344e39;font-weight:650}.guest .receipt-faq p{font-size:14px}.receipt-faq a{color:#365840}.reply:empty{display:none}.guest #check{background:#dce8d5;border:1px solid #9aa68c;color:#294938;border-radius:28px}
-.guest button:not(.wheel-orbs button){border-radius:32px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;box-shadow:0 1px 4px #172d282b;font-weight:700}
+.guest button:not(.wheel-orbs button, .invitation button){border-radius:32px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;box-shadow:0 1px 4px #172d282b;font-weight:700}
 .guest .dispatch-dock button{border:0;background:transparent;box-shadow:none}.guest .dispatch-dock [aria-pressed=true]{background:#faf4e5;box-shadow:0 1px 4px #172d282b}
 .guest .dispatch-actions{background:transparent;padding:0;border:0}.guest .dispatch-actions #send{min-height:54px;margin:4px 0;background:linear-gradient(115deg,#244b3c,#3b654c);box-shadow:0 4px 0 #173d2c,inset 0 0 0 2px #68876a;color:#fff6df;border:1px solid #254c38;font:800 21px PostalBaloo,system-ui}
 .guest #send:after{content:"  ✉";padding-left:.35em}.guest .sender-label,.guest #sender{text-align:center}

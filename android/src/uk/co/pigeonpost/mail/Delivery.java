@@ -63,34 +63,29 @@ public class Delivery extends BroadcastReceiver {
     }
     static void closeActivityWindow(Activity c){if(visible!=null&&visible.getContext()==c)clear(c);}
     static void clear(Context c){
-        if(glass!=null){Dialog previous=glass;glass=null;visible=null;previous.dismiss();UnlockQueue.afterUnlock(c.getApplicationContext());}
+        if(visible==null)return;
+        Dialog previous=glass;Context host=visible.getContext();glass=null;visible=null;
+        if(previous!=null)previous.dismiss();
+        else if(host instanceof OpenParcel&&!((Activity)host).isFinishing())((Activity)host).finish();
+        UnlockQueue.afterUnlock(c.getApplicationContext());
     }
-    static void show(Context c,JSONObject m){present(c,m,null,true);}
-    static void present(Context c,JSONObject m,android.os.IBinder appToken,boolean automatic){
+    static void show(Context c,JSONObject m){present(c,m,true);}
+    static void present(Context c,JSONObject m,boolean automatic){
         String id=m.optString("id");if(visible!=null){notice(c,m,false);return;}
         try{
-            int type=appToken==null?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_APPLICATION_PANEL;
+            boolean inActivity=c instanceof OpenParcel;
             Context windowContext=c;
-            if(appToken==null&&Build.VERSION.SDK_INT>=30){
+            if(!inActivity&&Build.VERSION.SDK_INT>=30){
                 Display display=c.getSystemService(android.hardware.display.DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
-                windowContext=c.createDisplayContext(display).createWindowContext(type,null);
+                windowContext=c.createDisplayContext(display).createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,null);
             }
-            Dialog pane=new Dialog(windowContext,R.style.ParcelGlass);
-            Window window=pane.getWindow();
-            window.setType(type);window.setFormat(PixelFormat.TRANSLUCENT);
-            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
-            GradientDrawable frost=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0x2ce6f1ed,0x18778c8a,0x2732474c});
-            window.setBackgroundDrawable(frost);
-            WindowManager.LayoutParams attrs=window.getAttributes();
-            if(appToken!=null)attrs.token=appToken;
-            if(Build.VERSION.SDK_INT>=31){
-                float density=c.getResources().getDisplayMetrics().density;
-                attrs.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
-                attrs.setBlurBehindRadius(Math.round(24*density));
-                window.setBackgroundBlurRadius(Math.round(38*density));
+            Dialog pane=inActivity?null:new Dialog(windowContext,R.style.ParcelGlass);
+            Window window=inActivity?((Activity)c).getWindow():pane.getWindow();
+            if(pane!=null){
+                window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+                window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);pane.setCancelable(false);
             }
-            attrs.width=attrs.height=WindowManager.LayoutParams.MATCH_PARENT;window.setAttributes(attrs);
-            pane.setCancelable(false);
+            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
             FrameLayout root=new FrameLayout(c);ImageView art=new ImageView(c);
             art.setImageBitmap(BitmapFactory.decodeFile(Mail.image(c,id).getPath()));art.setScaleType(ImageView.ScaleType.FIT_CENTER);
             art.setContentDescription(Mail.label(m));root.addView(art,new FrameLayout.LayoutParams(-1,-1));
@@ -141,9 +136,10 @@ public class Delivery extends BroadcastReceiver {
                     }
                 });
             }
-            pane.setContentView(root);
-            pane.show();glass=pane;visible=root;window.setLayout(-1,-1);
+            if(inActivity)((Activity)c).setContentView(root);else{pane.setContentView(root);pane.show();}
+            glass=pane;visible=root;window.setLayout(-1,-1);
+            ParcelFrost.attach(windowContext,window);
             root.postDelayed(()->actions.setVisibility(View.VISIBLE),1000);
-        }catch(Exception e){clear(c);notice(c,m,false);}
+        }catch(Exception e){android.util.Log.w("Pigeon","Could not present parcel window",e);clear(c);notice(c,m,false);if(c instanceof OpenParcel)((Activity)c).finish();}
     }
 }

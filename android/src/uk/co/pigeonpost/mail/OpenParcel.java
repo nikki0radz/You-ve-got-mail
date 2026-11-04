@@ -24,10 +24,7 @@ public final class OpenParcel extends Activity {
         getSystemService(NotificationManager.class).cancel(id,1);
         if("warning".equals(m.optString("status")))Mail.state(this,m,"received");
         Delivery.clear(this);
-        if(Settings.canDrawOverlays(this)){Delivery.present(getApplicationContext(),m,null,false);finish();}
-        else{
-            getWindow().getDecorView().post(()->Delivery.present(this,m,getWindow().getDecorView().getWindowToken(),false));
-        }
+        Delivery.present(this,m,false);
     }
     protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
 }

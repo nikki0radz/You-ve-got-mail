@@ -14,3 +14,5 @@
 - On light surfaces, explicitly pair body, helper and placeholder text with a dark ink. Check rendered normal text contrast of at least 4.5:1 in each supported theme.
 
 - The pigeon is the postal courier mascot. Other illustrations can feature people, axolotls, bees, objects or any character that fits. Use the existing sticker art as the style reference for consistent rounded plum outlines, soft pastel colours, gentle shading and readable lettering. Avoid halo and yellow expression marks. Design love-note and reminder lettering into the objects themselves.
+
+- Before releasing any shared CSS or guest welcome changes, run scripts/check-invitation.cjs against the release candidate at 320px and 430px. Keep the approved reference images separate from candidate renders. Update a reference only when the user approves that screen. Verify cross-app glass on a real phone over another app separately from browser or in-app previews.
