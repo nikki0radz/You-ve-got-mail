@@ -3,7 +3,7 @@ import {phoneProfile,phoneSize,frameURL} from './phone.mjs';
 import {pages} from './pages.mjs';
 import {buttons,layouts,themes,propsForSkin} from './templates.mjs';
 import {screen as composer,appVersion,elements as composerElements,numbers,choices,colours,stickerIds,empty,cleanLayout,current,newBook,record} from './model.mjs';
-import {mountReview,exportReview} from './review.mjs';
+import {mountReview,exportReview,exportComments} from './review.mjs?v=comments-export-1';
 const $=id=>document.getElementById(id),frames=[...document.querySelectorAll('iframe')];
 const requested=new URLSearchParams(location.search).get('page');
 const screen=Object.hasOwn(pages,requested)?requested:composer,isComposer=screen===composer;
@@ -23,7 +23,7 @@ if(!isComposer)profile=phoneProfile()||profile;
 let layout=cleanLayout(initial.working||current(book)?.revisions.at(-1)?.layout),dirty=!!initial.dirty,selected=isComposer?'row':'',editing=true,grid=0,locked=false,conflict=false;
 $('name').value=initial.name||current(book)?.name||pageName+' layout';
 let comments=structuredClone(initial.comments??current(book)?.revisions.at(-1)?.comments??[]);
-const review=mountReview(frames,()=>comments,()=>update());
+const review=mountReview(frames,()=>comments,()=>update(),()=>({screen,page:pageName,appVersion,option:optionInfo(),baseRevision:current(book)?.revisions.at(-1)?.id||null}));
 const ids=['All in','Bad beat','I’m horny','Unimpressed','I’m tired','I miss you'];
 const status=msg=>$('status').textContent=msg;
 const surface=f=>f.contentWindow?.designSurface;
@@ -43,7 +43,7 @@ function clearRound(revision){basedOnOption=revision?.reviewOption||null;compari
 function switchOption(groupIndex,number){
   const values=picks(),group=optionGroups[groupIndex];if(number===values[groupIndex])return;
   const view=surface(activeFrame);if(!view)return;
-  comparison.states[stateKey(values)]={layout:structuredClone(layout),comments:structuredClone(comments),dirty};
+  comparison.states[stateKey(values)]={layout:structuredClone(layout),comments:structuredClone(comments),option:optionInfo(),dirty};
   values[groupIndex]=number;
   let next=comparison.states[stateKey(values)];
   if(!next){
@@ -269,6 +269,41 @@ async function save(copy=false){
   const rev=record(next,dname,layout,copy);rev.comments=structuredClone(comments);rev.reviewOption=optionInfo();await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
   status('Saved '+dname+' · '+rev.id.slice(0,8)+'. '+(isComposer?'On your phone, tap Refresh draft.':'Saved on this laptop.'));
 }
+function commentsForPage(id,data,allOptions){
+  const rd=Object.hasOwn(rounds,id)?rounds[id]:null,cmp=data.comparison;
+  const groups=rd?[rd,...(rd.groups||[])]:[];
+  const active=groups.map((g,i)=>i===0?cmp?.active||0:cmp?.picks?.[g.id]||0);
+  const activeKey=stateKey(active);
+  function options(k){
+    if(!rd||rd.id!==cmp?.id)return null;
+    const nums=k.split('-').map(Number);
+    return groups.map((g,i)=>({element:g.title,roundId:g.id,choice:(groups.length>1?String.fromCharCode(65+i):'')+(nums[i]||' Current'),name:g.options[(nums[i]||0)-1]?.name||'Current layout'}));
+  }
+  const draft=current(data.book||newBook()),latest=draft?.revisions.at(-1);
+  function section(notes,k,info){
+    return {screen:id,page:pages[id][0],flow:pages[id][1],appVersion,draft:data.name||draft?.name||null,
+      baseRevision:latest?.id||null,options:info||options(k),comments:notes};
+  }
+  const sections=[];
+  const notes=data.comments??latest?.comments??[];
+  if(notes.length)sections.push(section(notes,activeKey,data.option||(!active.some(Boolean)&&data.basedOnOption)||null));
+  if(allOptions)for(const [k,view] of Object.entries(cmp?.states||{})){
+    if(k!==activeKey&&view.comments?.length)sections.push(section(view.comments,k,view.option));
+  }
+  return sections;
+}
+$('export-comments').onclick=()=>{
+  const all=$('comment-scope').value==='board',sections=[];
+  for(const id of all?Object.keys(pages):[screen]){
+    let data;
+    if(id===screen)data={book,comparison,comments,option:optionInfo(),name:$('name').value};
+    else try{data=JSON.parse(localStorage.getItem('pigeon.design.workroom.cache.v1'+(id===composer?'':'.'+id)))}catch{}
+    if(data)sections.push(...commentsForPage(id,data,all));
+  }
+  if(!sections.length){status('No comments in this selection. Right-click an element and choose Keep comment, or change the export scope under Comments.');return;}
+  exportComments(sections,all?'screen-board':pageName);
+  status('Comments downloaded. Attach the comments.json file to this chat.');
+};
 $('export').onclick=()=>{
   const d=current(book),rev=d?.revisions.at(-1);
   exportReview({name:$('name').value.trim()||pageName+' layout',draftId:d?.id||null,baseRevision:rev?.id||null,
