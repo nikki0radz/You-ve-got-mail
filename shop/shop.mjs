@@ -1,9 +1,8 @@
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
-import {escapeHtml as esc} from '../domain.mjs';
+import {escapeHtml as esc,collectionName as displayName} from '../domain.mjs';
 
 const categories=['Notes','Photos','Postcards','Flowers','Love notes','Messages','Jokes','Stickers'];
-const displayName=category=>category==='Photos'?'Photo frames':category;
 const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cce8','Lilac'],['#45634d','Forest']];
 let appCatalog;
 async function getCatalog(){
@@ -49,7 +48,7 @@ export async function openShop(onTest, initialCategory, guest=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     shell('Pick & post','The parcel shop','<div class="postal-shelves">'+availableCategories.map(cat=>{
       const items=catalog.filter(it=>it.category===cat);
-      return '<section><h3>'+displayName(cat)+'</h3><div class="postal-strip"><button class="bubble previous" aria-label="Previous '+cat+'">‹</button><div class="strip-items">'+items.map(shelfButton).join('')+'</div><button class="bubble following" aria-label="More '+cat+'">›</button></div><button class="seam" data-cat="'+cat+'" aria-label="See all '+cat+'">See all ↓</button></section>';
+      return '<section><h3>'+displayName(cat)+'</h3><div class="postal-strip"><button class="bubble previous" aria-label="Previous '+displayName(cat)+'">‹</button><div class="strip-items">'+items.map(shelfButton).join('')+'</div><button class="bubble following" aria-label="More '+displayName(cat)+'">›</button></div><button class="seam" data-cat="'+cat+'" aria-label="See all '+displayName(cat)+'">See all ↓</button></section>';
     }).join('')+'</div>');
     wireTiles(browse);dialog.scrollTop=shopScroll;
     dialog.querySelectorAll('[data-cat]').forEach(btn=>btn.onclick=()=>{rememberShop();group=btn.dataset.cat;returnScroll=0;gallery();});

@@ -1,3 +1,4 @@
+export function collectionName(key){return key==='Stickers'?'Pigeons':key==='Photos'?'Photo frames':key;}
 export function createId(){const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');}
 export const STORAGE_KEY='youve-got-mail-draft-v1';
 export const FRAMES=[{id:'bubble',label:'Bubble',description:'Round, soft, straight to the point.'},{id:'stamp',label:'Postage stamp',description:'A little special delivery.'},{id:'envelope',label:'Envelope',description:'Officially interrupting your day.'}];

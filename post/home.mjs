@@ -1,4 +1,4 @@
-import { escapeHtml as esc } from '../domain.mjs';
+import { escapeHtml as esc, collectionName } from '../domain.mjs';
 
 const folder='assets/home/';
 export const demoPeople=[
@@ -37,7 +37,7 @@ export function home(state){
   <div class="postal-track people">${arrow(-1,'people')}<div class="postal-row" data-list="people">${state.friends.map(friend).join('')}</div>${arrow(1,'people')}</div>
   <button class="add-pill" data-action="connect">+ Add someone</button>
   <section class="postal-shop"><div class="postal-kiosk"><header><h2>Pick &amp; post</h2><button data-action="shop"><span aria-hidden="true">▤</span> Shop</button></header>
-  <div class="postal-track">${arrow(-1,'categories')}<div class="postal-row" data-list="categories">${categories.map(([cat,img])=>`<button class="postal-cat" data-action="shop" data-id="${cat}"><img src="${folder+img}.webp" alt="">${cat==='Photos'?'Pictures':cat}</button>`).join('')}</div>${arrow(1,'categories')}</div>
+  <div class="postal-track">${arrow(-1,'categories')}<div class="postal-row" data-list="categories">${categories.map(([cat,img])=>`<button class="postal-cat" data-action="shop" data-id="${cat}"><img src="${folder+img}.webp" alt="">${cat==='Photos'?'Pictures':collectionName(cat)}</button>`).join('')}</div>${arrow(1,'categories')}</div>
   </div></section><button class="quick-post" data-action="compose">Quick message</button>`;
 }
 export function wireRails(app){

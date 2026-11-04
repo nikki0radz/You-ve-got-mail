@@ -1,3 +1,4 @@
+import {collectionName} from '../domain.mjs';
 import {openShop} from '../shop/shop.mjs';
 import {guestSelection} from '../shop/guest-selection.mjs';
 const preview=!location.hash && new URLSearchParams(location.search).get('preview')==='1';
@@ -52,7 +53,7 @@ function choose(){
   function move(n){position=offset(n);paint();}
   function browse(){openShop(async(image,name,group)=>{draft={image:await scaled(image),kind:kinds[group]};review();},categories[position],true);}
   function paint(){
-    const category=categories[position],label=category==='Photos'?'Photo frames':category;
+    const category=categories[position],label=collectionName(category);
     stage.querySelector('small').textContent=(position+1)+' / '+categories.length;
     stage.querySelector('h3').textContent=label;
     stage.querySelector('.caption').textContent=captions[category];
@@ -61,7 +62,7 @@ function choose(){
       const key=categories[offset(i-1)],id=String(guestSelection[key][0][0]).padStart(3,'0');
       const img=new Image();img.alt='';img.draggable=false;
       img.src=key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+id+'.webp':'assets/guest/'+id+'.svg';
-      button.setAttribute('aria-label',(i===1?'Browse ':'Show ')+(key==='Photos'?'photo frames':key.toLowerCase()));
+      button.setAttribute('aria-label',(i===1?'Browse ':'Show ')+collectionName(key).toLowerCase());
       button.replaceChildren(img);
     });
   }
