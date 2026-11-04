@@ -147,11 +147,16 @@ function showReceipt(key){
 async function start(){
   const page=preview&&document.documentElement.dataset.workroom;
   if(page){
+    if(page.includes('--')){
+      const {pickerRoute}=await import('../design/pickers.mjs');
+      const route=pickerRoute(page);
+      if(route){choose();await browse(route.category);if(route.grid)document.querySelector('[data-grid]')?.click();return;}
+    }
     if(page==='categories'){choose();return;}
     if(page==='decline'){invitation();steps.querySelector('#decline').click();return;}
-    if(['dispatch','loading','receipt'].includes(page)){
+    if(['dispatch','datePicker','loading','receipt'].includes(page)){
       draft={sender:'',time:'',later:false,image:'assets/guest/105.svg',reopen:()=>browse('Postcards','Open scrapbook')};
-      if(page==='dispatch')review();else if(page==='loading')loading();else showReceipt(null);return;
+      if(page==='dispatch'||page==='datePicker'){review();if(page==='datePicker')steps.querySelector('#later').click();}else if(page==='loading')loading();else showReceipt(null);return;
     }
     if(page==='crop'){
       const {fitPhoto}=await import('../shop/photo-fit.mjs'),{guestItems}=await import('../shop/guest-selection.mjs');
@@ -161,9 +166,9 @@ async function start(){
       const back=()=>{host.close();browse('Photos','Instant print')};
       fitPhoto(host,item,{photo:img,zoom:1,panX:.5,panY:.5},back,back);return;
     }
-    if(page==='banners'||page==='ink'){
+    if(page==='banners'||page==='ink'||page==='stickerPicker'){
       choose();await browse('Notes','Sticky note');
-      document.querySelector(page==='banners'?'[data-tool=note]':'.colour-chip')?.click();return;
+      document.querySelector(page==='banners'?'[data-tool=note]':page==='stickerPicker'?'[data-tool=second]':'.colour-chip')?.click();return;
     }
     const picks={library:['Photos'],gallery:['Photos'],notes:['Notes','Sticky note'],frames:['Photos','Instant print'],flowers:['Flowers','Big Romance'],pigeons:['Stickers','All in'],love:['Love notes','Bee mine'],reminders:['Reminders','Take your meds']};
     if(picks[page]){choose();await browse(...picks[page]);if(page==='gallery')document.querySelector('[data-grid]')?.click();return;}

@@ -1,3 +1,5 @@
+import {rounds} from './rounds.mjs';
+import {phoneProfile,phoneSize,frameURL} from './phone.mjs';
 import {pages} from './pages.mjs';
 import {buttons,layouts,themes,propsForSkin} from './templates.mjs';
 import {screen as composer,appVersion,elements as composerElements,numbers,choices,colours,stickerIds,empty,cleanLayout,current,newBook,record} from './model.mjs';
@@ -12,12 +14,12 @@ for(const group of new Set(Object.values(pages).map(p=>p[1]))){
 }
 $('page').value=screen;$('page').onchange=()=>{cache();const u=new URL(location.href);u.searchParams.set('page',$('page').value);location.assign(u)};
 document.querySelector('h1').textContent=pageName;
-for(const f of frames)f.src=isComposer?'composer.html?v=studio-pages-1':'page.html?preview=1&page='+encodeURIComponent(screen);
+for(const f of frames)f.src=frameURL(screen);
 $('pair').hidden=!isComposer;
 const KEY='pigeon.design.workroom.key.v1',CACHE='pigeon.design.workroom.cache.v1'+(isComposer?'':'.'+screen);
 const cached=()=>{try{return JSON.parse(localStorage.getItem(CACHE))||{}}catch{return {}}};
 const initial=cached();let key=localStorage.getItem(KEY)||'',book=initial.book||{...newBook(),screen},version=initial.version||0,profile=initial.profile||null;
-if(!isComposer&&!profile){try{profile=JSON.parse(localStorage.getItem('pigeon.design.workroom.cache.v1'))?.profile||null}catch{}}
+if(!isComposer)profile=phoneProfile()||profile;
 let layout=cleanLayout(initial.working||current(book)?.revisions.at(-1)?.layout),dirty=!!initial.dirty,selected=isComposer?'row':'',editing=true,grid=0,locked=false,conflict=false;
 $('name').value=initial.name||current(book)?.name||pageName+' layout';
 let comments=structuredClone(initial.comments??current(book)?.revisions.at(-1)?.comments??[]);
@@ -25,10 +27,44 @@ const review=mountReview(frames,()=>comments,()=>update());
 const ids=['All in','Bad beat','I’m horny','Unimpressed','I’m tired','I miss you'];
 const status=msg=>$('status').textContent=msg;
 const surface=f=>f.contentWindow?.designSurface;
-function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,comments,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
+let basedOnOption=initial.basedOnOption||current(book)?.revisions.at(-1)?.reviewOption||null;
+const round=Object.hasOwn(rounds,screen)?rounds[screen]:null;
+let comparison=round&&initial.comparison?.id===round.id?initial.comparison:{id:round?.id,active:0,states:{}};
+function optionInfo(){
+  const number=comparison.active||0;if(!number&&basedOnOption)return basedOnOption;return round?{roundId:round.id,title:round.title,number,name:number?round.options[number-1]?.name:'Current layout'}:null;
+}
+function clearRound(revision){basedOnOption=revision?.reviewOption||null;comparison={id:round?.id,active:0,states:{}};renderOptions();}
+function switchOption(number){
+  if(!round||number===comparison.active)return;
+  const view=surface(activeFrame);if(!view)return;
+  comparison.states[comparison.active]={layout:structuredClone(layout),comments:structuredClone(comments),dirty};
+  let next=comparison.states[number];
+  if(!next){
+    const base=comparison.states[0],option=round.options[number-1];
+    const candidate=cleanLayout(base.layout);
+    for(const change of option.changes||[]){
+      const id=change.element||view.idFor?.(change.selector);
+      if(!id){status('Open the starting screen to compare this option.');return;}
+      candidate.styles[id]={...candidate.styles[id],...change.style};
+    }
+    next={layout:cleanLayout(candidate),comments:structuredClone(base.comments),dirty:true};
+  }
+  comparison.active=number;layout=cleanLayout(next.layout);comments=structuredClone(next.comments);dirty=next.dirty;undo=null;
+  cache();renderOptions();renderFrames();bookUI();elList();inspector();dimensions();
+  status(number?'Viewing option '+number+' · '+round.options[number-1].name:'Viewing your original working layout.');
+}
+function renderOptions(){
+  $('round').hidden=!round;if(!round)return;
+  $('round-title').textContent=round.title;$('option-name').textContent=optionInfo().name;
+  const bar=$('option-numbers');bar.replaceChildren();
+  for(const [i,name] of ['Current',...round.options.map(o=>o.name)].entries()){
+    const b=btn(i?String(i):name,()=>switchOption(i));b.title=name;b.setAttribute('aria-label',i?'Option '+i+' · '+name:name);
+    b.setAttribute('aria-pressed',String(i===comparison.active));bar.append(b);
+  }
+}
+function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,profile,working:layout,comments,comparison,basedOnOption,name:$('name').value,dirty}))}catch{status('Browser storage is full. Save to your paired workspace before leaving.');}}
 function dimensions(){
-  const fits=p=>Number.isFinite(p?.width)&&p.width>=150&&p.width<=1600&&Number.isFinite(p.height)&&p.height>=200&&p.height<=2400;
-  const main=fits(profile)?profile:{width:390,height:780,insets:{top:24,bottom:24}};
+  const main=phoneSize(profile);
   const available=window.innerHeight-$('bench').getBoundingClientRect().top-window.scrollY-82;
   const zoom=$('zoom').value==='fit'?Math.max(.45,Math.min(1,available/(main.height+(main.insets?.top||0)+(main.insets?.bottom||0)+10))):Number($('zoom').value);
   frames.forEach((f,i)=>{
@@ -41,8 +77,8 @@ function dimensions(){
     foot.style.width=(width+l+r+10)*zoom+'px';foot.style.height=(height+t+b+10)*zoom+'px';
     device.querySelector('small').textContent=width+' × '+height+' CSS px';
   });
-  $('device-name').textContent=fits(profile)?'My phone':'Reference phone';
-  $('device-name').title=fits(profile)?'Measured on Android · font scale '+main.fontScale+' · WebView text '+(main.textZoom||100)+'%':'Pair your phone to replace these example measurements.';
+  $('device-name').textContent=main.measured?'My phone':'Reference phone';
+  $('device-name').title=main.measured?'Measured on Android · font scale '+main.fontScale+' · WebView text '+(main.textZoom||100)+'%':'Pair your phone to replace these example measurements.';
 }
 function renderFrames(){
   for(const f of frames){
@@ -203,7 +239,7 @@ async function read(k,replace){
   const data=await api('read',{key:k});
   if(data.book&&(data.book.schema!==1||data.book.screen!==screen||!Array.isArray(data.book.drafts)))throw Error('This workspace uses a different screen or format.');
   profile=data.profile;
-  if(replace){book=data.book||newBook();version=data.version;const d=current(book);layout=cleanLayout(d?.revisions.at(-1)?.layout);comments=structuredClone(d?.revisions.at(-1)?.comments||[]);$('name').value=d?.name||pageName+' layout';dirty=false;conflict=false;selected='row';}
+  if(replace){book=data.book||newBook();version=data.version;const d=current(book);clearRound(d?.revisions.at(-1));layout=cleanLayout(d?.revisions.at(-1)?.layout);comments=structuredClone(d?.revisions.at(-1)?.comments||[]);$('name').value=d?.name||pageName+' layout';dirty=false;conflict=false;selected='row';}
   dimensions();renderFrames();bookUI();elList();inspector();cache();
 }
 async function commit(next){if(!isComposer){localStorage.setItem(CACHE,JSON.stringify({book:next,dirty:false,profile}));book=next;return;}if(conflict)throw Error('Reconnect to load the latest workspace first.');await ensureKey();const r=await api('save',{key,version,book:next});book=next;version=r.version;cache();}
@@ -211,20 +247,20 @@ function action(fn){return async()=>{if(locked)return;locked=true;document.query
 async function save(copy=false){
   const name=$('name').value.trim();if(!name)throw Error('Give your draft a name first.');
   const next=structuredClone(book),dname=copy?name+' (copy)':name;
-  const rev=record(next,dname,layout,copy);rev.comments=structuredClone(comments);await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
+  const rev=record(next,dname,layout,copy);rev.comments=structuredClone(comments);rev.reviewOption=optionInfo();await commit(next);dirty=false;$('name').value=dname;cache();bookUI();$('history').value=rev.id;
   status('Saved '+dname+' · '+rev.id.slice(0,8)+'. '+(isComposer?'On your phone, tap Refresh draft.':'Saved on this laptop.'));
 }
 $('export').onclick=()=>{
   const d=current(book),rev=d?.revisions.at(-1);
   exportReview({name:$('name').value.trim()||pageName+' layout',draftId:d?.id||null,baseRevision:rev?.id||null,
     state:dirty||!rev?'Working copy':'Saved revision',approved:!!rev&&!dirty&&d.approved===rev.id,
-    component:pageName,sourceFiles:isComposer?['shop/guest-studio.mjs','shop/studio.css']:pages[screen][1]==='Main app'?['app.js','post/','styles.css']:['post/guest.mjs','shop/','post/guest.css'],appVersion,screen,layout:cleanLayout(layout),comments,elementPaths:Object.fromEntries(Object.keys(layout.styles).filter(k=>elements[k]).map(k=>[k,elements[k][1]])),targets:Object.fromEntries(Object.keys(layout.styles).map(k=>[k,nice(k)]))});
+    reviewOption:optionInfo()||rev?.reviewOption||null,preview:{preset:$('device-name').textContent,width:frames[0].contentWindow.innerWidth,height:frames[0].contentWindow.innerHeight},component:pageName,sourceFiles:isComposer?['shop/guest-studio.mjs','shop/studio.css']:pages[screen][1]==='Main app'?['app.js','post/','styles.css']:['post/guest.mjs','shop/','post/guest.css'],appVersion,screen,layout:cleanLayout(layout),comments,elementPaths:Object.fromEntries(Object.keys(layout.styles).filter(k=>elements[k]).map(k=>[k,elements[k][1]])),targets:Object.fromEntries(Object.keys(layout.styles).map(k=>[k,nice(k)]))});
   status('Review file downloaded. Attach the .json file to this chat.');
 };
 $('save').onclick=action(()=>save());$('duplicate').onclick=action(()=>save(true));
-$('restore').onclick=()=>{const r=current(book)?.revisions.find(r=>r.id===$('history').value);if(r){layout=cleanLayout(r.layout);comments=structuredClone(r.comments||[]);selected='row';update();select('row');status('Revision '+r.id.slice(0,8)+' restored locally. Save draft to create a new revision.');}};
+$('restore').onclick=()=>{const r=current(book)?.revisions.find(r=>r.id===$('history').value);if(r){clearRound(r);layout=cleanLayout(r.layout);comments=structuredClone(r.comments||[]);selected='row';update();select('row');status('Revision '+r.id.slice(0,8)+' restored locally. Save draft to create a new revision.');}};
 $('approve').onclick=action(async()=>{const next=structuredClone(book),d=current(next);d.approved=$('history').value;await commit(next);bookUI();status('Approval recorded for '+d.approved.slice(0,8)+'.');});
-$('drafts').onchange=action(async()=>{const id=$('drafts').value;if(dirty&&!confirm('Discard unsaved edits and switch drafts?')){bookUI();return;}const next=structuredClone(book);next.active=id;try{await commit(next)}catch(e){bookUI();throw e}const d=current(book);layout=cleanLayout(d.revisions.at(-1).layout);comments=structuredClone(d.revisions.at(-1).comments||[]);dirty=false;$('name').value=d.name;selected='row';cache();bookUI();select('row');status(isComposer?'Active draft changed. Refresh draft on your phone to follow it.':'Active laptop draft changed.');});
+$('drafts').onchange=action(async()=>{const id=$('drafts').value;if(dirty&&!confirm('Discard unsaved edits and switch drafts?')){bookUI();return;}const next=structuredClone(book);next.active=id;try{await commit(next)}catch(e){bookUI();throw e}const d=current(book);clearRound(d.revisions.at(-1));layout=cleanLayout(d.revisions.at(-1).layout);comments=structuredClone(d.revisions.at(-1).comments||[]);dirty=false;$('name').value=d.name;selected='row';cache();bookUI();select('row');status(isComposer?'Active draft changed. Refresh draft on your phone to follow it.':'Active laptop draft changed.');});
 $('name').oninput=()=>{dirty=true;cache();bookUI()};
 $('pair').onclick=action(async()=>{$('pairDialog').showModal();$('key').value=await ensureKey();$('pair-status').textContent=profile?'Phone measurements received.':'Waiting for your phone to report its measurements.'});
 $('copy').onclick=action(async()=>{await navigator.clipboard.writeText($('key').value);$('pair-status').textContent='Key copied.'});
@@ -234,5 +270,5 @@ $('element').onchange=e=>select(e.target.value);
 function mode(edit){editing=edit;$('edit').setAttribute('aria-pressed',String(edit));$('try').setAttribute('aria-pressed',String(!edit));renderFrames();$('bench-hint').textContent=edit?'Click an element to inspect it. Drag a selected sticker to position it.':'Tap through either preview. Sample deliveries stay in Design Mode.';}
 $('edit').onclick=()=>mode(true);$('try').onclick=()=>mode(false);$('compare').onchange=$('zoom').onchange=dimensions;
 window.addEventListener('message',e=>{if(e.origin!==location.origin||!frames.some(f=>f.contentWindow===e.source)||e.data?.app!=='pigeon-studio')return;const m=e.data;if(m.type==='ready'){elList();renderFrames();inspector()}else if(m.type==='select'&&editing){activeFrame=frames.find(f=>f.contentWindow===e.source);select(m.key);document.querySelector('aside').scrollTop=0;}else if(m.type==='move'&&editing&&m.key===selected){const obj=layout.styles[selected]||={};obj.x=Math.round(m.x*10)/10;obj.y=Math.round(m.y*10)/10;update();inspector();}});
-window.addEventListener('resize',dimensions);dimensions();elList();inspector();bookUI();
-if(isComposer&&key)action(async()=>{if(dirty){await read(key,false);status('Local edits restored.');}else{await read(key,true);status('Saved workspace loaded.');}})();
+renderOptions();window.addEventListener('resize',dimensions);dimensions();elList();inspector();bookUI();
+if(isComposer&&key)action(async()=>{if(dirty||Object.keys(comparison.states).length){await read(key,false);status('Local edits restored.');}else{await read(key,true);status('Saved workspace loaded.');}})();

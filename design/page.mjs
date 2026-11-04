@@ -23,11 +23,12 @@ if(guest){
     post:(id,op)=>queueMicrotask(()=>window.postOfficeResult(id,JSON.stringify(op==='friends'?{data:people}:{error:'Device action · preview only'})))};
   document.documentElement.dataset.workroom=key;
   await import('../app.js');
-  if(['inbox','sent','thread','friends','reply','quick'].includes(key))click('[data-action=tab][data-id=inbox]');
+  if(['inbox','sent','thread','friends','reply','quick','replyPicker'].includes(key))click('[data-action=tab][data-id=inbox]');
   if(key==='sent')click('[data-folder=sent]');
   if(key==='friends')click('[data-book]');
-  if(['thread','reply','quick'].includes(key))click('[data-row=sample]');
-  if(['reply','quick'].includes(key))click('[data-mb=reply]');
+  if(['thread','reply','quick','replyPicker'].includes(key))click('[data-row=sample]');
+  if(['reply','quick','replyPicker'].includes(key))click('[data-mb=reply]');
+  if(key==='replyPicker')click('[data-mb=sticker]');
   if(key==='quick')click('[data-mb=text]');
   if(['profile','avatar','rename'].includes(key))click('[data-action=profile]');
   if(key==='avatar')click('[data-social=change]');

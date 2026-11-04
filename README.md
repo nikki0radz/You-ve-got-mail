@@ -2,6 +2,8 @@
 
 A pigeon delivers transparent PNGs. The Android test edition receives real parcels from one-use invitations. The [web preview](https://nikki0radz.github.io/You-ve-got-mail/) also supports local design tests.
 
+[Open the screen board](https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/design/board.html) to open any page or picker. Options appear above the full phone. Choose one, edit and comment, then **Export for chat** and attach the JSON for the next revision.
+
 ## [Open Design Mode](https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/design/index.html?page=home)
 
 [GitHub Pages workspace](https://nikki0radz.github.io/You-ve-got-mail/design/index.html) · Each host keeps its own laptop-only drafts. For an existing paired postcard workspace, enter its private key under **Pair phone**.

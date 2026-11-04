@@ -16,3 +16,6 @@
 - The pigeon is the postal courier mascot. Other illustrations can feature people, axolotls, bees, objects or any character that fits. Use the existing sticker art as the style reference for consistent rounded plum outlines, soft pastel colours, gentle shading and readable lettering. Avoid halo and yellow expression marks. Design love-note and reminder lettering into the objects themselves.
 
 - Before releasing any shared CSS or guest welcome changes, run scripts/check-invitation.cjs against the release candidate at 320px and 430px. Keep the approved reference images separate from candidate renders. Update a reference only when the user approves that screen. Verify cross-app glass on a real phone over another app separately from browser or in-app previews.
+
+- For design reviews, use the workroom board and the actual interactive screen at the paired phone size. Implement feedback from the exported review against the identified screen and working layout. Preserve unrelated screens and return a refreshed review link.
+- When Nicole requests alternatives, put the requested number in a versioned round in design/rounds.mjs. If no count is specified, default to six (within five to ten). Show numbered controls above the complete phone preview even for a one-element change. Use a fresh round ID for new alternatives so past exports can identify the chosen option.
