@@ -152,6 +152,10 @@ public class Main extends Activity {
     }
     void reply(JSONObject m){pendingReply=m.optString("id");dispatchIntent();}
     public class Bridge {
+        @JavascriptInterface public void shareDesign(String data){
+            if(data==null||data.length()>100000)return;
+            runOnUiThread(()->{Intent share=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT,"Pigeon Post Home design").putExtra(Intent.EXTRA_TEXT,data);startActivity(Intent.createChooser(share,"Share your design"));});
+        }
         @JavascriptInterface public void setTheme(boolean dark){Mail.prefs(Main.this).edit().putBoolean("night",dark).apply();runOnUiThread(()->bars(dark));}
         @JavascriptInterface public String mailbox(){
             JSONArray rows=new JSONArray();for(JSONObject m:Mail.history(Main.this))rows.put(m);
