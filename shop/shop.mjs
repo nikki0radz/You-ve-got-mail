@@ -79,11 +79,14 @@ export async function openShop(onTest, initialCategory, options={}){
   let cancel=()=>dialog.close();
   let navigateBack=()=>cancel();
   dialog.oncancel=e=>{e.preventDefault();navigateBack();};
-  const shell=(name,status,body,back)=>{
+  const shell=(name,status,body,back,guestLibrary=false)=>{
     disposeReel?.();disposeReel=null;
     navigateBack=back||(()=>cancel());
-    dialog.innerHTML='<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header><h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
-    dialog.querySelector('.parcel-x').onclick=()=>cancel();
+    const header=guestLibrary?
+      '<header class="parcel-head guest-library-head"><button type="button" class="wheel-back pocket-back" data-prev><span aria-hidden="true">←</span> Back</button><small>'+esc(status)+'</small></header>':
+      '<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header>';
+    dialog.innerHTML=header+'<h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
+    const close=dialog.querySelector('.parcel-x');if(close)close.onclick=()=>cancel();
     const prev=dialog.querySelector('[data-prev]');if(prev)prev.onclick=back;
     dialog.scrollTop=0;
   };
@@ -126,7 +129,8 @@ export async function openShop(onTest, initialCategory, options={}){
     }else{
       content='<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index"><span>All '+unit+'</span><span class="frame-count"></span><button type="button" class="library-see-all" data-grid>See all</button></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>';
     }
-    shell(label,items.length+' '+unit,backButton+controls()+content,back);
+    const guestLibrary=options===true;
+    shell(label,items.length+' '+unit,(guestLibrary?'':backButton+controls())+content,back,guestLibrary);
     function filter(key){
       if(group===key)return;
       group=key;gridScroll=0;library(grid);
