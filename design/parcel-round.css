@@ -66,3 +66,22 @@
 .guest .dispatch-timing[data-review-look="timing-5"] .dispatch-dock::before{outline:1px dashed #fff3d7;outline-offset:-4px}
 .guest .dispatch-timing[data-review-look="timing-6"]{--active:#534768;--rail:#eae5f1;--radius:12px 12px 2px 2px}
 @media(prefers-reduced-motion:reduce){.guest .dispatch-timing[data-review-look] .dispatch-dock::before{transition:none}}
+
+
+/* Home review adjustments */
+html[data-workroom=home] .header-board .style-choice{display:none}
+html[data-workroom=home] #home-wheel .wheel-paper{background:var(--mm-panel)}
+html[data-workroom=home] .postal-header .profile-link img{width:42px;height:42px}
+html[data-workroom=home] .postal-header .postal-theme{align-self:center}
+html[data-workroom=home] .header-board[data-open=true] .mail-sign span{font-size:0}
+html[data-workroom=home] .header-board[data-open=true] .mail-sign span::after{content:'📬';font-size:19px}
+html[data-workroom=home] .header-board[data-open=false] .mail-sign span{font-size:0}
+html[data-workroom=home] .header-board[data-open=false] .mail-sign span::after{content:'⛔';font-size:19px}
+html[data-workroom=home] .postal-header strong[data-review-look=title-1]{white-space:pre-line;text-align:left}
+html[data-workroom=home] #app[data-review-look=background-1]{background:#e2eee8}
+html[data-workroom=home] #app[data-review-look=background-2]{background:#dcebe0}
+html[data-workroom=home] #app[data-review-look=background-3]{background:#d7eae6}
+html[data-workroom=home] #app[data-review-look=background-4]{background:#e9efe4}
+html[data-workroom=home] #app[data-review-look=background-5]{background:#e0f0ed}
+html[data-workroom=home] #app[data-review-look=background-6]{background:#e7f1e8}
+html[data-workroom=home] #app:has(.courier-stand[data-review-look=header-1]) #home-wheel .wheel-paper{background:#f8f1dd}

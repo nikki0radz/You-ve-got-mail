@@ -24,6 +24,11 @@ function reviewNode(node,id){
   const value=reviewStyles[id]?.reviewLook, look=readLook(value);
   if(!look&&!node.hasAttribute('data-review-look'))return;
   if(look)node.dataset.reviewLook=value;else delete node.dataset.reviewLook;
+  if(node.matches('.postal-header > strong')){
+    if(!originals.has(node))originals.set(node,node.textContent);
+    const title=look?'You’ve Got\nMail!':originals.get(node);
+    if(node.textContent!==title)node.textContent=title;
+  }
   if(node.matches('#steps > h2')){
     if(!originals.has(node))originals.set(node,node.textContent);
     const title=look?.entry[1]??originals.get(node);

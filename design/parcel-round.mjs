@@ -12,6 +12,8 @@ export const looks = {
     ['Pocket postcard', 'Hello from HQ', 'Your courier is standing by.'],
     ['Station board', 'Pigeon arrivals', 'Tap the sign to change your status.']
   ],
+  background: [['Mist'],['Pale sage'],['Soft lagoon'],['Ivory green'],['Sea glass'],['Gentle mint']],
+  title: [['Two lines']],
   heading: [
     ['Plain and personal', 'You’re sending Nicole a parcel'],
     ['Address label', 'To Nicole, from you'],
