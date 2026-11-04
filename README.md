@@ -15,6 +15,11 @@ This is a browser prototype. Owen and Sophie are demo friends. All receipts, rep
 
 Scheduled tests and snoozes are checked while the page is open and catch up when reopened. They are not background push notifications. Images are limited to 2 MB and saved only in browser storage; storage errors are shown rather than reported as successful receipts.
 
+## Pick & post
+Open **Pick & post** on the home screen. Choose a collection and a design, add a photo or message where the design calls for one, then choose an optional surround and extra note. **Save PNG** exports the finished artwork. **Share PNG** opens the system share sheet when supported and otherwise downloads a PNG. **Send test** uses the existing local recipient, scheduling and inbox flow. Photos are processed on the device.
+
+The PNG sprite sheets, crop rectangles and template writing areas are in `assets/post`. Photo openings use matching alpha masks, including the shaped postcard formats.
+
 ## Run and deploy
 
 No installation or dependencies required. Serve the repository root with any static HTTP server, or run `npm run build` and serve `dist/`.

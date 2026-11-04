@@ -1,0 +1,35 @@
+@font-face{font-family:ParcelCaption;src:url(../assets/post/satisfy.woff) format("woff");font-display:swap}
+#parcel-shop{box-sizing:border-box;width:min(94vw,480px);max-height:88dvh;margin:auto;border:2px solid var(--mm-edge);border-radius:24px;background:var(--mm-panel);color:var(--mm-text);padding:16px;overflow:auto}
+#parcel-shop:not([open]){display:none}
+.parcel-head,.parcel-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.parcel-head small{color:var(--mm-sub)}
+.parcel-x,.seam,.bubble{color:var(--mm-text);background:var(--mm-bg);border:1px solid var(--mm-edge);cursor:pointer}
+.parcel-x{border-radius:50%;width:34px;height:34px;font-size:20px}
+.postal-shelves section{margin:8px 0 19px;text-align:center}
+.postal-shelves h3{font:400 24px/1.35 ParcelCaption,cursive;margin:0 0 4px}
+.postal-strip{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;align-items:center;border-block:3px dotted var(--mm-panel);background:var(--mm-edge);border-radius:16px;padding:3px}
+.strip-items{display:flex;overflow-x:auto;scrollbar-width:none;gap:5px;scroll-snap-type:x proximity}
+.bubble{display:grid;place-items:center;width:25px;height:25px;font-size:20px;line-height:1;border-radius:50%;padding:0}
+.bubble:disabled{opacity:.28}
+.seam{position:relative;vertical-align:top;margin:-7px 0 0;font:700 11px/1.3 system-ui;border-radius:12px;padding:1px 7px}
+.seam:after{content:"";position:absolute;inset:-2px -5px -9px}
+.parcel-tile{min-width:0;flex:0 0 72px;scroll-snap-align:start;display:grid;align-content:start;justify-items:center;gap:2px;background:#f5ecd9;color:#294b3c;border:0;border-radius:11px;padding:4px;font:700 11px/1.25 system-ui;text-align:center}
+.parcel-tile svg{width:100%;height:54px;overflow:hidden}
+.parcel-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-top:10px}
+.parcel-canvas{display:grid;place-items:center;margin:8px auto;background:var(--mm-bg);border-radius:14px}
+.parcel-canvas canvas{height:auto;max-height:32dvh;max-width:100%;width:auto}
+.parcel-controls{display:grid;gap:8px;margin:9px 0}
+.parcel-controls label{display:grid;gap:3px;font-size:14px;font-weight:bold}
+.parcel-controls select,.parcel-controls textarea{padding:8px;border:1px solid var(--mm-edge);border-radius:10px;color:var(--mm-text);background:var(--mm-bg)}
+.parcel-actions button{min-height:42px}
+.parcel-error{color:var(--mm-text);font-size:13px}
+.parcel-error:empty{display:none}
+.post-home-shop{margin:20px -8px 10px;padding:12px 6px;background:#d9e6dd;color:#284b3d;border-top:5px solid #85ada1;border-radius:18px}
+:root[data-theme=dark] .post-home-shop{background:#9eafa1;color:#19372b;border-color:#0c1512}
+.post-home-shop header{display:flex;align-items:center;justify-content:center;gap:10px}
+.post-home-shop header h2{font-size:22px;margin:0}
+.post-home-shop header button{min-height:32px;padding:3px 11px;font-size:13px}
+.post-home-rail{display:grid;grid-template-columns:26px minmax(0,1fr) 26px;align-items:center}
+.post-home-items{display:flex;overflow-x:auto;scrollbar-width:none;gap:4px}
+.post-home-cat{flex:0 0 68px;display:grid;justify-items:center;gap:3px;background:transparent;color:inherit;border:0;font:700 11px system-ui;cursor:pointer;padding:5px 0}
+.post-home-cat b{width:37px;height:37px;display:grid;place-items:center;border-radius:50%;background:#faf0dc;font-size:21px}
