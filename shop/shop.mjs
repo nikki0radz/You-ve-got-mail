@@ -63,7 +63,7 @@ export async function openShop(onTest, initialCategory, guest=false){
   function gallery(){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=catalog.filter(it=>it.category===group);
-    shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',browse);wireTiles(gallery);dialog.scrollTop=returnScroll;
+    shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',guest?()=>dialog.close():browse);wireTiles(gallery);dialog.scrollTop=returnScroll;
   }
   function confirmExit(action){
     if(!dirty){action();return}
