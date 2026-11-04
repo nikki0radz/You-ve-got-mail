@@ -43,15 +43,17 @@ function rememberKey(){
   }return preparedKey;
 }
 function loading(){
-  steps.innerHTML='<section class="flight"><img src="assets/home/mascot.webp" alt=""><h2>Preparing your delivery</h2><p>Your parcel is being prepared for Nicole.</p></section>';
-  status.textContent=preview?'Preview flight · No parcel will be sent.':'Preparing your delivery…';
+  steps.innerHTML='<section class="flight dispatch-envelope"><small>PIGEON POST · DISPATCH DESK</small><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt="Pigeon with its satchel"></div><h2>Preparing your delivery</h2><p></p><div class="airmail-route" aria-hidden="true"><span>POST OFFICE</span><i></i><span>NICOLE</span></div></section>';
+  steps.querySelector('.flight p').textContent=draft.later?'Tucking your parcel away for its scheduled delivery.':'One little parcel, addressed to Nicole.';
+  status.textContent=preview?'Preview only · No mail will be sent.':'';
+
 }
 function openReceipt(key){
   history.replaceState(null,'','#reply-'+key);
   showReceipt(key);
 }
 function review(){
-  steps.innerHTML='<h2>Your delivery to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label>Your name<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
+  steps.innerHTML='<h2>Your delivery to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Name for Nicole’s notification"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
@@ -96,7 +98,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.4.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.5.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';

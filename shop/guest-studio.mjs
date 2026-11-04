@@ -1,3 +1,4 @@
+import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
 
@@ -115,18 +116,23 @@ export function startGuestStudio(dialog,item,back,onReady){
     if(state.note&&!state.note.text)stage.querySelector('[data-layer=note] .layer-image').dataset.hint='Tap to write';
     if(state.second){const image=state.second.image;image.alt='Added picture';stage.querySelector('[data-layer=second] .layer-image').append(image);}
     if(item.textBox||state.note){
-      const controls=document.createElement('details');controls.className='studio-colours';controls.innerHTML='<summary>Colours</summary>';
-      const addColour=(label,object,key,initial,repaint)=>{
-        const row=document.createElement('label'),input=document.createElement('input');
-        input.type='color';input.value=object[key]||initial;row.append(label,input);controls.append(row);
-        input.oninput=()=>{object[key]=input.value;dirty=true;repaint();};
-      };
-      if(item.category==='Notes')addColour('Note paper',state,'paper','#fff1cd',paintArt);
-      if(item.textBox)addColour('Design text',state,'ink',item.ink,paintArt);
-      if(state.note){
-        addColour('Banner paper',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote);
-        addColour('Banner text',state.note,'ink','#283c30',paintNote);
+      const controls=document.createElement('div');controls.className='studio-colours';
+      function row(fields){
+        const group=document.createElement('div');group.className='ink-row';
+        for(const [label,accessible,object,key,initial,repaint] of fields){
+          group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
+        }
+        controls.append(group);
       }
+      if(item.textBox){
+        const fields=[['Text','Design text colour',state,'ink',item.ink,paintArt]];
+        if(item.category==='Notes')fields.unshift(['Paper','Note paper colour',state,'paper','#fff1cd',paintArt]);
+        row(fields);
+      }
+      if(state.note)row([
+        ['Banner','Banner colour',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote],
+        ['Text','Banner text colour',state.note,'ink','#283c30',paintNote]
+      ]);
       dialog.querySelector('.studio-extras').before(controls);
     }
     select(active);layout();paintArt();paintNote();

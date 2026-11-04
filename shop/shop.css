@@ -44,12 +44,12 @@
 .frame-rail::-webkit-scrollbar{display:none}
 .frame-rail:before,.frame-rail:after{content:"";flex:0 0 29.25%}
 .frame-rail button{scroll-snap-align:center;position:relative;flex:0 0 41.5%;height:165px;border:0;background:transparent;padding:0;min-width:0}
-.frame-rail img{position:absolute;left:50%;top:50%;width:calc(125% - 10px);max-width:none;height:100%;object-fit:contain;transform:translate(-50%,-50%) scale(var(--size,.62));opacity:var(--alpha,.48);pointer-events:none}
-.frame-name{margin:5px 0;font-size:23px}.frame-index{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+.frame-rail button>img,.frame-rail button>svg{position:absolute;left:50%;top:50%;width:calc(125% - 10px);max-width:none;height:100%;object-fit:contain;transform:translate(-50%,-50%) scale(var(--size,.62));opacity:var(--alpha,.48);pointer-events:none}
+.frame-name{margin:5px 0;font-size:23px;color:#283b2b}.frame-index{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
 .frame-thumbs{display:flex;gap:5px;overflow:auto;padding:4px 2px 8px;scrollbar-width:thin}
-.frame-thumbs button{flex:1 0 44px;height:54px;background:#f5f0df;border:1px solid #cdc7af;border-radius:8px;padding:3px}
+.frame-thumbs button{flex:1 0 44px;min-width:44px;height:54px;background:#f5f0df;border:1px solid #cdc7af;border-radius:8px;padding:3px}
 .frame-thumbs button[aria-pressed=true]{border:2px solid #405a41;background:#e3ead7}
-.frame-thumbs img{width:100%;height:100%;object-fit:contain}.frame-use{width:100%}
+.frame-thumbs button>img,.frame-thumbs button>svg{width:100%;height:100%;object-fit:contain}.frame-use{width:100%}
 
 #parcel-shop .wheel { text-align:center; }
 #parcel-shop .wheel-back { background:none; border:0; color:var(--mm-text); min-height:44px; }

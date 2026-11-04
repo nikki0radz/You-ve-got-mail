@@ -1,3 +1,4 @@
+import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
 import {guestItems,guestSelection} from './guest-selection.mjs';
 import {startGuestStudio} from './guest-studio.mjs';
@@ -20,6 +21,24 @@ function miniature(item){
   const clip=item.artClip?' style="clip-path:path(evenodd, &quot;'+esc(item.artClip)+'&quot;)"':'';
   return '<svg viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><g'+clip+'><svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'" overflow="hidden"><image href="'+esc(item.sheet)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg></g></svg>';
 }
+// Six approved previews already show the sample cat in the finished design.
+const catPreviews=new Map([...guestSelection.Photos,guestSelection.Postcards.find(([id])=>id===105)]
+  .map(([id,name])=>[name,'assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp']));
+let maskSerial=0;
+const selections={app:new Map(),invitation:new Map(),reply:new Map()};
+function reelPreview(item){
+  const cat=(item.category==='Photos'||item.category==='Postcards') && catPreviews.get(item.name);
+  if(cat||(item.master&&!item.maskSheet))return '<img alt="" draggable="false" src="'+esc(cat||item.master)+'">';
+  if(!item.maskSheet)return miniature(item);
+  const [x,y,w,h]=item.rect,[left,top,right,bottom]=item.opening;
+  const key='reel-mask-'+(++maskSerial);
+  // Crop the unobstructed photo from the approved Instant print example.
+  const sample='<svg x="'+left*w+'" y="'+top*h+'" width="'+(right-left)*w+'" height="'+(bottom-top)*h+'" viewBox="25 29 141 120" preserveAspectRatio="xMidYMid slice"><image href="assets/guest/wheel-031.webp" width="193" height="205"/></svg>';
+  const crop=path=>'<svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'"><image href="'+esc(path)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg>';
+  const foreground=item.master?'<image href="'+esc(item.master)+'" width="'+w+'" height="'+h+'"/>':crop(item.sheet);
+  return '<svg aria-hidden="true" viewBox="0 0 '+w+' '+h+'"><defs><mask id="'+key+'" maskUnits="userSpaceOnUse" x="0" y="0" width="'+w+'" height="'+h+'">'+crop(item.maskSheet)+'</mask></defs><g mask="url(#'+key+')">'+sample+'</g>'+foreground+'</svg>';
+}
+
 export function openReplyShop(onReady,initialCategory='Stickers',onCancel){
   return openShop(onReady,initialCategory,{curated:true,wheel:true,studio:true,onCancel});
 }
@@ -34,7 +53,8 @@ export async function openShop(onTest, initialCategory, options={}){
   let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
   let returnScroll=0,previewURL,shopScroll=0,backFromItem;
-  let disposeReel,chosenFrame='Instant print';
+  let disposeReel;
+  const chosenDesign=options.wheel?selections.reply:guest?selections.invitation:selections.app;
   const stripOffsets=new Map();
   const trigger=document.activeElement;
   if(dialog.open)return;
@@ -93,14 +113,13 @@ export async function openShop(onTest, initialCategory, options={}){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=catalog.filter(it=>it.category===group);
     const back=options.wheel?wheel:guest?()=>dialog.close():browse;
-    if(guest&&group==='Photos'){
-      const frames=[...items].sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
-      shell('Photo frames','Choose a frame',backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through photo frames"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All frames <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All five frames"></div><button class="primary frame-use"></button>',back);
-      disposeReel=mountFrameReel(dialog,frames,Math.max(0,frames.findIndex(it=>it.name===chosenFrame)),item=>{
-        chosenFrame=item.name;backFromItem=gallery;chooseItem(item);
-      });return;
-    }
-    shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',back);wireTiles(gallery);dialog.scrollTop=returnScroll;
+    if(group==='Photos')items.sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
+    const label=displayName(group),unit=group==='Photos'?'frames':'designs';
+    shell(label,items.length+' '+unit,backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All '+unit+' <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>',back);
+    const first=Math.max(0,items.findIndex(item=>item.name===chosenDesign.get(group)));
+    disposeReel=mountFrameReel(dialog,items,first,reelPreview,item=>chosenDesign.set(group,item.name),item=>{
+      backFromItem=gallery;chooseItem(item);
+    });
   }
   function confirmExit(action){
     if(!dirty){action();return}
@@ -126,15 +145,19 @@ export async function openShop(onTest, initialCategory, options={}){
       if(page==='Finishing touches')controls='<label>Optional note<textarea data-text="extra" maxlength="180">'+esc(draft.extra)+'</textarea></label><label>Add another picture<input type="file" data-second accept="image/*"></label>'+(draft.second?'<label>Move<select data-layer><option value="framePos">Frame</option><option value="secondPos" '+(draft.layer==='secondPos'?'selected':'')+'>Extra picture</option></select></label><button data-remove>Remove extra picture</button>':'')+'<details><summary>Frame appearance</summary>'+selectControl('Background',palette)+selectControl('Shape',['Rounded','Oval','Square'].map(v=>[v,v]))+selectControl('Border',palette)+'</details>';
       controls='<p>Drag to place it on their screen. Pinch to resize.</p><label>Size<input type="range" data-size min=".12" max="1" step=".01" value="'+draft[draft.layer].size+'"></label>'+controls;
     }
-    const colourControl=(label,key,fallback)=>'<label>'+label+'<input type="color" data-setting="'+key+'" value="'+(draft[key]||fallback)+'"></label>';
+    const editableColours=[];
     if(page==='Write'){
-      if(current.category==='Notes')controls+=colourControl('Note paper','paper','#fff1cd');
-      controls+=colourControl('Text colour','ink',current.ink);
+      if(current.category==='Notes')editableColours.push(['Paper','Note paper colour','paper','#fff1cd']);
+      editableColours.push(['Text','Design text colour','ink',current.ink]);
     }
-    if(page==='Finishing touches')controls+=colourControl('Note background','noteFill','#fff4da')+colourControl('Note text','noteInk','#273d31');
+    if(page==='Finishing touches')editableColours.push(['Banner','Banner colour','noteFill','#fff4da'],['Text','Banner text colour','noteInk','#273d31']);
+    if(editableColours.length)controls+='<div class="ink-row"></div>';
     const exportButtons=guest?'<button class="primary" data-export="test" disabled>Use this parcel</button>':'<button class="secondary" data-export="save" disabled>Save PNG</button>'+(!window.Pigeon?'<button class="secondary" data-export="share" disabled>Share PNG</button>':'')+'<button class="primary" data-export="test" disabled>Send test</button>';
     const actions=page==='Ready'?exportButtons:'<button class="primary" data-next>Next</button>';
     shell(current.name,(step+1)+' of '+seq.length+' · '+page,'<div class="parcel-canvas" role="img" aria-label="Parcel preview"></div><div class="parcel-controls">'+controls+'</div><div class="parcel-actions">'+backButton+actions+'</div>',()=>{if(step){step--;if(stages()[step]==='Place on screen')draft.layer='framePos';edit();}else confirmExit(backFromItem);});
+    for(const [label,accessible,key,fallback] of editableColours){
+      dialog.querySelector('.ink-row').append(colourButton(label,accessible,draft[key]||fallback,value=>{draft[key]=value;dirty=true;paint();}));
+    }
     dialog.querySelector('[data-next]')?.addEventListener('click',()=>{if(page==='Upload photo'&&!draft.photo)return report(new Error('Choose a picture first.'));if(page==='Write'&&!draft.words.trim())return report(new Error('Add a few words first.'));step++;edit()});
     dialog.querySelectorAll('[data-setting],[data-range],[data-text]').forEach(el=>el.oninput=()=>{const k=el.dataset.setting||el.dataset.range||el.dataset.text;draft[k]=el.dataset.range?Number(el.value):el.value;dirty=true;paint()});
     const syncSize=()=>{const size=dialog.querySelector('[data-size]');if(size)size.value=draft[draft.layer].size;};

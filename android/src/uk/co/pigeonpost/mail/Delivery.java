@@ -12,7 +12,7 @@ import org.json.*;
 
 public class Delivery extends BroadcastReceiver {
     private static View visible;
-    private static String visibleId="";
+    private static Dialog glass;
     private static final Handler ui=new Handler(Looper.getMainLooper());
     static boolean busy(){return visible!=null;}
     static boolean locked(Context c){return c.getSystemService(KeyguardManager.class).isKeyguardLocked()||!c.getSystemService(PowerManager.class).isInteractive();}
@@ -63,27 +63,71 @@ public class Delivery extends BroadcastReceiver {
     }
     static void closeActivityWindow(Activity c){if(visible!=null&&visible.getContext()==c)clear(c);}
     static void clear(Context c){
-        if(visible!=null){try{c.getSystemService(WindowManager.class).removeViewImmediate(visible);}catch(IllegalArgumentException ignored){}visible=null;visibleId="";UnlockQueue.afterUnlock(c.getApplicationContext());}
+        if(glass!=null){Dialog previous=glass;glass=null;visible=null;previous.dismiss();UnlockQueue.afterUnlock(c.getApplicationContext());}
     }
     static void show(Context c,JSONObject m){present(c,m,null,true);}
     static void present(Context c,JSONObject m,android.os.IBinder appToken,boolean automatic){
         String id=m.optString("id");if(visible!=null){notice(c,m,false);return;}
         try{
-            WindowManager wm=c.getSystemService(WindowManager.class);
-            FrameLayout root=new FrameLayout(c);root.setBackgroundColor(0x10000000);ImageView art=new ImageView(c);
+            int type=appToken==null?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_APPLICATION_PANEL;
+            Context windowContext=c;
+            if(appToken==null&&Build.VERSION.SDK_INT>=30){
+                Display display=c.getSystemService(android.hardware.display.DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
+                windowContext=c.createDisplayContext(display).createWindowContext(type,null);
+            }
+            Dialog pane=new Dialog(windowContext,R.style.ParcelGlass);
+            Window window=pane.getWindow();
+            window.setType(type);window.setFormat(PixelFormat.TRANSLUCENT);
+            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+            GradientDrawable frost=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0x2ce6f1ed,0x18778c8a,0x2732474c});
+            window.setBackgroundDrawable(frost);
+            WindowManager.LayoutParams attrs=window.getAttributes();
+            if(appToken!=null)attrs.token=appToken;
+            if(Build.VERSION.SDK_INT>=31){
+                float density=c.getResources().getDisplayMetrics().density;
+                attrs.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+                attrs.setBlurBehindRadius(Math.round(24*density));
+                window.setBackgroundBlurRadius(Math.round(38*density));
+            }
+            attrs.width=attrs.height=WindowManager.LayoutParams.MATCH_PARENT;window.setAttributes(attrs);
+            pane.setCancelable(false);
+            FrameLayout root=new FrameLayout(c);ImageView art=new ImageView(c);
             art.setImageBitmap(BitmapFactory.decodeFile(Mail.image(c,id).getPath()));art.setScaleType(ImageView.ScaleType.FIT_CENTER);
             art.setContentDescription(Mail.label(m));root.addView(art,new FrameLayout.LayoutParams(-1,-1));
-            WindowManager.LayoutParams lp=new WindowManager.LayoutParams(-1,-1,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,PixelFormat.TRANSLUCENT);
-            if(appToken!=null){lp.type=WindowManager.LayoutParams.TYPE_APPLICATION_PANEL;lp.token=appToken;}
-            lp.flags|=WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
-            if(Build.VERSION.SDK_INT>=31&&wm.isCrossWindowBlurEnabled()){lp.flags|=WindowManager.LayoutParams.FLAG_BLUR_BEHIND;lp.setBlurBehindRadius(48);}
             int dp=(int)(c.getResources().getDisplayMetrics().density*12);
             LinearLayout actions=new LinearLayout(c);actions.setPadding(dp,dp,dp,dp);actions.setGravity(Gravity.CENTER);
             Button dismiss=new Button(c);dismiss.setText("×  Dismiss");Button reply=new Button(c);reply.setText("Reply");
             for(Button button:new Button[]{dismiss,reply}){GradientDrawable bg=new GradientDrawable();bg.setColor(0xff254939);bg.setCornerRadius(dp*3);button.setTextColor(-1);button.setBackground(bg);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-2,-2);bp.setMargins(dp/2,0,dp/2,0);actions.addView(button,bp);}
             root.setOnApplyWindowInsetsListener((v,insets)->{actions.setPadding(dp+insets.getSystemWindowInsetLeft(),dp,dp+insets.getSystemWindowInsetRight(),dp+insets.getSystemWindowInsetBottom());return insets;});
             root.addView(actions,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));actions.setVisibility(View.INVISIBLE);
-            dismiss.setOnClickListener(v->{clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();});reply.setOnClickListener(v->{try{c.startActivity(new Intent(c,Main.class).setAction("reply").putExtra("id",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}catch(Exception ignored){notice(c,m,false);}clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();});
+            Runnable dismissParcel=()->{
+                if(visible!=root)return;
+                c.getSystemService(NotificationManager.class).cancel(id,1);
+                clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();
+            };
+            root.setOnTouchListener(new View.OnTouchListener(){
+                float startX,startY;boolean dragging=false;int pointer=-1;
+                final int slop=ViewConfiguration.get(c).getScaledTouchSlop();
+                void reset(){pointer=-1;dragging=false;art.animate().translationX(0).translationY(0).alpha(1).setDuration(140).start();}
+                public boolean onTouch(View v,MotionEvent event){
+                    float x=event.getRawX(),y=event.getRawY(),dx=x-startX,dy=y-startY;
+                    switch(event.getActionMasked()){
+                    case MotionEvent.ACTION_DOWN:
+                        art.animate().cancel();startX=x;startY=y;pointer=event.getPointerId(0);dragging=false;return true;
+                    case MotionEvent.ACTION_POINTER_DOWN:case MotionEvent.ACTION_CANCEL:reset();return true;
+                    case MotionEvent.ACTION_MOVE:
+                        if(pointer<0)return true;
+                        if(Math.hypot(dx,dy)>slop)dragging=true;
+                        if(dragging){art.setTranslationX(dx);art.setTranslationY(dy);art.setAlpha(Math.max(.35f,1-(float)Math.hypot(dx,dy)/root.getWidth()));}
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if(pointer>=0&&dragging&&Math.hypot(dx,dy)>=Math.max(dp*6,slop*4)){dismissParcel.run();return true;}
+                        reset();return true;
+                    default:return true;
+                    }
+                }
+            });
+            dismiss.setOnClickListener(v->dismissParcel.run());reply.setOnClickListener(v->{try{c.startActivity(new Intent(c,Main.class).setAction("reply").putExtra("id",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}catch(Exception ignored){notice(c,m,false);}clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();});
             if(automatic){
                 root.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener(){
                     public boolean onPreDraw(){
@@ -97,7 +141,8 @@ public class Delivery extends BroadcastReceiver {
                     }
                 });
             }
-            wm.addView(root,lp);visible=root;visibleId=id;
+            pane.setContentView(root);
+            pane.show();glass=pane;visible=root;window.setLayout(-1,-1);
             root.postDelayed(()->actions.setVisibility(View.VISIBLE),1000);
         }catch(Exception e){clear(c);notice(c,m,false);}
     }
