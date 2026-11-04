@@ -1,6 +1,7 @@
 import {fonts,fontSpec,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
+import {guestSelection} from './guest-selection.mjs';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
 
 const apps=[['☀','Weather','#e9ad61'],['♫','Music','#ae748b'],['✆','Phone','#65a184'],['✉','Mail','#779cb1'],['◉','Camera','#787785'],['☷','Notes','#d8aa60'],['☁','Cloud','#799dba'],['✿','Photos','#b48c9f']];
@@ -105,25 +106,42 @@ export function startGuestStudio(dialog,item,back,onReady){
     dialog.oncancel=e=>{e.preventDefault();cancelCrop();};
     fitPhoto(dialog,item,crop,applied=>{state.crop=applied;dirty=true;show();},cancelCrop);
   }
-  async function upload(input,second=false){
+  async function upload(input){
     if(!input.files?.[0])return;const source=input.files[0];input.value='';
-    try{const img=await readPhoto(source);if(!input.isConnected)return;
-      if(second){state.second=contain({...makeLayer(img.height/img.width,170,700),image:img});active='second';dirty=true;show();}
-      else openCrop({photo:img,zoom:1,panX:.5,panY:.5});
-    }catch(e){grabError(e);}
+    try{const img=await readPhoto(source);if(input.isConnected)openCrop({photo:img,zoom:1,panX:.5,panY:.5});}
+    catch(e){grabError(e);}
+  }
+  function bindStickerPicker(panel){
+    for(const [id,name] of guestSelection.Stickers){
+      const pick=document.createElement('button'),img=new Image();
+      pick.type='button';img.alt='';img.src='assets/guest/'+id+'.svg';
+      pick.append(img,name);pick.setAttribute('aria-pressed',String(state.second?.id===id));
+      pick.onclick=async()=>{
+        if(busy)return;
+        busy=true;
+        try{
+          await img.decode();if(!panel.isConnected)return;
+          const position=state.second||makeLayer(1,170,700);
+          state.second=contain({...position,id,name,image:img,ratio:img.naturalHeight/img.naturalWidth});
+          active='second';dirty=true;show();tool('second').focus();
+        }catch(e){grabError(e);}finally{busy=false;}
+      };
+      panel.querySelector('.sticker-grid').append(pick);
+    }
+    if(state.second)tool('remove-second').onclick=()=>{state.second=null;active='art';dirty=true;show();tool('second').focus();};
   }
   function layer(key,label){
     return '<div class="move-layer" tabindex="0" role="group" aria-label="'+label+'" data-layer="'+key+'"><div class="layer-image"></div><button type="button" class="corner" aria-label="Resize '+label+'">↘</button></div>';
   }
   function show(){
     serial++;editing='';busy=false;dialog.classList.add('guest-studio');dialog.oncancel=e=>{e.preventDefault();leave();};
-    dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back">‹ Designs</button><small>PLACEMENT PREVIEW</small></div><h2></h2><p class="studio-tip">Drag to move. Pull the corner to resize.'+(item.textBox?' Tap the paper to write.':'')+'</p><div class="sample-phone" aria-label="Example frosted phone screen">'+phoneBackground()+layer('art','Artwork')+(state.second?layer('second','Extra photo'):'')+(state.note?layer('note','Note banner'):'')+'</div><div class="studio-tools">'+(item.maskSheet?button(state.crop.photo?'Edit picture':'Upload photo','photo'):'')+button(state.note?'Note options':'＋ Add note','note')+'</div><div class="banner-options" hidden><small>CHOOSE YOUR BANNER</small><div>'+bannerNames.map((s,i)=>'<button class="style-'+i+'" data-style="'+i+'">'+s+'</button>').join('')+'</div>'+(state.note?button('Edit text','edit-note')+button('Remove note','remove-note'):'')+'</div><details class="studio-extras"><summary>Extra picture</summary>'+button(state.second?'Replace extra picture':'Add extra picture','second')+(state.second?button('Remove picture','remove-second'):'')+'</details><input hidden type="file" accept="image/*" data-file="main"><input hidden type="file" accept="image/*" data-file="second"><p role="alert" class="studio-error"></p><button class="studio-primary" data-tool="ready">Ready for post　›</button>';
+    dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back">‹ Designs</button><small>PLACEMENT PREVIEW</small></div><h2></h2><p class="studio-tip">Drag to move. Pull the corner to resize.'+(item.textBox?' Tap the paper to write.':'')+'</p><div class="sample-phone" aria-label="Example frosted phone screen">'+phoneBackground()+layer('art','Artwork')+(state.second?layer('second',state.second.name+' sticker'):'')+(state.note?layer('note','Note banner'):'')+'</div><div class="studio-photo">'+(item.maskSheet?button(state.crop.photo?'Edit picture':'Upload photo','photo'):'')+'</div><div class="studio-tools">'+button(state.note?'Note options':'＋ Add note','note')+button(state.second?'Edit sticker':'＋ Add sticker','second')+'</div><div class="banner-options" hidden><small>CHOOSE YOUR BANNER</small><div>'+bannerNames.map((s,i)=>'<button class="style-'+i+'" data-style="'+i+'">'+s+'</button>').join('')+'</div>'+(state.note?button('Edit text','edit-note')+button('Remove note','remove-note'):'')+'</div><section class="sticker-options" aria-label="Choose a sticker" hidden><small>CHOOSE A STICKER</small><div class="sticker-grid"></div>'+(state.second?button('Remove sticker','remove-second'):'')+'</section><input hidden type="file" accept="image/*" data-file="main"><p role="alert" class="studio-error"></p><button class="studio-primary" data-tool="ready">Ready for post　›</button>';
     dialog.querySelector('h2').textContent=item.name;
     const stage=dialog.querySelector('.sample-phone'),artEl=stage.querySelector('[data-layer=art]');
     for(const el of stage.querySelectorAll('.move-layer'))bindLayer(el);
     if(item.textBox&&!state.words)artEl.querySelector('.layer-image').dataset.hint='Tap to write';
     if(state.note&&!state.note.text)stage.querySelector('[data-layer=note] .layer-image').dataset.hint='Tap to write';
-    if(state.second){const image=state.second.image;image.alt='Added picture';stage.querySelector('[data-layer=second] .layer-image').append(image);}
+    if(state.second){const image=state.second.image;image.alt='';stage.querySelector('[data-layer=second] .layer-image').append(image);}
     if(item.textBox||state.note){
       const controls=document.createElement('div');controls.className='studio-colours';
       function row(fields){
@@ -148,15 +166,22 @@ export function startGuestStudio(dialog,item,back,onReady){
         ['Banner','Banner colour',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote],
         ['Text','Banner text colour',state.note,'ink','#283c30',paintNote]
       ]);
-      dialog.querySelector('.studio-extras').before(controls);
+      dialog.querySelector('.sticker-options').before(controls);
     }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
-    const source=dialog.querySelector('[data-file=main]'),extra=dialog.querySelector('[data-file=second]');
+    const source=dialog.querySelector('[data-file=main]');
     if(item.maskSheet){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
-    tool('second').onclick=()=>extra.click();extra.onchange=()=>upload(extra,true);
-    if(state.second)tool('remove-second').onclick=()=>{state.second=null;active='art';dirty=true;show();};
-    const styles=dialog.querySelector('.banner-options');tool('note').onclick=()=>{styles.hidden=!styles.hidden;};
+    const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
+    function togglePanel(panel){
+      if(panel===stickers&&!stickers.querySelector('.sticker-grid button'))bindStickerPicker(stickers);
+      const opening=panel.hidden;styles.hidden=true;stickers.hidden=true;panel.hidden=!opening;
+      tool('note').setAttribute('aria-expanded',String(!styles.hidden));
+      tool('second').setAttribute('aria-expanded',String(!stickers.hidden));
+    }
+    for(const [key,panel] of [['note',styles],['second',stickers]]){
+      tool(key).setAttribute('aria-expanded','false');tool(key).onclick=()=>togglePanel(panel);
+    }
     styles.querySelectorAll('[data-style]').forEach(b=>{const style=Number(b.dataset.style);
       const icon=banner(style,'Aa',180,58);icon.setAttribute('aria-hidden','true');b.prepend(icon);
       b.setAttribute('aria-pressed',String(state.note?.style===style));b.onclick=()=>{
