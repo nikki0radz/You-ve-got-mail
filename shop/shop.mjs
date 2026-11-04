@@ -1,3 +1,4 @@
+import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
 import {escapeHtml as esc,collectionName as displayName} from '../domain.mjs';
@@ -20,15 +21,17 @@ export async function openShop(onTest, initialCategory, guest=false){
   let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
   let returnScroll=0,previewURL,shopScroll=0,backFromItem;
+  let disposeReel,chosenFrame='Instant print';
   const stripOffsets=new Map();
   const trigger=document.activeElement;
   if(dialog.open)return;
   dialog.showModal();
-  const cleanup=()=>{latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing');dialog.replaceChildren();trigger?.focus();};
+  const cleanup=()=>{disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing');dialog.replaceChildren();trigger?.focus();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
   dialog.oncancel=e=>{e.preventDefault();cancel();};
   const shell=(name,status,body,back)=>{
+    disposeReel?.();disposeReel=null;
     dialog.innerHTML='<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header><h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
     dialog.querySelector('.parcel-x').onclick=()=>cancel();
     const prev=dialog.querySelector('[data-prev]');if(prev)prev.onclick=back;
@@ -62,6 +65,13 @@ export async function openShop(onTest, initialCategory, guest=false){
   function gallery(){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=catalog.filter(it=>it.category===group);
+    if(guest&&group==='Photos'){
+      const frames=[...items].sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
+      shell('Photo frames','Choose a frame',backButton+'<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through photo frames"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index">All frames <span class="frame-count"></span></div><div class="frame-thumbs" role="group" aria-label="All five frames"></div><button class="primary frame-use"></button>',()=>dialog.close());
+      disposeReel=mountFrameReel(dialog,frames,Math.max(0,frames.findIndex(it=>it.name===chosenFrame)),item=>{
+        chosenFrame=item.name;backFromItem=gallery;chooseItem(item);
+      });return;
+    }
     shell(displayName(group),items.length+' designs',backButton+'<div class="parcel-gallery">'+items.map(shelfButton).join('')+'</div>',guest?()=>dialog.close():browse);wireTiles(gallery);dialog.scrollTop=returnScroll;
   }
   function confirmExit(action){

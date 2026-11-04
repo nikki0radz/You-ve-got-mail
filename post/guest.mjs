@@ -5,7 +5,7 @@ const preview=!location.hash && new URLSearchParams(location.search).get('previe
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
 const token=location.hash.slice(1);
 const steps=document.getElementById('steps'),status=document.getElementById('status');
-const kinds={Photos:'a framed photo',Stickers:'a sticker','Love notes':'a love note',Flowers:'flowers',Postcards:'a postcard',Notes:'a note'};
+const kinds={Photos:'a framed photo',Stickers:'a sticker',Reminders:'a reminder','Love notes':'a love note',Flowers:'flowers',Postcards:'a postcard',Notes:'a note'};
 let draft;
 async function api(path,key,body){
   const resp=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+key,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
@@ -42,7 +42,7 @@ function invitation(){
   };
 }
 const categories=Object.keys(guestSelection);
-const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for her screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.','Love notes':'Something sweet, already written.'};
+const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for her screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
 let position=categories.indexOf('Photos');
 function choose(){
   steps.innerHTML='<button class="wheel-back">‹ Back</button><section class="wheel"><h2>Pick your post</h2><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs"><button></button><button></button><button></button></div><p class="caption"></p><button class="browse"></button></div></section>';
