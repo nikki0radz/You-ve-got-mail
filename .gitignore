@@ -4,3 +4,7 @@ dist/
 *.log
 
 dist-android/
+
+android/.gradle/
+android/app/build/
+android/app/google-services.json

@@ -1,0 +1,22 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+android {
+    namespace 'uk.co.pigeonpost.mail'
+    compileSdk 35
+    buildToolsVersion "35.0.0"
+    defaultConfig { applicationId 'uk.co.pigeonpost.mail'; minSdk 28; targetSdk 35; versionCode 19; versionName '0.1.18' }
+    sourceSets { main { manifest.srcFile 'firebase-manifest.xml'; java.srcDirs = ['../src', 'src/main/java']; res.srcDirs = ['../res']; assets.srcDirs = [layout.buildDirectory.dir('generated/pigeon-assets')] } }
+    signingConfigs { release { if (System.getenv('MAIL_KEYSTORE') && System.getenv('MAIL_PASSWORD_FILE')) { storeFile file(System.getenv('MAIL_KEYSTORE')); storePassword file(System.getenv('MAIL_PASSWORD_FILE')).text.trim(); keyAlias 'pigeonpost'; keyPassword storePassword } } }
+    buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.9.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'androidx.work:work-runtime:2.10.0'
+}
+tasks.register('buildWeb', Exec) { workingDir rootProject.projectDir.parentFile; commandLine 'npm','run','build' }
+tasks.register('prepareWeb', Copy) { dependsOn 'buildWeb'; from rootProject.projectDir.parentFile.toPath().resolve('dist'); into layout.buildDirectory.dir('generated/pigeon-assets/site') }
+tasks.named('preBuild').configure { dependsOn 'prepareWeb' }
