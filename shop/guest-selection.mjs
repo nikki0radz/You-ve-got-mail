@@ -48,9 +48,13 @@ export const guestSelection = {
   ],
 };
 
+export const guestMaster = id => [125,126,151,159,162,163].includes(id)
+  ? 'assets/guest/' + id + '-clean.png'
+  : 'assets/guest/' + String(id).padStart(3,'0') + '.svg';
+
 export function guestItems(catalog) {
   return Object.entries(guestSelection).flatMap(([category, picks]) => picks.map(([id, name]) => {
-    const master = id === 162 ? 'assets/guest/162-clean.png' : 'assets/guest/' + String(id).padStart(3,'0') + '.svg';
+    const master = guestMaster(id);
     const item = catalog.find(entry => entry.category === category && entry.name === name);
     if (!item) throw new Error('Missing invitation design ' + id);
     return {...item, master};

@@ -1,7 +1,7 @@
 import {scaled} from '../shop/transport-image.mjs';
-import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=glide-1';
-import {openShop} from '../shop/shop.mjs?guest-library=5';
-import {guestSelection} from '../shop/guest-selection.mjs';
+import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=clean-pigeons';
+import {openShop} from '../shop/shop.mjs?guest-library=6';
+import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=clean-pigeons';
 const designPreview=document.documentElement.dataset.screen==='postcard-composer';
 const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
@@ -30,7 +30,7 @@ async function loadChoices(){
   steps.innerHTML='<section class="flight dispatch-envelope" aria-live="polite"><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt=""></div><h2>Loading your options</h2><p>Our pigeon is gathering your designs…</p><progress max="1" value="0" aria-label="Loading designs"></progress><p data-progress></p><button type="button" data-back>Back</button></section>';
   steps.querySelector('[data-back]').onclick=()=>{preloadGeneration++;invitation();};
   const progress=steps.querySelector('progress'),message=steps.querySelector('[data-progress]');
-  const masters=Object.values(guestSelection).flat().map(([id])=>id===162?'assets/guest/162-clean.png':'assets/guest/'+String(id).padStart(3,'0')+'.svg');
+  const masters=Object.values(guestSelection).flat().map(([id])=>guestMaster(id));
   const examples=[...guestSelection.Photos,guestSelection.Postcards.find(([id])=>id===105)].map(([id])=>'assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp');
   const paths=[...new Set([...masters,...examples])];progress.max=paths.length;
   let next=0,done=0;const failed=[];
