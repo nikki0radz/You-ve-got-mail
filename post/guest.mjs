@@ -1,7 +1,7 @@
 import {scaled} from '../shop/transport-image.mjs';
-import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=clean-pigeons';
-import {openShop} from '../shop/shop.mjs?guest-library=6';
-import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=clean-pigeons';
+import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=complete-pigeons';
+import {openShop} from '../shop/shop.mjs?guest-library=7';
+import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=complete-pigeons';
 const designPreview=document.documentElement.dataset.screen==='postcard-composer';
 const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
@@ -18,7 +18,7 @@ function invitation(){
   status.textContent='';
   steps.querySelector('#accept').onclick=loadChoices;
   steps.querySelector('#decline').onclick=()=>{
-    steps.innerHTML='<img class="decline-pigeon" src="assets/home/sad.webp" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
+    steps.innerHTML='<img class="decline-pigeon" src="assets/guest/decline-clean-v2.png" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
     steps.querySelector('#back').onclick=invitation;
   };
 }
