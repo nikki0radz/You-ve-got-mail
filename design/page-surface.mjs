@@ -59,7 +59,7 @@ function reviewNode(node,id){
 }
 function scan(){
   const root=[...document.querySelectorAll('dialog[open]')].at(-1)||document.body;defs.clear();
-  for(const n of root.querySelectorAll(candidates)){
+  for(const n of [root,...root.querySelectorAll(candidates)]){
     if(!n.getClientRects().length||n.closest('[aria-hidden=true]')||n.matches('input[type=hidden]'))continue;
     const path=locate(n);let hash=2166136261;for(const c of path)hash=Math.imul(hash^c.charCodeAt(0),16777619);
     const id='view-'+(hash>>>0).toString(36);n.dataset.workId=id;reviewNode(n,id);
@@ -82,6 +82,7 @@ function configure(config){
     if(!/^view-[a-z0-9]+$/.test(id))continue;const d={...extraCSS(s)};
     for(const k of ['width','height','gap','margin','padding','radius','fontSize','borderWidth'])if(k in s)d[propMap[k]||k]=s[k]+'px';
     for(const k of ['color','background','borderColor','font','align'])if(k in s)d[propMap[k]||k]=s[k];
+    if('moveX' in s||'moveY' in s)d.translate=(s.moveX||0)+'px '+(s.moveY||0)+'px';
     if(s.width||s.height)d.boxSizing='border-box';if(s.height)d.minHeight=0;if(s.borderWidth!==undefined)d.borderStyle='solid';if('opacity'in s)d.opacity=s.opacity/100;
     css+='[data-work-id="'+id+'"]{'+Object.entries(d).map(([k,v])=>kebab(k)+':'+v+'!important').join(';')+'}';
   }
@@ -89,13 +90,34 @@ function configure(config){
   if(config.textScale&&config.textScale!==1){
     for(const [id,{n}] of defs){if(!n.childElementCount||n.matches('button,summary,label,h1,h2,h3,p,select')){const base=n.dataset.workFont||(n.dataset.workFont=parseFloat(getComputedStyle(n).fontSize));css+='[data-work-id="'+id+'"]{font-size:'+((config.layout.styles[id]?.fontSize||Number(base))*config.textScale)+'px!important}';}}
   }
-  if(css!==sheet.textContent)sheet.textContent=css;
+  if(css!==sheet.textContent)sheet.textContent=css;requestAnimationFrame(placeHandle);
 }
 const colour=s=>{const a=s.match(/\d+/g);return a?'#'+a.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join(''):'#ffffff'};
 function inspect(id){const n=defs.get(id)?.n;if(!n)return null;const c=getComputedStyle(n),r=n.getBoundingClientRect();return {width:r.width,height:r.height,gap:parseFloat(c.gap)||0,padding:parseFloat(c.paddingTop)||0,margin:parseFloat(c.marginTop)||0,fontSize:parseFloat(c.fontSize),radius:parseFloat(c.borderTopLeftRadius)||0,borderWidth:parseFloat(c.borderTopWidth),opacity:100*c.opacity,color:colour(c.color),borderColor:colour(c.borderColor),background:colour(c.backgroundColor),align:c.textAlign,font:c.fontFamily.split(',')[0].replace(/["']/g,'')}}
+const handle=document.createElement('div');handle.setAttribute('aria-label','Drag to resize post office');
+handle.style.cssText='display:none;position:fixed;width:24px;height:24px;z-index:2147483647;background:#25614c;border:2px solid white;border-radius:50%;touch-action:none;cursor:nwse-resize';
+handle.textContent='↘';handle.style.color='white';handle.style.textAlign='center';document.body.append(handle);
+function placeHandle(){const n=defs.get(selected)?.n;if(!editing||!n?.matches('.courier-stand')){handle.style.display='none';return;}const r=n.getBoundingClientRect();handle.style.display='block';handle.style.left=(r.right-12)+'px';handle.style.top=(r.bottom-12)+'px';}
+window.addEventListener('scroll',placeHandle,true);window.addEventListener('resize',placeHandle);
+let resizeDrag=null;
+handle.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const n=defs.get(selected)?.n;if(!n)return;const r=n.getBoundingClientRect();resizeDrag={key:selected,pointer:e.pointerId,x:e.clientX,y:e.clientY,width:r.width,height:r.height};handle.setPointerCapture(e.pointerId)});
+handle.addEventListener('pointermove',e=>{if(!resizeDrag||e.pointerId!==resizeDrag.pointer)return;e.preventDefault();e.stopPropagation();const scale=Math.max(.25,1+(e.clientX-resizeDrag.x)/resizeDrag.width);parent.postMessage({app:'pigeon-studio',type:'resize',key:resizeDrag.key,width:Math.round(resizeDrag.width*scale),height:Math.round(resizeDrag.height*scale)},location.origin)});
+for(const type of ['pointerup','pointercancel'])handle.addEventListener(type,()=>resizeDrag=null);
+let dragging=null;
+document.addEventListener('pointermove',e=>{
+  if(!dragging||e.pointerId!==dragging.pointer)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  parent.postMessage({app:'pigeon-studio',type:'position',key:dragging.key,moveX:dragging.x+e.clientX-dragging.startX,moveY:dragging.y+e.clientY-dragging.startY},location.origin);
+},true);
+for(const type of ['pointerup','pointercancel'])document.addEventListener(type,()=>{dragging=null},true);
 for(const type of ['pointerdown','click','keydown'])document.addEventListener(type,e=>{
-  if(!editing||e.button===2||(type==='keydown'&&![' ','Enter'].includes(e.key)))return;
+  if(e.target===handle||!editing||e.button===2||(type==='keydown'&&![' ','Enter'].includes(e.key)))return;
   const hit=e.target.closest('button[data-work-id],a[data-work-id],summary[data-work-id],select[data-work-id],label[data-work-id]')||e.target.closest('[data-work-id]');if(!hit)return;e.preventDefault();e.stopImmediatePropagation();
   if(type==='pointerdown'||type==='keydown')emit('select',hit.dataset.workId);
+  if(type==='pointerdown'&&hit.matches('.courier-stand,.courier-stand *')&&!hit.closest('[data-set-open]')){
+    const stand=hit.closest('.courier-stand');const id=stand.dataset.workId;
+    if(id){const style=reviewStyles[id]||{};emit('select',id);dragging={key:id,pointer:e.pointerId,startX:e.clientX,startY:e.clientY,x:style.moveX||0,y:style.moveY||0};stand.setPointerCapture(e.pointerId);}
+  }
 },true);
 window.designSurface={idFor:selector=>document.querySelector(selector)?.dataset.workId,variants:()=>[...document.querySelectorAll('select[data-style-key]')].map(el=>({id:el.dataset.styleKey,title:el.parentElement.querySelector('span')?.textContent||'Layout',options:[...el.options].map(o=>o.textContent)})),inspect,appearance:id=>appearance(defs.get(id)?.n),configure,toolbarReport:()=>'',inventory:()=>Object.fromEntries([...defs].map(([k,v])=>[k,[v.label,v.path,v.type]]))};scan();emit('ready');
+

@@ -130,7 +130,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       content='<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index"><span>All '+unit+'</span><span class="frame-count"></span><button type="button" class="library-see-all" data-grid>See all</button></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>';
     }
     const guestLibrary=options===true;
-    shell(label,items.length+' '+unit,(guestLibrary?'':backButton+controls())+content,back,guestLibrary);
+    shell(label,items.length+' '+unit,(guestLibrary?'':backButton+(options.wheel?'':controls()))+content,back,guestLibrary);
     function filter(key){
       if(group===key)return;
       group=key;gridScroll=0;library(grid);

@@ -8,7 +8,7 @@ let layout=empty(),editing=false,selected='row',grid=0,textScale=1,frame=0,drag=
 const phone=window.PigeonDesign;
 const notify=(type,details={})=>{if(parent!==window)parent.postMessage({app:'pigeon-studio',type,...details},location.origin)};
 function selector(key){return elements[key]?.[1]||('[data-design-copy="'+key+'"]')}
-function target(key){return dialog.querySelector(selector(key))}
+function target(key){return key==='background'?dialog:dialog.querySelector(selector(key))}
 function apply(){
   let css='';
   for(const key of ['pocket',...Object.keys(layout.styles).filter(k=>k!=='pocket')]){
@@ -24,7 +24,7 @@ function apply(){
     if(s.font)d.fontFamily=s.font;
     for(const k of ['background','color','borderColor'])if(s[k])d[k]=s[k];
     if('x'in s)d.left=s.x+'%';if('y'in s)d.top=s.y+'%';
-    const sel='#parcel-shop.guest-studio :where('+selector(key)+')',decl=Object.entries(d).map(([k,v])=>k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+':'+v+'!important').join(';');
+    const sel=key==='background'?'#parcel-shop.guest-studio':'#parcel-shop.guest-studio :where('+selector(key)+')',decl=Object.entries(d).map(([k,v])=>k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+':'+v+'!important').join(';');
     css+=sel+'{'+decl+'}\n';
     if(key==='row'){
       if(s.order)css+=sel+' [data-tool=second]{order:'+(s.order==='sticker-first'?-1:1)+'!important}';
@@ -58,6 +58,7 @@ dialog.designGeometry=()=>{
   return g;
 };
 function keyFor(el){
+  if(el===dialog)return 'background';
   const copy=el.closest('[data-design-copy]');if(copy)return copy.dataset.designCopy;
   for(const k of [...Object.keys(elements).filter(k=>!['row','pocket','palette','banners'].includes(k)),'row','palette','banners'])if(el.closest(selector(k)))return k;
 }

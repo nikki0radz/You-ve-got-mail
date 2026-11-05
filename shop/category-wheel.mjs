@@ -6,7 +6,7 @@ const categories=Object.keys(guestSelection);
 
 export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse}){
   const first=Math.max(0,categories.indexOf(initialCategory));
-  root.innerHTML='<button type="button" class="wheel-back pocket-back"><span aria-hidden="true">←</span> Back</button><section class="wheel"><h2>Pick your post</h2><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
+  root.innerHTML='<button type="button" class="wheel-back pocket-back"><span aria-hidden="true">←</span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
   const cards=slots.map((key,slot)=>{

@@ -3,7 +3,7 @@ import {safeAppearance} from './appearance.mjs';
 import {buttons,layouts} from './templates.mjs';
 export const screen='postcard-composer', appVersion='0.1.9';
 export const elements={
-  row:['Composer toolbar','.studio-tools'],note:['Add note','[data-tool=note]'],second:['Add sticker','[data-tool=second]'],
+  background:['Popup background','#parcel-shop'],row:['Composer toolbar','.studio-tools'],note:['Add note','[data-tool=note]'],second:['Add sticker','[data-tool=second]'],
   ready:['Ready for post','[data-tool=ready]'],photo:['Upload photo','[data-tool=photo]'],back:['Designs','[data-tool=back]'],
   title:['Postcard title','h2'],hint:['Placement instructions','.studio-tip'],eyebrow:['Preview label','.studio-heading small'],
   art:['Postcard artwork','[data-layer=art]'],banner:['Note banner','[data-layer=note]'],extra:['Added sticker','[data-layer=second]'],
@@ -13,7 +13,7 @@ export const elements={
   label:['Banner picker label','.banner-options small'],cropOk:['Confirm photo','[data-ok]'],cropZoom:['Photo zoom','.zoom-strip'],
   pocket:['Shared · toolbar buttons','.studio-tools button']
 };
-export const numbers={width:[1,900],height:[1,1200],padding:[0,90],margin:[0,100],fontSize:[8,96],radius:[0,100],borderWidth:[0,20],opacity:[0,100],gap:[0,64],x:[0,95],y:[0,95]};
+export const numbers={width:[1,900],height:[1,1200],padding:[0,90],margin:[0,100],fontSize:[8,96],radius:[0,100],borderWidth:[0,20],opacity:[0,100],gap:[0,64],x:[0,95],y:[0,95],moveX:[-1000,1000],moveY:[-1000,1000]};
 export const colours=['color','background','borderColor'];
 export const choices={align:['left','center','right'],font:['PostalBaloo','system-ui','Georgia','monospace','ParcelCaption'],order:['note-first','sticker-first'],equal:['equal','content']};
 export const stickerIds=[125,126,163,151,159,162];
@@ -48,3 +48,4 @@ export function record(book,name,layout,newDraft=false){
   d.name=name;d.revisions.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),screen:book.screen,appVersion,layout:cleanLayout(layout)});
   return d.revisions.at(-1);
 }
+

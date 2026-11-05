@@ -133,6 +133,7 @@ public class Delivery extends BroadcastReceiver {
                 c.getSystemService(NotificationManager.class).cancel(id,1);
                 clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();
             };
+            final long swipeEnabledAt=android.os.SystemClock.uptimeMillis()+2000;
             root.setOnTouchListener(new View.OnTouchListener(){
                 float startX,startY;boolean dragging=false;int pointer=-1;
                 final int slop=ViewConfiguration.get(c).getScaledTouchSlop();
@@ -141,7 +142,7 @@ public class Delivery extends BroadcastReceiver {
                     float x=event.getRawX(),y=event.getRawY(),dx=x-startX,dy=y-startY;
                     switch(event.getActionMasked()){
                     case MotionEvent.ACTION_DOWN:
-                        art.animate().cancel();startX=x;startY=y;pointer=event.getPointerId(0);dragging=false;return true;
+                        art.animate().cancel();startX=x;startY=y;pointer=android.os.SystemClock.uptimeMillis()>=swipeEnabledAt?event.getPointerId(0):-1;dragging=false;return true;
                     case MotionEvent.ACTION_POINTER_DOWN:case MotionEvent.ACTION_CANCEL:reset();return true;
                     case MotionEvent.ACTION_MOVE:
                         if(pointer<0)return true;
@@ -176,3 +177,4 @@ public class Delivery extends BroadcastReceiver {
         }catch(Exception e){android.util.Log.w("Pigeon","Could not present parcel window",e);clear(c);notice(c,m,false);if(c instanceof OpenParcel)((Activity)c).finish();}
     }
 }
+
