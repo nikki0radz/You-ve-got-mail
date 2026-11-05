@@ -1,8 +1,9 @@
+import {setupHomeColours} from './post/home-colours.mjs';
 import {openPhoneStudio,closePhoneStudio} from './design/phone-home.mjs';
 import {settingsPage,wireSettings} from './post/settings.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
 import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom} from './post/mailbox.mjs';
-import {header,home,wireRails,demoPeople} from './post/home.mjs';
+import {header,home,wireRails,demoPeople} from './post/home.mjs?v=sliding-status-1';
 import {installSocial} from './post/social.mjs';
 import {openShop,backInShop} from './shop/shop.mjs';
 import{createId,STORAGE_KEY,FRAMES,COLOURS,loadState,validateMessage,makeMessage,escapeHtml as esc}from'./domain.mjs';
@@ -13,13 +14,15 @@ const icons={home:'M3 10l9-7 9 7v10H3z M9 20v-7h6v7',inbox:'M4 4h16l2 11v5H2v-5z
 function icon(name){return`<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name]||icons.mail}"/></svg>`}
 function toast(text){clearTimeout(noticeTimer);notice.textContent=text;notice.classList.add('visible');noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3500)}
 function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));return true}catch{toast('Could not save on this device. Remove a picture or free some storage.');return false}}
-function applyTheme(){window.Pigeon?.setTheme?.(state.theme==='dark');document.documentElement.dataset.theme=state.theme;document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#111c19':'#a1c6bc'}
+let homeColours;
+function applyTheme(){window.Pigeon?.setTheme?.(state.theme==='dark');document.documentElement.dataset.theme=state.theme;document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#111c19':'#a1c6bc';homeColours?.apply()}
 function inbox(){if(window.Pigeon?.mailbox)return mailboxView();const request=state.friendRequest;const requestCard=request?`<button class="menu-item" data-action="invitation"><span><strong>Friend request</strong><small>Local test · ${esc(request.status)}</small></span><span>›</span></button>`:'';return`<section class="page-heading"><h1>Your inbox</h1><p>Evidence that your friends have free time.</p>${window.Pigeon?'<button class="primary" data-action="phone-history">Phone inbox &amp; schedules</button>':''}</section>${requestCard}${!state.inbox.length?`<div class="empty"><img src="assets/pigeon.webp" alt=""><h2>Suspiciously peaceful.</h2><p>Try a test pop-up to see a letter here.</p><button class="secondary" data-action="test">Send test</button></div>`:`<div class="inbox-list">${state.inbox.slice().reverse().map(m=>`<button class="inbox-item" data-action="read" data-id="${esc(m.id)}"><span>${icon(m.type==='message'?'mail':'inbox')}</span><span><strong>${esc(m.sender)}</strong><span>${esc(m.type==='picture'?'A picture':m.text||m.gift||'A little interruption')}</span><small>${formatTime(m.createdAt)} · Test on this device${m.snoozeUntil?' · Snoozed':''}</small></span>${m.read?'':'<b class="unread" aria-label="Unread"></b>'}</button>`).join('')}</div>`}${state.scheduled.length?`<h2 class="section-title">Waiting pigeons</h2>${state.scheduled.map(m=>`<div class="scheduled"><span>Local test · ${esc(m.recipient)}<small>${formatTime(Date.parse(m.when))}</small></span><button class="text-button" data-action="cancel-scheduled" data-id="${esc(m.id)}">Cancel</button></div>`).join('')}`:''}`}
-function render(){applyTheme();app.innerHTML=`${header(state)}<div class="draft-label">${window.Pigeon?"Android test edition":"Web preview · local test deliveries"}</div><div class="page-content">${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span></button>`).join('')}</nav>`;wireRails(app);if(tab==='settings')wireSettings(app);
+function render(){applyTheme();app.innerHTML=`${header(state,tab==='home')}<div class="draft-label">${window.Pigeon?"Android test edition":"Web preview · local test deliveries"}</div><div class="page-content">${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span></button>`).join('')}</nav>`;wireRails(app);if(tab==='settings')wireSettings(app);
  if(tab==='home')mountCategoryWheel(app.querySelector('#home-wheel'),{initialCategory:'Photos',onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(window.Pigeon?.name)Pigeon.name(state.profile.name);
 }
+homeColours=setupHomeColours({app,getTheme:()=>state.theme,setTheme:value=>{state.theme=value;persist();render()},isHome:()=>tab==='home'});
 function formatTime(n){return new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short'}).format(new Date(n))}
 function start(next){lastFocus=document.activeElement;flow=next;renderFlow();if(!dialog.open)dialog.showModal()}
 function close(){dialog.close();flow=null;if(lastFocus?.isConnected)lastFocus.focus()}
@@ -141,6 +144,7 @@ window.refreshDeliverySettings=()=>{if(tab==='settings')wireSettings(app);};
 render();setTimeout(catchUp,600);setInterval(catchUp,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)catchUp()});
 
 window.pigeonBack=()=>{
+  if(homeColours.close())return true;
   if(closePhoneStudio())return true;
   const top=document.activeElement?.closest('dialog[open]');
   if(top?.id==='mail-window'){
