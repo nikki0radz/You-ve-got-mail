@@ -85,7 +85,28 @@ public class Delivery extends BroadcastReceiver {
                 window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
                 window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);pane.setCancelable(false);
             }
-            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+            // Draw the backdrop behind the system bars while keeping the controls inset.
+            if(Build.VERSION.SDK_INT>=30){
+                window.setDecorFitsSystemWindows(false);
+                WindowManager.LayoutParams params=window.getAttributes();
+                params.setFitInsetsTypes(0);
+                if(Build.VERSION.SDK_INT>=35)params.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+                else params.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                window.setAttributes(params);
+            }else{
+                window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+                if(Build.VERSION.SDK_INT>=28){
+                    WindowManager.LayoutParams params=window.getAttributes();
+                    params.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                    window.setAttributes(params);
+                }
+            }
+            if(inActivity){
+                window.setStatusBarColor(Color.TRANSPARENT);
+                window.setNavigationBarColor(Color.TRANSPARENT);
+                if(Build.VERSION.SDK_INT>=29){window.setStatusBarContrastEnforced(false);window.setNavigationBarContrastEnforced(false);}
+            }
             FrameLayout root=new FrameLayout(c);ImageView art=new ImageView(c);
             art.setImageBitmap(BitmapFactory.decodeFile(Mail.image(c,id).getPath()));art.setScaleType(ImageView.ScaleType.FIT_CENTER);
             art.setContentDescription(Mail.label(m));root.addView(art,new FrameLayout.LayoutParams(-1,-1));
@@ -93,7 +114,19 @@ public class Delivery extends BroadcastReceiver {
             LinearLayout actions=new LinearLayout(c);actions.setPadding(dp,dp,dp,dp);actions.setGravity(Gravity.CENTER);
             Button dismiss=new Button(c);dismiss.setText("×  Dismiss");Button reply=new Button(c);reply.setText("Reply");
             for(Button button:new Button[]{dismiss,reply}){GradientDrawable bg=new GradientDrawable();bg.setColor(0xff254939);bg.setCornerRadius(dp*3);button.setTextColor(-1);button.setBackground(bg);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-2,-2);bp.setMargins(dp/2,0,dp/2,0);actions.addView(button,bp);}
-            root.setOnApplyWindowInsetsListener((v,insets)->{actions.setPadding(dp+insets.getSystemWindowInsetLeft(),dp,dp+insets.getSystemWindowInsetRight(),dp+insets.getSystemWindowInsetBottom());return insets;});
+            root.setOnApplyWindowInsetsListener((v,insets)->{
+                int left,top,right,bottom;
+                if(Build.VERSION.SDK_INT>=30){
+                    android.graphics.Insets safe=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout());
+                    left=safe.left;top=safe.top;right=safe.right;bottom=safe.bottom;
+                }else{
+                    left=insets.getSystemWindowInsetLeft();top=insets.getSystemWindowInsetTop();
+                    right=insets.getSystemWindowInsetRight();bottom=insets.getSystemWindowInsetBottom();
+                }
+                art.setPadding(left,top,right,bottom);
+                actions.setPadding(dp+left,dp,dp+right,dp+bottom);
+                return insets;
+            });
             root.addView(actions,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));actions.setVisibility(View.INVISIBLE);
             Runnable dismissParcel=()->{
                 if(visible!=root)return;
