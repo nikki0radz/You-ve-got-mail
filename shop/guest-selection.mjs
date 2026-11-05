@@ -48,7 +48,7 @@ export const guestSelection = {
   ],
 };
 
-export const guestMaster = id => [125,126,151,159,162,163].includes(id)
+export const guestMaster = id => id === 162
   ? 'assets/guest/' + id + '-clean.png'
   : 'assets/guest/' + String(id).padStart(3,'0') + '.svg';
 

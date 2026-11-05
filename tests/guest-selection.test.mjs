@@ -14,7 +14,7 @@ test('guest artwork and masked frames match the approved collections',async()=>{
     assert.ok(full,item.name);
     assert.deepEqual(item.rect,full.rect);
     const bytes=await readFile(new URL('../'+item.master,import.meta.url));
-    if(item.master.endsWith('.png'))assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    if(item.master.endsWith('.png')){assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(bytes.subarray(-8,-4).toString(),'IEND',item.master+' is incomplete');}
     else assert.match(bytes.toString('utf8'), /viewBox="0 0 \d+ \d+"/);
     if(item.category==='Photos')assert(await readFile(new URL('../assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp',import.meta.url)));
   }
