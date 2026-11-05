@@ -1,7 +1,7 @@
 import {scaled} from '../shop/transport-image.mjs';
-import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=complete-pigeons';
-import {openShop} from '../shop/shop.mjs?guest-library=7';
-import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=complete-pigeons';
+import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=complete-stickers';
+import {openShop} from '../shop/shop.mjs?guest-library=8';
+import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=complete-stickers';
 const designPreview=document.documentElement.dataset.screen==='postcard-composer';
 const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';

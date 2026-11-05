@@ -1,5 +1,5 @@
 import {collectionName} from '../domain.mjs';
-import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-pigeons';
+import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
 
 const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for their screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
 const categories=Object.keys(guestSelection);

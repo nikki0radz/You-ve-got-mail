@@ -1,7 +1,7 @@
 import {fonts,fontSpec,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
-import {guestSelection} from './guest-selection.mjs';
+import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
 
 const apps=[['☀','Weather','#e9ad61'],['♫','Music','#ae748b'],['✆','Phone','#65a184'],['✉','Mail','#779cb1'],['◉','Camera','#787785'],['☷','Notes','#d8aa60'],['☁','Cloud','#799dba'],['✿','Photos','#b48c9f']];
@@ -114,7 +114,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   function bindStickerPicker(panel){
     for(const [id,name] of guestSelection.Stickers){
       const pick=document.createElement('button'),img=new Image();
-      pick.type='button';img.alt='';img.src=id===162?'assets/guest/162-clean.png':'assets/guest/'+id+'.svg';
+      pick.type='button';img.alt='';img.src=guestMaster(id);
       pick.append(img,name);pick.setAttribute('aria-pressed',String(state.second?.id===id));
       pick.onclick=async()=>{
         if(busy)return;
