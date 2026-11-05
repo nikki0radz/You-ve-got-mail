@@ -3,15 +3,5 @@
 #phone-studio button{border:1px solid #819782;border-radius:14px;padding:8px;color:#294637;background:#fffaf0;font-weight:700}
 #phone-studio p{margin:5px 10px;font-size:12px;color:#3b5747}
 #phone-studio iframe{flex:1;min-height:0;border:0;width:100%;background:#a1c6bc}
-#phone-studio .phone-design-colours{position:absolute;right:4px;top:23%;display:grid;gap:5px;padding:5px;border-radius:20px;background:#fffaf0d9}
-#phone-studio .phone-design-colours button{width:27px;height:27px;padding:0;border:2px solid #617365;border-radius:50%}
-#phone-studio .phone-design-controls,#phone-studio .phone-design-choices{padding:5px 10px;background:#f8f3e5}
-#phone-studio .phone-design-controls{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-#phone-studio [hidden]{display:none!important}
-#phone-studio .phone-design-row{display:flex;overflow-x:auto;gap:6px;padding:6px 0}
-#phone-studio .phone-design-row button{flex:0 0 44px}
-#phone-studio button[aria-pressed=true]{background:#365a40;color:#fff9e8}
-
-#phone-studio .phone-design-arrows{display:flex;justify-content:space-between;gap:8px}
-#phone-studio .phone-design-arrows button{flex:1}
-#phone-studio .phone-design-row{touch-action:pan-x;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+#phone-studio .phone-design-colours{display:flex;align-items:center;justify-content:center;gap:7px;padding:6px;overflow-x:auto}
+#phone-studio .phone-design-colours button{flex:0 0 29px;width:29px;height:29px;padding:0;border:2px solid #617365;border-radius:50%}

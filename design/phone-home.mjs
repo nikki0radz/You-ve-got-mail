@@ -1,117 +1,81 @@
-import {looks} from './parcel-round.mjs';
-
 const key='pigeon.phone.home.design.v1';
-const groups={header:{title:'Header layout',selector:'.courier-stand'},sign:{title:'Open / closed sign',selector:'.mail-sign'},carousel:{title:'Carousel',selector:'#home-wheel .wheel-paper'}};
 const colours=['#f8f1dd','#e5efe7','#c9ddd1','#a1c6bc','#597c66','#365a40','#283f32','#ead8bf'];
 let closeStudio=()=>false;
 export function closePhoneStudio(){return closeStudio()}
 export function openPhoneStudio(){
   if(document.getElementById('phone-studio'))return;
-  let draft={header:1,sign:1,carousel:1,colours:{},align:{}};
-  try{draft={...draft,...JSON.parse(localStorage.getItem(key)||'{}')}}catch{}
+  let draft={colours:{}};
+  try{const saved=JSON.parse(localStorage.getItem(key)||'{}');draft.colours=saved.colours||{}}catch{}
   const layer=document.createElement('section');layer.id='phone-studio';
-  layer.innerHTML='<header><button data-close>← Back</button><strong>Design Home</strong><button data-export>Export</button></header><p>Tap an item for colours and alignment. Hold it to see designs.</p><iframe title="Home design preview" src="design/page.html?page=home"></iframe><div class="phone-design-colours" aria-label="Colours"></div><div class="phone-design-controls" hidden></div><div class="phone-design-choices" hidden></div>';
+  layer.innerHTML='<header><button data-close>← Back</button><strong>Design Home</strong><button data-export>Export</button></header><p>Post office · tap the counter or carousel, then choose a colour.</p><div class="phone-design-colours" aria-label="Colours"></div><iframe title="Post office Home preview" src="design/page.html?page=home"></iframe>';
   document.body.append(layer);
-  const frame=layer.querySelector('iframe'),controls=layer.querySelector('.phone-design-controls'),palette=layer.querySelector('.phone-design-colours'),choices=layer.querySelector('.phone-design-choices');
-  let target='header',timer=null,start=null,held=false,swiped=false;
-  const persist=()=>{try{localStorage.setItem(key,JSON.stringify(draft))}catch{}};
-  function repaint(){
-    const doc=frame.contentDocument;if(!doc?.querySelector('.courier-stand'))return;
-    const stand=doc.querySelector('.courier-stand'),sign=doc.querySelector('.mail-sign'),wheel=doc.querySelector('#home-wheel .wheel-paper');
-    const surface=frame.contentWindow.designSurface;
-    const id=surface?.idFor('.courier-stand');
-    if(id)surface.configure({editing:false,selected:'',layout:{styles:{[id]:{reviewLook:'header-'+draft.header}}},textScale:1});
-    stand.dataset.reviewLook='header-'+draft.header;
-    let copy=stand.querySelector('.counter-copy');
-    if(!copy){copy=doc.createElement('div');copy.className='counter-copy';copy.innerHTML='<b></b><small></small>';stand.append(copy)}
-    copy.firstElementChild.textContent=looks.header[draft.header-1][1];copy.lastElementChild.textContent=looks.header[draft.header-1][2];
-    sign.dataset.phoneSign=draft.sign;wheel.dataset.phoneWheel=draft.carousel;
-    for(const [id,g] of Object.entries(groups)){
-      const node=doc.querySelector(g.selector);if(!node)continue;
-      node.style.textAlign=draft.align[id]||'';
-      node.style.backgroundColor=draft.colours[id]||'';
-    }
-    let style=doc.getElementById('phone-design-style');
-    if(!style){
-      style=doc.createElement('style');style.id='phone-design-style';
-      style.textContent=`
-        .header-board .courier-stand{touch-action:pan-y}
-        .header-board .courier-stand .mail-sign[data-phone-sign]{border-radius:var(--phone-radius,14px);border-style:var(--phone-border,solid);box-shadow:var(--phone-shadow,0 3px 0 var(--edge));transform:var(--phone-rotate,none)}
-        .mail-sign[data-phone-sign="2"]{--phone-radius:3px;--phone-border:double}
-        .mail-sign[data-phone-sign="3"]{--phone-radius:40px;--phone-shadow:0 0 0 4px #dfd1af}
-        .mail-sign[data-phone-sign="4"]{--phone-radius:4px 20px 4px 20px;--phone-rotate:rotate(-3deg)}
-        .mail-sign[data-phone-sign="5"]{--phone-radius:50%;--phone-border:dashed}
-        .mail-sign[data-phone-sign="6"]{--phone-radius:4px;--phone-shadow:5px 5px 0 #9a8b70}
-        .mail-sign[data-phone-sign="7"]{--phone-radius:0;--phone-border:dotted}
-        .mail-sign[data-phone-sign="8"]{--phone-radius:24px 4px;--phone-shadow:0 4px 0 #a39472}
-        .mail-sign[data-phone-sign="9"]{--phone-radius:8px;--phone-border:double;--phone-rotate:rotate(3deg)}
-        .mail-sign[data-phone-sign="10"]{--phone-radius:30px;--phone-border:dashed}
-        #home-wheel .category-reel{mask-image:linear-gradient(to right,transparent,#000 var(--fade),#000 calc(100% - var(--fade)),transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--fade),#000 calc(100% - var(--fade)),transparent)}
-        #home-wheel .category-reel button:not([aria-current=true])>span{opacity:var(--side-opacity)!important}
-      `;doc.head.append(style);
-    }
-    const rail=wheel.querySelector('.category-reel');
-    rail.style.setProperty('--fade',(2+draft.carousel*1.4)+'%');rail.style.setProperty('--side-opacity',String(.39+draft.carousel*.055));
-  }
-  function pick(id){
-    target=id;choices.hidden=true;controls.hidden=false;
-    controls.replaceChildren();
-    const title=document.createElement('strong');title.textContent=groups[id].title;controls.append(title);
-    for(const [label,value] of [['Left','left'],['Centre','center'],['Right','right']]){
-      const button=document.createElement('button');button.textContent=label;button.setAttribute('aria-pressed',String(draft.align[id]===value));button.onclick=()=>{draft.align[id]=value;persist();repaint();pick(id)};controls.append(button);
-    }
-    palette.hidden=false;
-  }
-  function variants(id){
-    pick(id);choices.hidden=false;choices.replaceChildren();
-    const hint=document.createElement('strong');hint.textContent=groups[id].title+' · '+draft[id]+' of 10';choices.append(hint);
-    const row=document.createElement('div');row.className='phone-design-row';
-    for(let n=1;n<=10;n++){
-      const b=document.createElement('button');b.textContent=String(n);b.setAttribute('aria-label',groups[id].title+' option '+n);b.setAttribute('aria-pressed',String(draft[id]===n));
-      b.onclick=()=>choose(id,n);row.append(b);
-    }
-    choices.append(row);
-    const arrows=document.createElement('div');arrows.className='phone-design-arrows';
-    for(const [label,delta] of [['← Previous',-1],['Next →',1]]){
-      const button=document.createElement('button');button.textContent=label;
-      button.onclick=()=>choose(id,(draft[id]-1+delta+10)%10+1);
-      arrows.append(button);
-    }
-    choices.append(arrows);
-  }
-  function choose(id,n){
-    draft[id]=n;persist();repaint();variants(id);
-    choices.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
-  }
+  const frame=layer.querySelector('iframe'),palette=layer.querySelector('.phone-design-colours');
+  let target='header';
+  const persist=()=>{try{localStorage.setItem(key,JSON.stringify({...draft,header:'post-office-6'}))}catch{}};
   for(const colour of colours){
     const button=document.createElement('button');button.style.background=colour;button.title=colour;button.setAttribute('aria-label','Colour '+colour);
-    button.onclick=()=>{draft.colours[target]=colour;persist();repaint()};palette.append(button);
+    button.onclick=()=>{draft.colours[target]=colour;persist();paint()};palette.append(button);
+  }
+  function paint(){
+    const doc=frame.contentDocument,stand=doc?.querySelector('.courier-stand');
+    if(!stand)return;
+    stand.style.setProperty('--booth-paper',draft.colours.header||'#e5d5b3');
+    const wheel=doc.querySelector('#home-wheel .wheel-paper');
+    if(wheel){
+      const colour=draft.colours.carousel||'';
+      wheel.style.backgroundColor=colour;
+      wheel.style.color=['#597c66','#365a40','#283f32'].includes(colour)?'#fff9e8':'#203b2c';
+    }
   }
   frame.onload=()=>{
-    const doc=frame.contentDocument,listen=()=>{if(!doc.querySelector('.courier-stand')||!frame.contentWindow.designSurface)return setTimeout(listen,100);frame.contentWindow.designSurface.configure({editing:false,selected:'',layout:{styles:{}},textScale:1});repaint();};
-    listen();
-    doc.addEventListener('pointerdown',e=>{
-      const found=e.target.closest('.mail-sign,.courier-stand,#home-wheel .wheel-paper');if(!found)return;
-      const id=found.matches('.mail-sign')?'sign':found.matches('.courier-stand')?'header':'carousel';start={id,x:e.clientX,y:e.clientY};held=false;swiped=false;
-      timer=setTimeout(()=>{held=true;variants(id)},500);
-    },true);
-    doc.addEventListener('pointermove',e=>{
-      if(!start)return;
-      const dx=e.clientX-start.x,dy=e.clientY-start.y;
-      if(Math.hypot(dx,dy)>12)clearTimeout(timer);
-      if(!choices.hidden&&start.id===target&&Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.3){
-        swiped=true;choose(target,(draft[target]-1+(dx<0?1:-1)+10)%10+1);start=null;
-      }else if(Math.abs(dy)>20)start=null;
-    },true);
-    doc.addEventListener('pointerup',()=>{clearTimeout(timer);if(start&&!held&&!swiped)pick(start.id);start=null},true);
-    doc.addEventListener('pointercancel',()=>{clearTimeout(timer);start=null},true);
-    doc.addEventListener('click',e=>{if(e.target.closest('.mail-sign,.courier-stand,#home-wheel .wheel-paper')){e.preventDefault();e.stopImmediatePropagation()}},true);
-    doc.addEventListener('contextmenu',e=>e.preventDefault(),true);
+    const doc=frame.contentDocument;
+    const prepare=()=>{
+      const stand=doc.querySelector('.courier-stand'),surface=frame.contentWindow.designSurface;
+      if(!stand||!surface){setTimeout(prepare,100);return}
+      surface.configure({editing:false,selected:'',layout:{styles:{}},textScale:1});
+      stand.classList.add('post-office-six');
+      const roof=doc.createElement('div');roof.className='post-office-roof';
+      const name=doc.createElement('span');name.textContent='PIGEON POST';roof.append(name);
+      const counter=doc.createElement('div');counter.className='post-office-counter';
+      const label=stand.querySelector('.mail-sign');counter.append(label);
+      stand.prepend(roof);stand.append(counter);
+      const style=doc.createElement('style');
+      style.textContent=`
+        html[data-workroom=home] .header-board .style-choice{display:none}
+        html[data-workroom=home] #home-wheel .wheel-paper{background:#e4eedf;color:#203b2c}
+        .header-board[data-open] .courier-stand.post-office-six{
+          display:grid;grid-template-rows:auto 1fr auto;justify-items:center;gap:0;
+          padding:0 12px 10px;border:3px solid #75563b;border-radius:17px 17px 10px 10px;
+          background:linear-gradient(90deg,#9a714b 0 5%,#31573f 5% 95%,#9a714b 95%);
+          overflow:hidden;color:#263e2c
+        }
+        .post-office-six .post-office-roof{width:calc(100% + 24px);min-height:50px;display:grid;place-items:center;
+          border-bottom:4px solid #75563b;border-radius:10px 10px 0 0;
+          background:repeating-linear-gradient(100deg,#e9e4c8 0 22px,#457253 22px 44px)}
+        .post-office-roof span{padding:3px 19px;background:#fff0cb;color:#294d35;border:2px solid #745639;border-radius:18px;font:800 16px PostalBaloo,system-ui}
+        .header-board .post-office-six>img{display:block;width:min(68%,190px);height:165px;object-fit:contain;margin:-2px auto -7px}
+        .post-office-counter{width:100%;padding:7px;background:var(--booth-paper,#e5d5b3);border:3px solid #795a3b;border-radius:8px;box-sizing:border-box}
+        .header-board[data-open] .post-office-six .mail-sign{display:flex;justify-content:center;align-items:center;gap:6px;width:100%;min-height:44px;box-sizing:border-box;
+          margin:0;transform:none;border:2px solid #1b5135;border-radius:13px;background:#286b43;color:#fff9e8;font:800 17px/1.1 system-ui;text-align:center}
+        .header-board[data-open=false] .post-office-six .mail-sign{background:#8b3840;border-color:#60252b;color:#fff9e8}
+        .post-office-six .side-signs{display:none}
+      `;doc.head.append(style);paint();
+      doc.addEventListener('click',e=>{
+        if(e.target.closest('.mail-sign')){
+          e.preventDefault();e.stopImmediatePropagation();
+          const board=doc.querySelector('.header-board'),open=board.dataset.open!=='true';
+          board.dataset.open=String(open);
+          const sign=board.querySelector('.mail-sign');sign.lastChild.textContent=open?' Open to mail':' Closed to mail';sign.querySelector('span').textContent=open?'●':'⊘';return;
+        }
+        if(e.target.closest('.courier-stand')){target='header';e.preventDefault();e.stopImmediatePropagation()}
+        else if(e.target.closest('#home-wheel .wheel-paper')){target='carousel'}
+      },true);
+    };
+    prepare();
   };
   layer.querySelector('[data-export]').onclick=()=>{
-    const payload=JSON.stringify({format:'pigeon-post.phone-home-design',version:1,screen:'home',appVersion:'0.1.11',exportedAt:new Date().toISOString(),draft},null,2);
-    if(window.Pigeon?.shareDesign)Pigeon.shareDesign(payload);
-    else navigator.clipboard?.writeText(payload);
+    const payload=JSON.stringify({format:'pigeon-post.phone-home-design',version:1,screen:'home',appVersion:'0.1.12',exportedAt:new Date().toISOString(),draft:{...draft,header:'post-office-6'}},null,2);
+    if(window.Pigeon?.shareDesign)Pigeon.shareDesign(payload);else navigator.clipboard?.writeText(payload);
   };
   closeStudio=()=>{layer.remove();closeStudio=()=>false;return true};
   layer.querySelector('[data-close]').onclick=closeStudio;

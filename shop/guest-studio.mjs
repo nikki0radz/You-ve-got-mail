@@ -114,7 +114,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   function bindStickerPicker(panel){
     for(const [id,name] of guestSelection.Stickers){
       const pick=document.createElement('button'),img=new Image();
-      pick.type='button';img.alt='';img.src='assets/guest/'+id+'.svg';
+      pick.type='button';img.alt='';img.src=id===162?'assets/guest/162-clean.png':'assets/guest/'+id+'.svg';
       pick.append(img,name);pick.setAttribute('aria-pressed',String(state.second?.id===id));
       pick.onclick=async()=>{
         if(busy)return;
