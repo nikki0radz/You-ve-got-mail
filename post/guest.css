@@ -66,3 +66,11 @@ body{--paper:#f9f4e4;--heading:#283b2b;--button:#40563e;--copy:#51694e;--rule:#b
 .guest .dispatch-timing .dispatch-dock button:is(#now,#later){min-width:0;min-height:44px;padding:6px 4px;background:transparent;box-shadow:none;color:#475049}
 .guest .dispatch-timing .dispatch-dock button:is(#now,#later)[aria-pressed=true]{color:#203c2b;font-weight:800}
 @media(prefers-reduced-motion:reduce){.guest .dispatch-timing .dispatch-dock::before{transition:none}}
+
+/* One-time invitation spacing and progress */
+.guest .flight progress{accent-color:var(--button);width:100%}
+.guest .flight progress::-webkit-progress-bar{background:#dce8d5;border-radius:999px}
+.guest .flight progress::-webkit-progress-value{background:#40563e;border-radius:999px}
+.guest .flight progress::-moz-progress-bar{background:#40563e;border-radius:999px}
+.guest button.wheel-back.pocket-back,#parcel-shop button.wheel-back.pocket-back{vertical-align:middle;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.guest button.wheel-back.pocket-back span,#parcel-shop button.wheel-back.pocket-back span{display:inline-flex;align-items:center;justify-content:center;line-height:1}

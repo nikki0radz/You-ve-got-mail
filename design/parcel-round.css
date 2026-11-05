@@ -70,7 +70,7 @@
 
 /* Home review adjustments */
 html[data-workroom=home] .header-board .style-choice{display:none}
-html[data-workroom=home] #home-wheel .wheel-paper{background:var(--mm-panel)}
+html[data-workroom=home] #home-wheel .wheel-paper{background:var(--shop-card)}
 html[data-workroom=home] .postal-header .profile-link img{width:42px;height:42px}
 html[data-workroom=home] .postal-header .postal-theme{align-self:center}
 html[data-workroom=home] .header-board[data-open=true] .mail-sign span{font-size:0}
@@ -104,3 +104,17 @@ html[data-workroom=home] #app:has(.courier-stand[data-review-look=header-1]) #ho
 .guest [data-review-look=calendar-3] .schedule-review{background:#e5efe1;border-radius:24px;border:2px solid #718c75}
 .guest [data-review-look=calendar-4] .schedule-review{background:#f3dfb9;border:2px dashed #a78b5b;border-radius:6px}
 .guest [data-review-look=calendar-5] .schedule-review{background:#eee5eb;border:2px solid #a68196;border-radius:18px 4px 18px 4px}
+/* Five independent treatments for the existing two-button status switch. */
+#app .post-office-controls[data-review-look=status-1] button[aria-pressed=true]{box-shadow:0 0 0 2px #fff2aa,0 0 22px 8px #89ff83cc,inset 0 0 10px #c8ff9d99;filter:saturate(1.25)}
+#app .header-board[data-open=false] .post-office-controls[data-review-look=status-1] button[aria-pressed=true]{box-shadow:0 0 0 2px #ffd3d1,0 0 22px 8px #ff6268cc,inset 0 0 10px #ffb0ac99}
+#app .post-office-controls[data-review-look=status-2]{border:6px dotted #ffdc84;border-radius:15px;box-shadow:0 0 0 3px #80502e,0 4px 0 #68442f}
+#app .post-office-controls[data-review-look=status-2] button[aria-pressed=true]{box-shadow:0 0 12px 4px #9eff88a8}
+#app .header-board[data-open=false] .post-office-controls[data-review-look=status-2] button[aria-pressed=true]{box-shadow:0 0 12px 4px #ff7585b8}
+#app .post-office-controls[data-review-look=status-3] button{border-radius:4px;border-style:dashed;letter-spacing:.04em}
+#app .post-office-controls[data-review-look=status-3] button[aria-pressed=true]{transform:scale(1.04);box-shadow:0 4px 0 #20372b,0 0 12px #a9ffad}
+#app .post-office-controls[data-review-look=status-4] button{border-radius:25px}
+#app .post-office-controls[data-review-look=status-4] button[aria-pressed=true]{outline:4px solid #fff1ad;outline-offset:1px;box-shadow:0 0 19px 7px #58e878b3}
+#app .header-board[data-open=false] .post-office-controls[data-review-look=status-4] button[aria-pressed=true]{outline-color:#ffd5ce;box-shadow:0 0 19px 7px #ff7183b3}
+#app .post-office-controls[data-review-look=status-5] button{border-radius:7px;border-width:3px;text-transform:uppercase}
+#app .post-office-controls[data-review-look=status-5] button[aria-pressed=true]{border-style:double;outline:3px dashed #fff7d7;outline-offset:-8px;box-shadow:0 5px 0 #1d4531}
+#app .post-office-controls[data-review-look^=status-] button[aria-pressed=false]{background:#d3d3d3;color:#373737;filter:grayscale(1);box-shadow:none;outline:none}
