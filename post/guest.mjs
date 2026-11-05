@@ -1,6 +1,7 @@
 import {scaled} from '../shop/transport-image.mjs';
 import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=glide-1';
 import {openShop} from '../shop/shop.mjs?guest-library=5';
+import {guestSelection} from '../shop/guest-selection.mjs';
 const designPreview=document.documentElement.dataset.screen==='postcard-composer';
 const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
@@ -15,13 +16,45 @@ async function api(path,key,body){
 function invitation(){
   steps.innerHTML='<section class="invitation"><img class="courier" src="assets/home/mascot.webp?v=satchel" alt="Pigeon with a messenger bag on a green letterbox"><p class="eyebrow">A PIGEON FROM NICOLE</p><h1>Got a minute for<br>Nicole?</h1><p id="brief">She sent you a one-time link. Pick a little something and this pigeon will drop it onto her phone.</p><button class="accept" id="accept">Alright, pigeon. I’m in.</button><button class="quiet" id="decline">Tell her I’m out.</button></section>';
   status.textContent='';
-  steps.querySelector('#accept').onclick=choose;
+  steps.querySelector('#accept').onclick=loadChoices;
   steps.querySelector('#decline').onclick=()=>{
     steps.innerHTML='<img class="decline-pigeon" src="assets/home/sad.webp" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back">Back to invitation</button>';
     steps.querySelector('#back').onclick=invitation;
   };
 }
 let lastCategory='Photos';
+let choicesLoaded=false, preloadGeneration=0;
+async function loadChoices(){
+  if(choicesLoaded){choose();return;}
+  const generation=++preloadGeneration;
+  steps.innerHTML='<section class="flight dispatch-envelope" aria-live="polite"><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt=""></div><h2>Loading your options</h2><p>Our pigeon is gathering your designs…</p><progress max="1" value="0" aria-label="Loading designs"></progress><p data-progress></p><button type="button" data-back>Back</button></section>';
+  steps.querySelector('[data-back]').onclick=()=>{preloadGeneration++;invitation();};
+  const progress=steps.querySelector('progress'),message=steps.querySelector('[data-progress]');
+  const masters=Object.values(guestSelection).flat().map(([id])=>id===162?'assets/guest/162-clean.png':'assets/guest/'+String(id).padStart(3,'0')+'.svg');
+  const examples=[...guestSelection.Photos,guestSelection.Postcards.find(([id])=>id===105)].map(([id])=>'assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp');
+  const paths=[...new Set([...masters,...examples])];progress.max=paths.length;
+  let next=0,done=0;const failed=[];
+  async function worker(){
+    while(next<paths.length&&generation===preloadGeneration){
+      const path=paths[next++];
+      try{await new Promise((resolve,reject)=>{
+        const image=new Image(),timer=setTimeout(()=>{image.src='';reject(new Error('Timed out'));},20000);
+        image.onload=async()=>{try{if(image.decode)await image.decode();clearTimeout(timer);resolve();}catch(error){clearTimeout(timer);reject(error);}};image.onerror=()=>{clearTimeout(timer);reject(new Error('Image failed'));};image.src=path;
+      });}catch{failed.push(path);}
+      if(generation!==preloadGeneration)return;
+      progress.value=++done;message.textContent=done+' of '+paths.length+' ready';
+    }
+  }
+  await Promise.all(Array.from({length:4},worker));
+  if(generation!==preloadGeneration)return;
+  if(failed.length){
+    steps.querySelector('h2').textContent='A few designs didn’t load';
+    steps.querySelector('.flight>p').textContent='Check your connection and try again.';
+    message.textContent=failed.length+' of '+paths.length+' could not be loaded.';
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Try again';retry.onclick=loadChoices;steps.querySelector('.flight').append(retry);return;
+  }
+  choicesLoaded=true;choose();
+}
 function choose(){
   status.textContent='';
   mountCategoryWheel(steps,{initialCategory:lastCategory,onBack:invitation,onBrowse:category=>browse(category)});
