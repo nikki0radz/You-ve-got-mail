@@ -6,7 +6,7 @@ const PAGES = "https://nikki0radz.github.io";
 import { MAX_IMAGE, secret, digest, InputError, jsonBody, label, pngSizeSafe, parcelContents, checkReceipt, closedMail } from "./mail-data";
 import { friendAction } from "./friends";
 import { designAction } from "./design";
-export async function deliveryApi(request: Request, db?: D1Database, env: {FCM_PROJECT_ID?:string,FCM_CLIENT_EMAIL?:string,FCM_PRIVATE_KEY?:string} = {}, ctx?: ExecutionContext) {
+export async function deliveryApi(request: Request, db?: D1Database, env: {FCM_SERVICE_ACCOUNT?:string} = {}, ctx?: ExecutionContext) {
   const url = new URL(request.url);
   const design = url.pathname.startsWith("/api/design/");
   const origin = request.headers.get("origin");

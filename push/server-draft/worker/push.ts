@@ -1,7 +1,7 @@
 import { createFcmSender } from './fcm.mjs';
 import { digest, InputError, jsonBody } from './mail-data';
 
-type PushEnv = { FCM_PROJECT_ID?:string, FCM_CLIENT_EMAIL?:string, FCM_PRIVATE_KEY?:string };
+type PushEnv = { FCM_SERVICE_ACCOUNT?:string };
 let previous='',sender:ReturnType<typeof createFcmSender>|null=null;
 export async function registerDevice(request:Request,db:D1Database,key:string,output:(x:unknown,status?:number)=>Response) {
   const body=await jsonBody(request,8192),token=body.token;
@@ -18,10 +18,14 @@ export async function registerDevice(request:Request,db:D1Database,key:string,ou
   return output({ok:true});
 }
 export async function wakeMailbox(db:D1Database,owner:string,urgent:boolean,env:PushEnv){
-  const {FCM_PROJECT_ID,FCM_CLIENT_EMAIL,FCM_PRIVATE_KEY}=env;
-  if(!FCM_PROJECT_ID||!FCM_CLIENT_EMAIL||!FCM_PRIVATE_KEY)return;
-  const fingerprint=FCM_PROJECT_ID+'\n'+FCM_CLIENT_EMAIL+'\n'+FCM_PRIVATE_KEY;
-  if(previous!==fingerprint){sender=createFcmSender({projectId:FCM_PROJECT_ID,clientEmail:FCM_CLIENT_EMAIL,privateKey:FCM_PRIVATE_KEY});previous=fingerprint;}
+  const credential=env.FCM_SERVICE_ACCOUNT;
+  if(!credential)return;
+  if(previous!==credential){
+    let account:{project_id?:string,client_email?:string,private_key?:string};
+    try{account=JSON.parse(credential)}catch{return;}
+    if(!account||account.project_id!=='you-ve-got-mail-f8f2b'||typeof account.client_email!=='string'||typeof account.private_key!=='string')return;
+    sender=createFcmSender({projectId:account.project_id,clientEmail:account.client_email,privateKey:account.private_key});previous=credential;
+  }
   const rows=await db.prepare('SELECT token FROM push_devices WHERE owner=? ORDER BY updated DESC LIMIT 10').bind(owner).all<{token:string}>();
   await Promise.allSettled(rows.results.map(({token})=>sender!(token,{urgent})));
 }

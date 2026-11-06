@@ -5,7 +5,7 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 const worker = {
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
-    if (new URL(request.url).pathname.startsWith("/api/")) return deliveryApi(request, env.DB, env as unknown as {FCM_PROJECT_ID?:string,FCM_CLIENT_EMAIL?:string,FCM_PRIVATE_KEY?:string}, ctx);
+    if (new URL(request.url).pathname.startsWith("/api/")) return deliveryApi(request, env.DB, env as unknown as {FCM_SERVICE_ACCOUNT?:string}, ctx);
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
