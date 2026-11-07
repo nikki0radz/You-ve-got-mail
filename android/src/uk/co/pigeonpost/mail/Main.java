@@ -25,6 +25,12 @@ public class Main extends Activity {
         if(Build.VERSION.SDK_INT>=29)getWindow().setNavigationBarContrastEnforced(false);
     }
     static final String HOST="appassets.androidplatform.net";
+    static boolean allowsArtworkRequest(String scheme,String host,int port,String path,String method){
+        return "https".equals(scheme) && "pigeon-post-delivery.nikki0radz.chatgpt.site".equals(host) && port==-1
+            && path!=null && (path.startsWith("/api/art/") || path.startsWith("/api/catalogue/"))
+            && !path.contains("/../") && !path.endsWith("/..")
+            && ("GET".equals(method) || "POST".equals(method) || "OPTIONS".equals(method));
+    }
     private int dp(int n){return Math.round(getResources().getDisplayMetrics().density*n);}
     void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);
@@ -43,10 +49,7 @@ public class Main extends Activity {
                 Uri uri=req.getUrl();
                 if(!req.isForMainFrame()&&"data".equals(uri.getScheme())&&uri.toString().startsWith("data:image/"))return null;
                 String path=uri.getPath();
-                if(!req.isForMainFrame() && "https".equals(uri.getScheme())
-                    && "pigeon-post-delivery.nikki0radz.chatgpt.site".equals(uri.getHost())
-                    && uri.getPort()==-1 && path!=null && path.startsWith("/api/art/")
-                    && ("GET".equals(req.getMethod()) || "POST".equals(req.getMethod()) || "OPTIONS".equals(req.getMethod()))) return null;
+                if(!req.isForMainFrame() && allowsArtworkRequest(uri.getScheme(),uri.getHost(),uri.getPort(),path,req.getMethod())) return null;
                 if(!req.isForMainFrame() && "blob".equals(uri.getScheme()) &&
                     uri.toString().startsWith("blob:https://"+HOST+"/")) return null;
                 if("https".equals(uri.getScheme())&&HOST.equals(uri.getHost())&&path!=null&&path.startsWith("/")&&!path.contains("..")&&!path.contains("\\")){
