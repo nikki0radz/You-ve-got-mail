@@ -11,7 +11,20 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Start Android and verify the published APK
+      - uses: actions/checkout@v4
+        with:
+          ref: c204ee71ad3c7a531b02aeaf807636bfee0dedfd
+          path: candidate
+      - name: Build offline picker fixture
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -eu
+          sed -i '/<head>/a <script>localStorage.setItem("pigeon.shared-art.library.v1","00000000000000000000000000000000");</script>' index.html
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/qa.p12" -alias pigeonpost -storepass android -keypass android -keyalg RSA -dname "CN=Offline QA" -validity 1
+          echo android > "$RUNNER_TEMP/qa.pass"
+          MAIL_KEYSTORE="$RUNNER_TEMP/qa.p12" MAIL_PASSWORD_FILE="$RUNNER_TEMP/qa.pass" bash android/build.sh "$GITHUB_WORKSPACE/phone-qa.apk"
+      - name: Start Android and verify the offline native picker
         shell: bash
         run: |
           set -eu
