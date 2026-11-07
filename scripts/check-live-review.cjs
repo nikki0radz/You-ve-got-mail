@@ -3,6 +3,7 @@ const {chromium}=require('playwright'), assert=require('node:assert/strict'),fs=
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
 try{
  const page=await browser.newPage({viewport:{width:360,height:800},hasTouch:true,isMobile:true});
+ page.setDefaultTimeout(12000);
  page.on('pageerror',e=>console.error('PageError',e));
  const base=process.argv[2] || 'http://127.0.0.1:3000/';
  await page.goto(base+'guest.html?preview=1');
