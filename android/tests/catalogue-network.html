@@ -1,0 +1,22 @@
+<!doctype html><meta charset="utf-8"><h1>Waiting for catalogue checks</h1>
+<script type="module">
+const out=document.querySelector('h1');
+try{
+ if(!window.Pigeon||location.origin!=='https://appassets.androidplatform.net')throw Error('Expected installed Pigeon WebView');
+ const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/catalogue/';
+ async function check(path,method,status,headers={}) {
+   const response=await fetch(base+path,{method,headers,credentials:'omit',cache:'no-store'});
+   if(response.status!==status)throw Error(path.split('/')[0]+' '+method+' returned '+response.status);
+   return response;
+ }
+ const page=await (await check('items','GET',200)).json();
+ if(!Array.isArray(page.items)||!Array.isArray(page.categories))throw Error('Public items have no category list');
+ // Deliberately invalid placeholder exercises the owner's real preflight and rejection path.
+ const denied=await (await check('unlock','POST',403,{Authorization:'Bearer QA-INVALID'})).json();
+ if(!denied.error)throw Error('Expected rejection details');
+ const missing=await (await check('files/'+'0'.repeat(64),'GET',404)).json();
+ if(!missing.error)throw Error('Expected original-file absent response');
+ await check('unlock','OPTIONS',204);
+ out.textContent='PASS Catalogue items, unlock, files and OPTIONS';
+}catch(err){out.textContent='FAIL '+err.message}
+</script>
