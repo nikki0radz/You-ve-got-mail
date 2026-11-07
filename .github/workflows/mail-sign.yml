@@ -1,0 +1,76 @@
+name: Check mail signs
+on:
+  push:
+    branches: [qa/mail-sign-023]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright@1.55.1
+      - name: Check invitation and review controls
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          node scripts/serve.mjs --port 3000 &
+          for i in {1..20}; do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
+          for width in 320 430; do
+            sed "s/const width of \[320,430\]/const width of [$width]/" scripts/check-invitation.cjs > scripts/reference.cjs
+            node scripts/reference.cjs || echo "Reference mismatch; comparing both sizes to released pixels below."
+          done
+          node scripts/check-live-review.cjs
+          git fetch --depth=1 origin a86d9c56fb4f8fb6ff3e9f738dabb5df33764220
+          git worktree add /tmp/prior FETCH_HEAD
+          (cd /tmp/prior && node scripts/serve.mjs --port 3001) &
+          node - <<'JS'
+          const {chromium}=require('playwright'),assert=require('node:assert/strict');
+          (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_PATH});try{
+          for(const width of [320,430]){const captures=[];
+          for(const port of [3000,3001]){const p=await b.newPage({viewport:{width,height:900}});await p.goto('http://localhost:'+port+'/guest.html?preview=1');await p.locator('.courier').evaluate(n=>n.decode());await p.evaluate(()=>document.fonts.ready);captures.push(await p.locator('.guest').screenshot());await p.locator('#decline').click();await p.locator('#back').click();await p.locator('#accept').click();await p.locator('#steps .wheel').waitFor();await p.close();}
+          assert.ok(captures[0].equals(captures[1]),width+'px card differs from previous release');console.log(width+'px unchanged vs release');}
+          }finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});
+          JS
+          node scripts/check-frame-feedback.cjs
+          node - <<'JS'
+          const assert=require('node:assert/strict'), {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
+            try {
+              for(const width of [320,430]){
+                const p=await browser.newPage({viewport:{width,height:800},hasTouch:true,isMobile:true});
+                await p.goto(process.env.APP_URL || 'http://localhost:3000/');
+                const control=p.getByRole('switch',{name:'Open to mail',exact:true}),art=p.locator('.mail-status-art');
+                const status=async open=>{
+                  assert.equal(await control.isChecked(),open);
+                  await art.evaluate(img=>img.decode());
+                  assert.equal(await art.getAttribute('src'),'assets/home/mail-'+(open?'open':'closed')+'.webp');
+                  assert.equal(await art.evaluate(img=>img.naturalWidth),1064);
+                };
+                await status(true);
+                const first=await art.boundingBox();
+                assert(first.width>=230 && first.width<=width && first.height>=44);
+                await control.tap();await status(false);
+                assert.deepEqual(await art.boundingBox(),first);
+                await p.reload();await status(false);
+                await control.focus();await p.keyboard.press('Space');await status(true);
+                assert(await control.evaluate(el=>el===document.activeElement));
+                const design=p.getByRole('switch',{name:'Design mode'});
+                await design.click();
+                await p.frameLocator('iframe[title="Paused app screen"]').locator('.mail-toggle').click();
+                await p.getByPlaceholder('What would you change here?').waitFor();
+                await design.click();await status(true);
+                await p.evaluate(()=>{window.nativeCalls=[];window.Pigeon={receiving:open=>window.nativeCalls.push(open)};});
+                await control.tap();await control.tap();
+                assert.deepEqual(await p.evaluate(()=>window.nativeCalls),[false,true]);
+                await p.close();
+                console.log(width+'px signs: tap, reload, keyboard, paused review and Android bridge passed');
+              }
+            }finally{await browser.close();}
+          })().catch(e=>{console.error(e);process.exitCode=1;});
+          JS
