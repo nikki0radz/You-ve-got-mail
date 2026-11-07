@@ -1,0 +1,7 @@
+/* The space is part of the app viewport and keeps its first controls reachable. */
+body:has(> .review-space)::before {content:"";display:block;height:36px}
+.review-space {display:none}
+[data-review-ui="dock"] {position:fixed!important;inset:0 0 auto!important;z-index:2147483647!important;display:block!important;pointer-events:none!important;text-align:right!important}
+dialog[data-review-ui="freeze"] {position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;overflow:hidden!important;background:#faf4e5!important;box-shadow:none!important;}
+dialog[data-review-ui="freeze"]:not([open]) {display:none!important}
+[data-review-ui="freeze"] > iframe {display:block;border:0;margin:0;max-width:none;max-height:none}

@@ -18,6 +18,12 @@ Right-click a control or box in either laptop preview to comment on it or its su
 
 Drafts contain versioned visual settings. Photos and typed test messages stay in each preview. Duplicating creates a separate draft. Restoring a revision brings its settings into the editor, and saving appends a revision. Approval records a choice for later publication. The main composer keeps its released design until a separate release.
 
+## Review the live screen
+
+In Android 0.1.18, the [web app](https://nikki0radz.github.io/You-ve-got-mail/), and the [guest preview](https://nikki0radz.github.io/You-ve-got-mail/guest.html?preview=1), turn on **Design mode** at the top. Tap an element, or pick a surrounding container under **Selected element**. Comments and colour changes save as you edit. **Done** lets you pick another element. Turn the switch off to continue through the app.
+
+**Export design** creates a JSON file with the reviewed screens, their measured layouts, element comments and colour choices. Android opens its file picker. Export the Android app and the guest browser separately when reviewing both.
+
 ## Try it on Android
 
 1. Install the signed APK on Android 9 or later. On first launch, open **Set up delivery**. Enable notifications and display over other apps. Enable precise schedules for timed tests.

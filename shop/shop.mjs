@@ -85,6 +85,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     const header=guestLibrary?
       '<header class="parcel-head guest-library-head"><button type="button" class="wheel-back pocket-back" data-prev><span aria-hidden="true">←</span> Back</button><small>'+esc(status)+'</small></header>':
       '<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header>';
+    dialog.dataset.reviewScreen='shop / '+name+' / '+status;
     dialog.innerHTML=header+'<h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
     const close=dialog.querySelector('.parcel-x');if(close)close.onclick=()=>cancel();
     const prev=dialog.querySelector('[data-prev]');if(prev)prev.onclick=back;

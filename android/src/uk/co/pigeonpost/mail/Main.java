@@ -15,7 +15,7 @@ import java.util.*;
 public class Main extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> photo;
-    private String saveData,pendingReply="";
+    private String saveData,reviewData,pendingReply="";
     private boolean webReady;
     private FrameLayout frame;
     void bars(boolean dark){
@@ -92,6 +92,14 @@ public class Main extends Activity {
     protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
         if(req==41&&photo!=null){Uri u=res==RESULT_OK&&data!=null?data.getData():null;photo.onReceiveValue(u!=null&&"content".equals(u.getScheme())?new Uri[]{u}:null);photo=null;}
+        if(req==43 && reviewData!=null){
+            String review=reviewData;reviewData=null;
+            if(res==RESULT_OK && data!=null && data.getData()!=null){
+                try(OutputStream out=getContentResolver().openOutputStream(data.getData())){
+                    out.write(review.getBytes(java.nio.charset.StandardCharsets.UTF_8));toast("Design review saved");
+                }catch(Exception e){toast("Could not save the review. Your local comments are still here.");}
+            }
+        }
         if(req==42&&saveData!=null){String png=saveData;saveData=null;if(res==RESULT_OK&&data!=null&&data.getData()!=null)try(OutputStream out=getContentResolver().openOutputStream(data.getData())){out.write(android.util.Base64.decode(png.substring(22),0));toast("PNG saved");}catch(Exception e){toast("Could not save PNG");}}
     }
     void settings(){pendingReply="@settings";dispatchIntent();}
@@ -152,6 +160,16 @@ public class Main extends Activity {
     }
     void reply(JSONObject m){pendingReply=m.optString("id");dispatchIntent();}
     public class Bridge {
+        @JavascriptInterface public void saveReview(String json){
+            if(json==null || json.isEmpty())return;
+            runOnUiThread(()->{
+                if(reviewData!=null)return;
+                reviewData=json;
+                try{startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("application/json").putExtra(Intent.EXTRA_TITLE,"pigeon-post-design-review.json"),43);}
+                catch(ActivityNotFoundException e){reviewData=null;toast("Could not open the file picker.");}
+            });
+        }
         @JavascriptInterface public void shareDesign(String data){
             if(data==null||data.length()>100000)return;
             runOnUiThread(()->{Intent share=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT,"Pigeon Post Home design").putExtra(Intent.EXTRA_TEXT,data);startActivity(Intent.createChooser(share,"Share your design"));});

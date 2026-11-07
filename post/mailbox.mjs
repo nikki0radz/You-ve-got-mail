@@ -18,7 +18,10 @@ function post(op,args={}){
 window.postOfficeResult=(id,raw)=>{const promise=pending.get(id);if(!promise)return;pending.delete(id);try{const r=JSON.parse(raw);if(r.error)throw Error(r.error);promise.resolve(r.data);}catch(e){promise.reject(e);}};
 const el=()=>document.querySelector('#mail-window');
 function page(title,body,back){
-  const d=el();delete d.dataset.receipt;if(!d.open)d.showModal();
+  const d=el();
+  // Keep private sender names out of the design export.
+  d.dataset.reviewScreen=title.replace(/^(Reply to |A note for |To |From ).+$/,(_,prefix)=>prefix.trim()+' parcel');
+  delete d.dataset.receipt;if(!d.open)d.showModal();
   d.innerHTML='<header><span>PIGEON POST</span><button data-x aria-label="Close">×</button></header><h2>'+esc(title)+'</h2>'+body+'<p class="mb-error" role="alert"></p>';
   d.querySelector('[data-x]').onclick=()=>d.close();
   if(back){d.insertAdjacentHTML('beforeend',button('back','‹ Back'));action('back',back);}
