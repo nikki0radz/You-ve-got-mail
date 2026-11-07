@@ -1,24 +1,20 @@
-name: Archive signed Android 0.1.28
+name: Verify Android installer downloads
 on:
   push:
     branches: [release/archive-android-028]
 permissions:
-  contents: write
+  contents: read
 jobs:
-  archive:
+  downloads:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify and archive the published installer
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Check both publicly served signed APKs and the live catalogue
         run: |
           set -euo pipefail
-          file=Youve-Got-Mail-0.1.28.apk
-          expected=142badb55b65e41cd7055324b5e7ce9954778b4725e88504fc4b3c0ae17a2aa0
-          curl --fail --silent --show-error --location "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/$file" -o "$file"
-          echo "$expected  $file" | sha256sum -c -
-          if ! gh release view android-0.1.28 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create android-0.1.28 "$file" --repo "$GITHUB_REPOSITORY" --target "6c78eba9635bfcc47efd1605ed37581c7f3b62c8" --title "Android 0.1.28" --notes "Archived signed installer." --latest=false
-          fi
-          curl --retry 3 --fail --silent --show-error --location "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.28/$file" -o checked.apk
-          echo "$expected  checked.apk" | sha256sum -c -
+          site=https://pigeon-post-delivery.nikki0radz.chatgpt.site
+          for version in 0.1.28 0.1.29; do
+            curl -fsSL --retry 2 "$site/downloads/Youve-Got-Mail-$version.apk" -o "$version.apk"
+          done
+          echo '142badb55b65e41cd7055324b5e7ce9954778b4725e88504fc4b3c0ae17a2aa0  0.1.28.apk' | sha256sum -c -
+          echo '0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d  0.1.29.apk' | sha256sum -c -
+          curl -fsS "$site/api/catalogue/items" | jq -e '.categories | type == "array"'
