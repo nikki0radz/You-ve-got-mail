@@ -19,8 +19,7 @@ export function openPhoneStudio(){
   function paint(){
     const doc=frame.contentDocument,stand=doc?.querySelector('.courier-stand');
     if(!stand)return;
-    const controls=stand.querySelector('.post-office-controls');
-    if(controls)controls.style.backgroundColor=draft.colours.header||'';
+    stand.style.backgroundColor=draft.colours.header||'';
     const wheel=doc.querySelector('#home-wheel .wheel-paper');
     if(wheel){
       const colour=draft.colours.carousel||'';
@@ -37,7 +36,7 @@ export function openPhoneStudio(){
       paint();
       new MutationObserver(paint).observe(doc.querySelector('#app'),{childList:true,subtree:true});
       doc.addEventListener('click',e=>{
-        if(e.target.closest('[data-set-open]'))return;
+        if(e.target.closest('.mail-toggle'))return;
         if(e.target.closest('.courier-stand')){target='header';e.preventDefault();e.stopImmediatePropagation()}
         else if(e.target.closest('#home-wheel .wheel-paper')){target='carousel'}
       },true);

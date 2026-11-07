@@ -114,7 +114,7 @@ for(const type of ['pointerdown','click','keydown'])document.addEventListener(ty
   if(e.target===handle||!editing||e.button===2||(type==='keydown'&&![' ','Enter'].includes(e.key)))return;
   const hit=e.target.closest('button[data-work-id],a[data-work-id],summary[data-work-id],select[data-work-id],label[data-work-id]')||e.target.closest('[data-work-id]');if(!hit)return;e.preventDefault();e.stopImmediatePropagation();
   if(type==='pointerdown'||type==='keydown')emit('select',hit.dataset.workId);
-  if(type==='pointerdown'&&hit.matches('.courier-stand,.courier-stand *')&&!hit.closest('[data-set-open]')){
+  if(type==='pointerdown'&&hit.matches('.courier-stand,.courier-stand *')&&!hit.closest('.mail-toggle')){
     const stand=hit.closest('.courier-stand');const id=stand.dataset.workId;
     if(id){const style=reviewStyles[id]||{};emit('select',id);dragging={key:id,pointer:e.pointerId,startX:e.clientX,startY:e.clientY,x:style.moveX||0,y:style.moveY||0};stand.setPointerCapture(e.pointerId);}
   }

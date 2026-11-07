@@ -16,18 +16,5 @@ export function header(state,showColours=false){
 }
 export function home(state){
   const on=state.receiving;
-  return `<section class="header-board" data-open="${on}"><div class="courier-stand post-office-home"><img class="post-office-art" src="${folder}post-office.png" alt="Pigeon at the post office"><div class="post-office-controls"><label class="mail-toggle"><input id="receiving" type="checkbox" role="switch" aria-label="Open to mail" ${on?'checked':''}><span class="mail-toggle-track" aria-hidden="true"><span class="mail-toggle-glow"></span><span class="mail-toggle-option">✉ Open to mail</span><span class="mail-toggle-option">⊘ Closed</span></span></label></div></div></section><div id="home-wheel"></div>`;
-}
-export function wireRails(root){
-  const label=root.querySelector('.mail-toggle'),input=root.querySelector('#receiving');if(!label||!input)return;
-  let start=null,suppress=false;
-  label.addEventListener('pointerdown',e=>{if(e.isPrimary)start={x:e.clientX,y:e.clientY};});
-  label.addEventListener('pointerup',e=>{
-    if(!start||!e.isPrimary)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;
-    if(Math.abs(dx)<32||Math.abs(dx)<Math.abs(dy))return;
-    const next=dx<0;suppress=true;e.preventDefault();
-    if(input.checked!==next){input.checked=next;input.dispatchEvent(new Event('change',{bubbles:true}));}
-  });
-  label.addEventListener('pointercancel',()=>{start=null});
-  label.addEventListener('click',e=>{if(suppress){e.preventDefault();e.stopImmediatePropagation();suppress=false;}},true);
+  return `<section class="header-board" data-open="${on}"><div class="courier-stand post-office-home"><img class="post-office-art" src="${folder}post-office.png" alt="Pigeon at the post office"><div class="post-office-controls"><label class="mail-toggle"><input id="receiving" type="checkbox" role="switch" aria-label="Open to mail" ${on?'checked':''}><img class="mail-status-art" src="${folder}mail-${on?'open':'closed'}.webp" width="1064" height="314" alt=""></label></div></div></section><div id="home-wheel"></div>`;
 }

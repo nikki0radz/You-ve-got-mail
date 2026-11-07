@@ -13,7 +13,8 @@ rounds.home.groups=[{id:'home-invite-button-01',title:'One-time link button',opt
 
 import {reviewGroup} from './parcel-round.mjs';
 rounds.home.groups.push(reviewGroup('header','Pigeon and mail status','.courier-stand'));
-rounds.home.groups.push(reviewGroup('status','Open and closed status','.post-office-controls'));
+// Keep this retired slider group's position so saved review comments retain their option numbers.
+rounds.home.groups.push(reviewGroup('status','Open and closed status','.mail-toggle-track'));
 rounds.home.groups.push(reviewGroup('background','Home background','#app'),reviewGroup('title','App title','.postal-header > strong'));
 rounds.dispatch=reviewGroup('heading','Delivery heading','#steps > h2');
 rounds.dispatch.groups=[
