@@ -1,0 +1,29 @@
+name: Android shared artwork smoke
+on:
+  push:
+    branches: [android/shared-art-library-026]
+    paths: ['android/tests/shared_art_release_smoke.py', '.github/workflows/shared-art-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Android and verify the published APK
+        shell: bash
+        run: |
+          set -eu
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sdkmanager "system-images;android-35;google_apis;x86_64" "emulator"
+          echo no | avdmanager create avd -f -n PigeonQA -k "system-images;android-35;google_apis;x86_64" -d pixel_6
+          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
+          timeout 360 adb wait-for-device
+          for i in {1..150}; do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          python android/tests/shared_art_release_smoke.py
