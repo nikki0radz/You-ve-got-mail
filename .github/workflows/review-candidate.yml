@@ -1,0 +1,24 @@
+name: Check live design review
+on:
+  push:
+    branches: [qa/live-design-review-018]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright@1.55.1
+      - name: Check invitation and review controls
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          node scripts/serve.mjs --port 3000 &
+          for i in {1..20}; do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
+          node scripts/check-invitation.cjs
+          node scripts/check-live-review.cjs
