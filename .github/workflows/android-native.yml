@@ -1,0 +1,54 @@
+name: Android native build
+on:
+  push:
+    branches: [android/catalogue-network-029]
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Link the build to its staging commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=android-native-029 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/checkout@v4
+      - name: Compile native activity and verify Android resources
+        shell: bash
+        run: |
+          set -eu
+          tools="$ANDROID_HOME/build-tools/35.0.0"
+          platform="$ANDROID_HOME/platforms/android-35/android.jar"
+          mkdir -p build/{gen,classes,dex}
+          "$tools/aapt2" compile --dir android/res -o build/resources.zip
+          "$tools/aapt2" link -I "$platform" --manifest android/AndroidManifest.xml --java build/gen -o build/base.apk build/resources.zip
+          find android/src build/gen -name '*.java' > build/sources
+          javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$tools/core-lambda-stubs.jar:$platform" -d build/classes @build/sources
+          jar cf build/classes.jar -C build/classes .
+          "$tools/d8" --min-api 28 --lib "$platform" --output build/dex build/classes.jar
+          cp "$tools/lib/apksigner.jar" "$tools/lib64/libc++.so" "$tools/zipalign" "$tools/aapt" build/
+      - name: Test actual compiled WebView routing and live public metadata
+        run: |
+          platform="$ANDROID_HOME/platforms/android-35/android.jar"
+          javac -cp "build/classes:$platform" -d build/test android/tests/ArtworkRouteCheck.java
+          java -Dsun.net.http.allowRestrictedHeaders=true -cp "build/test:build/classes:$platform" uk.co.pigeonpost.mail.ArtworkRouteCheck live
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pigeon-native-029
+          path: |
+            build/base.apk
+            build/dex/*.dex
+            build/apksigner.jar
+            build/zipalign
+            build/aapt
+            build/libc++.so
+      - name: Record build result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ job.status }}
+        run: |
+          state=failure
+          if [ "$RESULT" = success ]; then state=success; fi
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$state" -f context=android-native-029 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
