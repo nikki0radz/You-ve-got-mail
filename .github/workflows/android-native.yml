@@ -22,7 +22,7 @@ jobs:
           javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$tools/core-lambda-stubs.jar:$platform" -d build/classes @build/sources
           jar cf build/classes.jar -C build/classes .
           "$tools/d8" --min-api 28 --lib "$platform" --output build/dex build/classes.jar
-          cp "$tools/lib/apksigner.jar" "$tools/zipalign" build/
+          cp "$tools/lib/apksigner.jar" "$tools/lib64/libc++.so" "$tools/zipalign" "$tools/aapt" build/
       - uses: actions/upload-artifact@v4
         with:
           name: pigeon-native-026
@@ -31,3 +31,5 @@ jobs:
             build/dex/*.dex
             build/apksigner.jar
             build/zipalign
+            build/aapt
+            build/libc++.so
