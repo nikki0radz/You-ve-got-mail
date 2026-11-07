@@ -1,0 +1,13 @@
+name: Stop live write QA
+on:
+  push:
+    paths: ['.github/workflows/end-live-qa.yml']
+permissions:
+  actions: write
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel 42420769019 --repo nikki0radz/You-ve-got-mail || true
