@@ -21,7 +21,7 @@ function invitation(){
   steps.querySelector('#accept').onclick=loadChoices;
   steps.querySelector('#decline').onclick=()=>{
     steps.dataset.reviewScreen='decline';
-    steps.innerHTML='<img class="decline-pigeon" src="assets/guest/decline-clean-v2.png" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back"><span aria-hidden="true">←</span> Back to invitation</button>';
+    steps.innerHTML='<img class="decline-pigeon" src="assets/guest/decline-clean-v2.png" alt="A tearful pigeon"><h2>BOO, you’re no fun!</h2><p>You can close this page and return later. Your invitation is still unused.</p><button id="back"><span class="back-arrow" aria-hidden="true"></span> Back to invitation</button>';
     steps.querySelector('#back').onclick=invitation;
   };
 }
@@ -31,7 +31,7 @@ async function loadChoices(){
   steps.dataset.reviewScreen="loading choices";
   if(choicesLoaded){choose();return;}
   const generation=++preloadGeneration;
-  steps.innerHTML='<section class="flight dispatch-envelope" aria-live="polite"><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt=""></div><h2>Loading your options</h2><p>Our pigeon is gathering your designs…</p><progress max="1" value="0" aria-label="Loading designs"></progress><p data-progress></p><button type="button" data-back><span aria-hidden="true">←</span> Back</button></section>';
+  steps.innerHTML='<section class="flight dispatch-envelope" aria-live="polite"><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt=""></div><h2>Loading your options</h2><p>Our pigeon is gathering your designs…</p><progress max="1" value="0" aria-label="Loading designs"></progress><p data-progress></p><button type="button" data-back><span class="back-arrow" aria-hidden="true"></span> Back</button></section>';
   steps.querySelector('[data-back]').onclick=()=>{preloadGeneration++;invitation();};
   const progress=steps.querySelector('progress'),message=steps.querySelector('[data-progress]');
   const masters=Object.values(guestSelection).flat().map(([id])=>guestMaster(id));
@@ -95,7 +95,7 @@ function openReceipt(key){
 }
 function review(){
   steps.dataset.reviewScreen="dispatch";
-  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing" data-base-look="whenticks-3" data-review-look="whenticks-3"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
+  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing" data-base-look="whenticks-1" data-review-look="whenticks-1"><legend data-review-look="timeheading-1" data-base-look="timeheading-1">When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
@@ -142,7 +142,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.24.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.25.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';

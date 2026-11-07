@@ -1,0 +1,49 @@
+@font-face{font-family:ParcelChewy;src:url('../assets/type/chewy/latin.woff') format('woff');font-display:swap}
+@font-face{font-family:ParcelFredoka;src:url('../assets/type/fredoka/latin.woff') format('woff');font-weight:300 700;font-display:swap}
+#app:has(.post-office-home) .postal-header{padding-top:0;margin-bottom:0}
+#app:has(.post-office-home) .draft-label{margin:0}
+@media(max-width:450px){#app:has(.post-office-home){padding-top:calc(6px + env(safe-area-inset-top))}}
+#app .mail-toggle,#app #receiving{-webkit-tap-highlight-color:transparent}
+#app #receiving:focus:not(:focus-visible){outline:none}
+#home-wheel>.wheel>p{border-top:1px solid var(--mm-edge);padding-top:7px;margin-top:4px}
+html[data-theme=light] :is(.profile-link img,.mail-friend img,#social-flow .photo-booth img,#mail-window .recipient-avatar,#flow .recipient-avatar){background:#fff9ed;border:2px solid #c9ddd1}
+html[data-theme=light] #parcel-shop{background:#fff9ed}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button{justify-content:center;text-align:center}
+:is(#mail-window,#flow) .recipient-people .recipient-avatar{width:42px;height:42px}
+html[data-theme=light] :is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button[aria-pressed=true]{color:#111c19;background:#f2d5bf;border-color:#fff9ed}
+:is(#mail-window,#flow) .recipient-people button{font:700 17px/1.2 PostalBaloo,system-ui}
+:is(#mail-window,#flow) [data-review-look=recipientfont-2] button{font:400 18px/1.15 ParcelCoiny,system-ui}
+:is(#mail-window,#flow) [data-review-look=recipientfont-3] button{font:400 20px/1.15 ParcelLilita,system-ui}
+:is(#mail-window,#flow) [data-review-look=recipientfont-4] button{font:400 22px/1.2 ParcelCaption,cursive}
+:is(#mail-window,#flow) [data-review-look=recipientfont-5] button{font:700 18px/1.25 Georgia,serif}
+:is(#mail-window,#flow) [data-review-look=recipientfont-6] button{font:650 20px/1.15 ParcelFredoka,system-ui}
+:is(.timing-options,.dispatch-timing) legend[data-review-look]{float:none;margin:4px auto 6px;padding:0 7px;text-align:center;color:inherit;font:700 18px/1.25 PostalBaloo,system-ui}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-1]{border-bottom:1px solid currentColor}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-2]{border:2px dotted #738c76;padding:3px 10px;border-radius:5px}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-3]{font:400 23px/1.2 ParcelCaption,cursive}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-4]{border-inline:4px double #718771;background:#f2d5bf;color:#293d32;padding:4px 12px}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-5]{font:750 13px/1.3 system-ui;text-transform:uppercase;letter-spacing:.09em}
+:is(.timing-options,.dispatch-timing) legend[data-review-look=timeheading-6]{border-radius:15px 3px;background:#365a40;color:#fff9ed;padding:4px 18px}
+.guest #send::after{content:'💌'}
+/* A geometric arrow is centred independently of the system font's arrow baseline. */
+button .back-arrow{display:inline-block;flex:none;width:1.1em;height:1.1em;background:currentColor;mask:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M16 10H4m0 0 6-6m-6 6 6 6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+button:has(>.back-arrow){display:inline-flex;align-items:center;justify-content:center;gap:.4em}
+#parcel-shop button.secondary[data-prev],#parcel-shop .guest-library-head .wheel-back{display:inline-flex;align-items:center;line-height:1.25}
+#app .setting-field select{border:0;border-bottom:2px solid #597c66;border-radius:5px 5px 0 0;background:#c9ddd1;color:#374f40}
+#app .setting-field input[type=checkbox]{appearance:none;display:grid;place-content:center;width:25px;height:25px;padding:0;border:2px solid #6d886e;border-radius:50%;background:#fff9ed;color:#fff;margin-inline:6px}
+#app .setting-field input[type=checkbox]:checked{background:#365a40;border-color:#365a40}
+#app .setting-field input[type=checkbox]:checked::after{content:'✓';font:900 18px/1 system-ui}
+#app .permission-list{display:grid;gap:6px;counter-reset:permissions}
+#app .permission-list .setting-pill{width:100%;margin:0;padding:8px 10px;text-align:left;background:#c9ddd1;color:#304838;border:0;border-bottom:1px solid #718f79;border-radius:0}
+#app .permission-list[data-review-look=permissionactions-2] button{border:2px dotted #6a826c;background:#fff9ed;border-radius:6px}
+#app .permission-list[data-review-look=permissionactions-3] button{border-inline:5px double #86694e;background:#f2d5bf;border-radius:6px}
+#app .permission-list[data-review-look=permissionactions-4] button::before{counter-increment:permissions;content:counter(permissions) '. ';font-weight:800}
+#app .permission-list[data-review-look=permissionactions-5]{grid-template-columns:1fr 1fr}
+#app .permission-list[data-review-look=permissionactions-5] button{border-radius:24px;text-align:center;background:#365a40;color:#fff9ed}
+#app .permission-list[data-review-look=permissionactions-6] button{background:transparent;color:var(--mm-text);border:0;text-decoration:underline;text-underline-offset:4px}
+#app .setting-pill[data-action=test]{background:#c9ddd1;color:#304838}
+.ink-picker.swatch-picker{width:min(310px,calc(100% - 30px));padding:16px;text-align:center}
+.swatch-picker .ink-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}
+.ink-picker .ink-swatches button{width:100%;aspect-ratio:1;padding:0;min-height:0;border-radius:50%;border:2px solid #829085;background:var(--swatch);box-shadow:none}
+.ink-picker .ink-swatches button[aria-pressed=true]{outline:2px solid currentColor;outline-offset:1px}
+.ink-picker .ink-swatches .clear-swatch{background:repeating-conic-gradient(#ccd2c8 0 25%,#fff9ed 0 50%) 0 0/12px 12px}

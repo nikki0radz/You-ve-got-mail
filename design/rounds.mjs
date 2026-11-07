@@ -35,16 +35,19 @@ export const feedbackGroups=[
   ['railwidth','Carousel width','.frame-card','.frame-card'],
   ['notetitle','Optional note heading','.note-question','.note-question'],
   ['catalogfont','Design name font','.frame-name','.frame-name'],
-  ['receiptfont','Parcel title font','.post-receipt > strong','.post-receipt > strong']
+  ['receiptfont','Parcel title font','.post-receipt > strong','.post-receipt > strong'],
+  ['recipientfont','Recipient lettering','.recipient-people','.recipient-people'],
+  ['timeheading','Timing heading','.timing-options legend, .dispatch-timing legend','.timing-options legend, .dispatch-timing legend'],
+  ['permissionactions','Permission buttons','.permission-list','.permission-list']
 ].map(([key,title,selector,anchor])=>({
   ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+(['sendrow','catalogfont','receiptfont'].includes(key)?'-03':'-02')
 }));
-const [recipient,time,mailbox,settings,people,rail,note,catalogFont,receiptFont]=feedbackGroups;
-rounds.recipient={...recipient,groups:[time]};rounds.schedule=rounds.recipient;
+const [recipient,time,mailbox,settings,people,rail,note,catalogFont,receiptFont,recipientFont,timeHeading,permissionActions]=feedbackGroups;
+rounds.recipient={...recipient,groups:[time,recipientFont,timeHeading]};rounds.schedule=rounds.recipient;
 rounds.inbox={...mailbox,groups:[people]};rounds.sent=rounds.inbox;
 for(const page of ['library','stickerPicker','picker--pigeons','picker--notes','picker--postcards','picker--reminders','picker--flowers','picker--love'])rounds[page]={...rail,groups:[catalogFont]};
 rounds.posted=receiptFont;
 for(const page of ['banners','notes','love','flowers','reminders','pigeons','placementFrame','placementPostcard'])rounds[page]=note;
-rounds.settings=settings;
+rounds.settings={...settings,groups:[permissionActions]};rounds.dispatch.groups.push(timeHeading);
 
 rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-review-timing-01'?time:group);

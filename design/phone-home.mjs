@@ -7,7 +7,7 @@ export function openPhoneStudio(){
   let draft={colours:{}};
   try{const saved=JSON.parse(localStorage.getItem(key)||'{}');draft.colours=saved.colours||{}}catch{}
   const layer=document.createElement('section');layer.id='phone-studio';
-  layer.innerHTML='<header><button data-close>← Back</button><strong>Design Home</strong><button data-export>Export</button></header><p>Post office · tap the counter or carousel, then choose a colour.</p><div class="phone-design-colours" aria-label="Colours"></div><iframe title="Post office Home preview" src="design/page.html?page=home"></iframe>';
+  layer.innerHTML='<header><button data-close><span class="back-arrow" aria-hidden="true"></span> Back</button><strong>Design Home</strong><button data-export>Export</button></header><p>Post office · tap the counter or carousel, then choose a colour.</p><div class="phone-design-colours" aria-label="Colours"></div><iframe title="Post office Home preview" src="design/page.html?page=home"></iframe>';
   document.body.append(layer);
   const frame=layer.querySelector('iframe'),palette=layer.querySelector('.phone-design-colours');
   let target='header';

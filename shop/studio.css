@@ -42,16 +42,11 @@
 .colour-chip i,.ink-picker output::before{content:"";display:inline-block;width:22px;height:22px;border-radius:50%;border:1px solid #647660;box-shadow:0 0 0 2px #fff7e8}
 dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;border-radius:24px;text-align:center}
 .ink-picker::backdrop{background:#20332766}.ink-picker h2{font:800 22px PostalBaloo,system-ui;margin:0 0 12px}
-.ink-disc{position:relative;width:min(190px,100%);aspect-ratio:1;margin:auto;border-radius:100%;touch-action:none;background:linear-gradient(rgb(0 0 0 / var(--shade,0)),rgb(0 0 0 / var(--shade,0))),radial-gradient(circle closest-side,#fff,transparent),conic-gradient(red,#ff0,#0f0,#0ff,#00f,#f0f,red);box-shadow:0 0 0 1px #88947f}
-.ink-disc i{position:absolute;width:14px;height:14px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #202d25;transform:translate(-50%,-50%);pointer-events:none}
-.ink-picker label{display:grid;gap:5px;margin:10px 0 0;font:600 13px system-ui}.ink-picker input[type=range]{width:100%;accent-color:#41664c}.ink-picker output{display:inline-flex;align-items:center;gap:8px;margin:8px auto;font:600 12px monospace}.ink-picker output::before{background:var(--ink)}
 .ink-actions button,#parcel-shop button:is([data-prev],[data-keep],[data-discard],.frame-use,.wheel-back,.browse),#parcel-shop.guest-studio button:not(.corner),#parcel-shop.guest-studio .studio-tools button{border-radius:30px;min-height:44px;background:#faf4e5;color:#294938;border:1px solid #9aa68c;box-shadow:0 1px 4px #172d282b;font-weight:700}
 #parcel-shop.guest-studio .studio-tools button{background:#faf4e5;border:1px solid #a6b39b;box-shadow:0 1px 4px #172d282b}
 #parcel-shop.guest-studio .studio-tools [data-tool=second][aria-expanded=true]{background:#bfd2b9;border-color:#648066;color:#203e2c;box-shadow:inset 0 2px 3px #365a4038}
 #parcel-shop.guest-studio .studio-tools{gap:5px}#parcel-shop.guest-studio .studio-back,#parcel-shop.guest-studio .studio-link{text-decoration:none}
 #parcel-shop .ink-row .colour-chip{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:5px 12px;border-radius:30px;background:#faf4e5;color:#294938;border:1px solid #9aa68c}
-.ink-picker input[type=range]{appearance:none;border-radius:18px;height:12px;margin:7px 0;background:linear-gradient(to right,#000,var(--bright));border:1px solid #88947f}
-.ink-picker input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border:2px solid #faf4e5;border-radius:50%;background:#48664c;box-shadow:0 0 0 1px #314338}
 .ink-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
 .ink-actions button{min-height:52px;margin:0;padding:8px 6px;font:800 18px/1.25 PostalBaloo,system-ui}
 .ink-actions button[data-apply]{background:#365a40;color:#fff9e8;border-color:#234532;box-shadow:0 3px 0 #243e2d}

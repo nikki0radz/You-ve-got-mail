@@ -1,5 +1,8 @@
 // Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
 export const looks = {
+  recipientfont: ['Rounded 17','Coiny 18','Lilita 20','Handwritten 22','Classic 18','Fredoka 20'].map(x=>[x]),
+  timeheading: ['Ruled heading','Postage label','Centred script','Ticket stub','Small capitals','Ribbon'].map(x=>[x]),
+  permissionactions: ['Underlined list','Postage stamps','Ticket stubs','Numbered steps','Pill pairs','Plain rows'].map(x=>[x]),
   sendrow: ['Envelope row','Address slip','Portrait capsule','Postmark label','Airmail edge','Sorting desk'].map(x=>[x]),
   catalogfont: ['Rounded','Coiny','Lilita One','Handwritten','Serif italic','Typewriter'].map(x=>[x]),
   receiptfont: ['Rounded','Coiny','Lilita One','Handwritten','Serif italic','Typewriter'].map(x=>[x]),

@@ -27,8 +27,8 @@ function page(title,body,back){
   d.querySelector('[data-x]').onclick=()=>d.close();
   if(back){
     const footer=d.querySelector('.reply-actions');
-    if(footer)footer.insertAdjacentHTML('afterbegin',button('back','<span aria-hidden="true">←</span> Back'));
-    else d.insertAdjacentHTML('beforeend',button('back','<span aria-hidden="true">←</span> Back'));
+    if(footer)footer.insertAdjacentHTML('afterbegin',button('back','<span class="back-arrow" aria-hidden="true"></span> Back'));
+    else d.insertAdjacentHTML('beforeend',button('back','<span class="back-arrow" aria-hidden="true"></span> Back'));
     action('back',back);
   }
 }
@@ -83,7 +83,7 @@ export function composeFrom(category,refresh,example,myProfile={}){
   const review=async(png,name,group,reopen)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=snapshot.friends||[];const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a pigeon',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-1" data-review-look="sendrow-1"><label>Send to<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="recipient-people" role="group" aria-label="Recipient"></div></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel　✉</button>'+button('edit','✎ Edit parcel'));
+    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-5" data-review-look="sendrow-5"><label>Send to<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="recipient-people" data-review-look="recipientfont-1" data-base-look="recipientfont-1" role="group" aria-label="Recipient"></div></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
     fitPreview(el().querySelector('.mail-proof'));
     const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
     const list=el().querySelector('.recipient-people');
@@ -105,7 +105,7 @@ export function composeFrom(category,refresh,example,myProfile={}){
       if(selected==='self'){const result=Pigeon.queue(JSON.stringify({sender:'Myself',image,kind:kinds[group],text:name,when}));if(result!=='ok')throw Error(result);}
       else{const friend=people.find(f=>f.code===selected);await post('send',{code:friend.code,recipient:friend.name,kind:kinds[group],image,when,receiptSecret:key});}
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
-      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-1" data-review-look="receiptfont-1">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+button('done','Done'));
+      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+button('done','Done'));
       el().dataset.receipt='0';action('done',()=>{el().close();refresh();});});
   };
   if(example)return review(example.image,example.name,category,()=>composeFrom(category,refresh,null,myProfile));

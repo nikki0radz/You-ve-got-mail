@@ -1,6 +1,8 @@
 export const fonts={
   Handwritten:['ParcelCaption, cursive',400],
   Rounded:['PostalBaloo, sans-serif',650],
+  Chewy:['ParcelChewy, sans-serif',400],
+  Fredoka:['ParcelFredoka, sans-serif',650],
   Coiny:['ParcelCoiny, sans-serif',400],
   'Lilita One':['ParcelLilita, sans-serif',400],
   'Soft script':['ParcelCaption, cursive',700],

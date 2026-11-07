@@ -18,7 +18,7 @@ if(guest){
 }else{
   const people={friends:[{name:'Owen',code:'POSTSAMPLE',mode:'open'}],incoming:[],outgoing:[],me:{code:'SAMPLECODE'}};
   const mail=[{id:'sample',sender:'Owen',kind:'A postcard',status:'received',created:Date.UTC(2026,0,1,12),when:Date.UTC(2026,0,1,12)},{id:'out',sent:true,sender:'Owen',kind:'A sticker',created:Date.UTC(2026,0,2,12),when:Date.UTC(2026,0,2,12)}];
-  const prefs={fullPopup:true,onUnlock:true,warning:true,warningSeconds:3,closedInbox:true,backdropMode:'blur',backdropOpacity:25};
+  const prefs={fullPopup:true,onUnlock:true,warning:true,warningSeconds:3,closedInbox:true,backdropOpacity:70};
   const hint=()=>{const n=document.querySelector('#notice');n.textContent='Device action · preview only';n.classList.add('visible');setTimeout(()=>n.classList.remove('visible'),1600)};
   window.Pigeon={mailbox:()=>JSON.stringify(mail),friendsCached:()=>JSON.stringify(people),wasRead:()=>false,markRead:()=>{},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,
     deliveryPrefs:()=>JSON.stringify(prefs),deliverySetting:(k,v)=>prefs[k]=v==='true'||v==='false'?v==='true':isNaN(v)?v:Number(v),
@@ -44,7 +44,11 @@ if(guest){
     if(key==='posted')click('[data-mb=send]');
   }
   if(['settings','defaults','about'].includes(key))click('[data-action=tab][data-id=settings]');
-  if(key==='defaults'||key==='about')click('[data-action='+key+']');
+  if(key==='defaults'){
+    const button=document.createElement('button');button.dataset.action='defaults';
+    document.querySelector('#app').append(button);button.click();button.remove();
+  }
+  if(key==='about')click('[data-action=about]');
 
 }
 await import('./page-surface.mjs');

@@ -4,7 +4,7 @@ const pad=n=>String(n).padStart(2,'0');
 const dayValue=d=>[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
 export function dispatchControls(host,draft){
   host.innerHTML=
-    '<fieldset class="timing-options" data-base-look="whenticks-3" data-review-look="whenticks-3"><legend>When should it arrive?</legend><div>'+[['now','Now'],['later','Later']].map(([key,label])=>'<label><input type="radio" name="post-time" value="'+key+'"><span><b>'+label+'</b></span></label>').join('')+'</div></fieldset>'+
+    '<fieldset class="timing-options" data-base-look="whenticks-1" data-review-look="whenticks-1"><legend data-review-look="timeheading-1" data-base-look="timeheading-1">When should it arrive?</legend><div>'+[['now','Now'],['later','Later']].map(([key,label])=>'<label><input type="radio" name="post-time" value="'+key+'"><span><b>'+label+'</b></span></label>').join('')+'</div></fieldset>'+
     '<section class="schedule-panel" hidden>'+stylePicker('calendar','Date style',['Postmarked calendar','Diary slip','Quick booking'])+'<div class="date-content"></div><small>Times are local to you · up to 30 days ahead</small></section>';
   const panel=host.querySelector('.schedule-panel'),content=host.querySelector('.date-content');
   let month;const today=new Date(),last=new Date(today.getTime()+30*86400000);

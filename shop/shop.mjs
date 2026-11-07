@@ -79,7 +79,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     disposeReel?.();disposeReel=null;
     navigateBack=back||(()=>cancel());
     const header=guestLibrary?
-      '<header class="parcel-head guest-library-head"><button type="button" class="wheel-back pocket-back" data-prev><span aria-hidden="true">←</span> Back</button><small>'+esc(status)+'</small></header>':
+      '<header class="parcel-head guest-library-head"><button type="button" class="wheel-back pocket-back" data-prev><span class="back-arrow" aria-hidden="true"></span> Back</button><small>'+esc(status)+'</small></header>':
       '<header class="parcel-head"><small>'+esc(status)+'</small><button type="button" aria-label="Close" class="parcel-x">×</button></header>';
     dialog.dataset.reviewScreen='shop / '+name+' / '+status;
     dialog.innerHTML=header+'<h2>'+esc(name)+'</h2>'+body+'<p role="alert" class="parcel-error"></p>';
@@ -88,7 +88,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     dialog.scrollTop=0;
   };
   const report=e=>{const line=dialog.querySelector('.parcel-error');if(line)line.textContent=e.message||String(e);};
-  const backButton='<button class="secondary" data-prev><span aria-hidden="true">←</span> Back</button>';
+  const backButton='<button class="secondary" data-prev><span class="back-arrow" aria-hidden="true"></span> Back</button>';
   const chooseItem=it=>{current=it;step=0;dirty=false;
     if(studio){
       disposeReel?.();disposeReel=null;
