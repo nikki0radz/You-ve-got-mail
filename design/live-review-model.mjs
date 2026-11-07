@@ -25,7 +25,17 @@ export function label(el) {
 }
 export function describe(el) {
   const r = el.getBoundingClientRect(), s = el.ownerDocument.defaultView.getComputedStyle(el);
-  return {selector:selector(el),label:label(el),x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height),
+  const detail={};
+  if(el.matches('img')){
+    // Only identify bundled artwork. Picked photos and mailbox images stay local.
+    const asset=el.getAttribute('src')?.match(/^(?:\.\/)?(assets\/[\w./-]+\.(?:png|webp|svg))(?:\?.*)?$/i);
+    if(asset)detail.asset=asset[1];
+  }
+  const tile=el.closest('[data-design],[data-preview],.category-reel button');
+  if(tile?.hasAttribute('aria-label'))detail.design=tile.getAttribute('aria-label');
+  if(el.matches('details'))detail.open=el.open;
+  if(el.hasAttribute('aria-pressed'))detail.pressed=el.getAttribute('aria-pressed');
+  return {...detail,selector:selector(el),label:label(el),x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height),
     background:s.backgroundColor,text:s.color,border:s.borderTopColor,fontSize:s.fontSize,display:s.display};
 }
 export function screen(doc, root) {
@@ -41,5 +51,9 @@ export function layout(root) {
   const elements = [root,...root.querySelectorAll('*')].filter(el => !el.closest('[data-review-ui],svg *,option,script,style') && el.getClientRects().length);
   return {viewport:{width:root.ownerDocument.defaultView.innerWidth,height:root.ownerDocument.defaultView.innerHeight},
     scroll:{x:root.ownerDocument.defaultView.scrollX,y:root.ownerDocument.defaultView.scrollY,container:root.scrollTop},
-    elements:elements.map(describe)};
+    elements:elements.filter(el=>{
+      if(el===root)return true;
+      const r=el.getBoundingClientRect(),w=root.ownerDocument.defaultView;
+      return r.right>0 && r.bottom>0 && r.left<w.innerWidth && r.top<w.innerHeight;
+    }).map(describe)};
 }

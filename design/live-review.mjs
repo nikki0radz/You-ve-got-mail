@@ -1,4 +1,4 @@
-import {selector,label,layout,screen} from './live-review-model.mjs';
+import {selector,label,describe,layout,screen} from './live-review-model.mjs';
 import {freezeFrame} from './review-freeze.mjs';
 
 const prefix='pigeon.live-review.v1.';
@@ -99,7 +99,7 @@ function finish(){
 }
 function record(){
   const path=selector(selected),items=session.entry.targets;
-  return items[path]??=( {selector:path,label:label(selected),colours:{},comment:''} );
+  return items[path]??={selector:path,label:label(selected),atSelection:describe(selected),colours:{},comment:''};
 }
 function edit(write){
   const item=record();write(item);
