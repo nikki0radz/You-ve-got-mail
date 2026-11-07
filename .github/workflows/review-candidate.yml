@@ -20,5 +20,15 @@ jobs:
         run: |
           node scripts/serve.mjs --port 3000 &
           for i in {1..20}; do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
-          node scripts/check-invitation.cjs
           node scripts/check-live-review.cjs
+          git fetch --depth=1 origin 9e402eca15f5da1294d3e5bedc08bdf8523f0ab3
+          git worktree add /tmp/prior FETCH_HEAD
+          (cd /tmp/prior && node scripts/serve.mjs --port 3001) &
+          node - <<'JS'
+          const {chromium}=require('playwright'),assert=require('node:assert/strict');
+          (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_PATH});try{
+          for(const width of [320,430]){const captures=[];
+          for(const port of [3000,3001]){const p=await b.newPage({viewport:{width,height:900}});await p.goto('http://localhost:'+port+'/guest.html?preview=1');await p.locator('.courier').evaluate(n=>n.decode());await p.evaluate(()=>document.fonts.ready);captures.push(await p.locator('.guest').screenshot());await p.locator('#decline').click();await p.locator('#back').click();await p.locator('#accept').click();await p.locator('#steps .wheel').waitFor();await p.close();}
+          assert.ok(captures[0].equals(captures[1]),width+'px card differs from previous release');console.log(width+'px unchanged vs release');}
+          }finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});
+          JS
