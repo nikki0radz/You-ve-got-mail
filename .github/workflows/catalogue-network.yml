@@ -56,6 +56,9 @@ jobs:
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
             sleep 2
           done
+          python -u android/tests/catalogue-tls-forward.py > "$RUNNER_TEMP/catalogue-tunnel.log" 2>&1 &
+          adb reverse tcp:8868 tcp:8868
+          adb shell settings put global http_proxy 127.0.0.1:8868
           adb install -g phone-qa.apk
           adb shell input keyevent KEYCODE_WAKEUP
           adb shell wm dismiss-keyguard
@@ -67,6 +70,7 @@ jobs:
             adb shell uiautomator dump /sdcard/network.xml >/dev/null || true
             adb shell cat /sdcard/network.xml > "$RUNNER_TEMP/ui.xml" || true
             python -c 'import os,re,subprocess;from xml.etree import ElementTree as E;p=os.environ["RUNNER_TEMP"]+"/ui.xml";r=E.parse(p).getroot();matches=[n for n in r.iter("node") if n.get("text","").lower()=="later" or n.get("content-desc","").lower()=="later"];coords=[list(map(int,re.findall(r"[0-9]+",n.get("bounds","")))) for n in matches];[subprocess.run(["adb","shell","input","tap",str((a+c)//2),str((b+d)//2)]) for a,b,c,d in coords]' || true
+            cat "$RUNNER_TEMP/catalogue-tunnel.log" | tail -2
             if grep -q "PASS Catalogue items" "$RUNNER_TEMP/ui.xml"; then
               echo "PASS Real appassets WebView GET /items, dummy POST /unlock, GET /files and OPTIONS"
               exit 0
