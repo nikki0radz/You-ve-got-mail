@@ -1,0 +1,29 @@
+#art-upload{position:fixed;inset:0;width:min(94vw,31rem);max-height:90dvh;margin:auto;overflow:auto;box-sizing:border-box;padding:18px 20px 22px;border:2px solid var(--mm-edge,#c2c4a7);border-radius:24px;background:var(--mm-panel,#fff9ed);color:var(--mm-text,#283c30);font:500 15px/1.4 system-ui;overscroll-behavior:contain}
+#art-upload::backdrop{background:#101b16a8}
+#art-upload [hidden]{display:none!important}
+#art-upload h2,#art-upload h3{font-family:PostalBaloo,system-ui;color:inherit;margin:4px 0 9px}
+#art-upload h2{font-size:1.65rem;padding-right:35px}
+#art-upload .art-close{position:absolute;right:12px;top:9px;background:none;border:0;color:inherit;font-size:26px;width:40px;height:40px}
+#art-upload label{display:grid;text-align:left;gap:4px;color:inherit;font-size:13px;font-weight:700;margin-block:8px}
+#art-upload input:not([type=file]),#art-upload select{min-width:0;width:100%;min-height:42px;box-sizing:border-box;border:1px solid var(--mm-edge);border-radius:12px;padding:6px 9px;background:var(--mm-bg);color:var(--mm-text);font:inherit}
+#art-upload .art-fields,#art-upload .art-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;align-items:end}
+#art-upload .art-share{padding:10px 12px;margin-bottom:10px;border-radius:12px;background:var(--mm-bg);border:1px solid var(--mm-edge)}
+#art-upload .art-share summary{cursor:pointer;font-weight:750}
+#art-upload .art-share input{margin-bottom:8px}
+#art-upload button{cursor:pointer}
+#art-upload button:disabled{opacity:.55;cursor:default}
+#art-upload .primary,#art-upload .secondary{box-sizing:border-box;min-height:42px;height:auto;width:100%;border-radius:18px;padding:8px 10px;margin:6px 0;font-weight:750}
+#art-upload .primary{border:1px solid #365a40;background:#365a40;color:#fff9ed}
+#art-upload .secondary{background:transparent;color:var(--mm-text);border:1px solid var(--mm-edge)}
+#art-upload .art-queue{margin-top:16px}
+#art-upload ol{margin:0;padding:0;list-style:none}
+#art-upload li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--mm-edge)}
+#art-upload li span{min-width:0;overflow-wrap:anywhere}
+#art-upload li small{display:block;font-size:12px}
+#art-upload li button,#art-upload .art-remove{background:transparent;border:0;text-decoration:underline;color:inherit;padding:8px;flex-shrink:0}
+#art-upload .art-feedback:empty{display:none}
+#art-upload .art-stage{position:relative;display:table;margin:0 auto 10px;max-width:100%;line-height:0;background:repeating-conic-gradient(#d4ddd6 0 25%,#eff1eb 0 50%) 0/14px 14px}
+#art-upload .art-stage img{display:block;max-width:100%;max-height:32dvh;width:auto;height:auto;user-select:none;pointer-events:none}
+#art-upload .art-stage.drawing{touch-action:none;cursor:crosshair}
+#art-upload .art-box{position:absolute;border:2px dashed #365a40;background:#fff9ed70;box-sizing:border-box;pointer-events:none}
+#art-upload .art-coordinates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px}

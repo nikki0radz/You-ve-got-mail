@@ -62,7 +62,7 @@ export function mountFrameReel(root,items,first,preview,onSelect,onUse) {
     if(selected>=0){icons[selected].setAttribute('aria-pressed','false');icons[selected].tabIndex=-1;}
     selected=i;
     icons[i].setAttribute('aria-pressed','true');icons[i].tabIndex=0;
-    name.textContent=items[i].name;count.textContent=(i+1)+' / '+items.length;use.textContent='Use '+items[i].name+'　›';
+    name.textContent=items[i].name;count.textContent=(i+1)+' / '+items.length;use.textContent=(items[i].useLabel||'Use '+items[i].name)+'　›';
     revealIcon();onSelect(items[i]);
   }
   rail.onscroll=()=>{

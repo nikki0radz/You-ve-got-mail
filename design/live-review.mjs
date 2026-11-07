@@ -1,4 +1,4 @@
-import {feedbackGroups} from './rounds.mjs';
+import {feedbackGroups,approvedLooks} from './rounds.mjs';
 import {selector,label,describe,layout,screen} from './live-review-model.mjs';
 import {freezeFrame} from './review-freeze.mjs';
 
@@ -92,12 +92,13 @@ function applyOptions(root){
   for(const group of feedbackGroups){
     const el=root.querySelector(group.selector);
     if(!el)continue;
-    const n=optionNumber(group);
+    const n=approvedLooks[group.key]||optionNumber(group);
     if(n)el.dataset.reviewLook=group.key+'-'+n;
   }
 }
 function numberControls(doc,root){
   for(const group of feedbackGroups){
+    if(approvedLooks[group.key])continue;
     const target=root.querySelector(group.selector),anchor=root.querySelector(group.anchor);
     if(!target||!anchor)continue;
     const row=doc.createElement('aside');
@@ -106,7 +107,7 @@ function numberControls(doc,root){
     group.options.forEach((option,i)=>{
       const b=doc.createElement('button');b.type='button';b.textContent=String(i+1);
       b.setAttribute('aria-label',group.title+' '+(i+1)+' · '+option.name);
-      b.setAttribute('aria-pressed',String((optionNumber(group)||Number(target.dataset.baseLook?.split('-')[1]))===i+1));
+      b.setAttribute('aria-pressed',String((optionNumber(group)||Number(target.dataset.baseLook?.split('-')[1]||1))===i+1));
       row.append(b);
     });
     // Keep the controls adjacent to their element in the scrolling phone copy.
@@ -128,7 +129,7 @@ function sync(force=false){
   if(dock.parentNode!==host)host.append(dock);
   applyOptions(root);
   const key=keyFor(screen(document,root));
-  if(force||key!==lastLiveKey){lastLiveKey=key;liveStyle.textContent=rules((unsaved.get(key)||json(key,{targets:{}})).targets);}
+  if(force||key!==lastLiveKey){lastLiveKey=key;liveStyle.textContent=rules((unsaved.get(key)||json(key,{targets:{}})).targets)+linkedRules(document.documentElement.dataset.theme);}
 }
 const observer=new MutationObserver(()=>sync());
 observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','data-review-screen','aria-current','aria-pressed']});
@@ -149,8 +150,28 @@ function save(updateLayout=false,changed){
   try{localStorage.setItem(key,JSON.stringify(entry));unsaved.delete(key);status('Saved on this device');}
   catch{unsaved.set(key,entry);status('Device storage is full or unavailable. Export before leaving.');}
 }
+// Linked navigation colours follow the active state, even on another tab.
+const linkedColourKey = theme => 'pigeon.linked-navigation.v1.'+theme;
+function linkedTarget(el){
+  const tab=el.closest('.app-nav button, .mail-tabs button');
+  if(!tab)return '';
+  if(tab.closest('.app-nav'))return '#app .app-nav button'+(tab.hasAttribute('aria-current')?'[aria-current=page]':':not([aria-current])');
+  return '#app .mail-tabs button[aria-pressed='+tab.getAttribute('aria-pressed')+']';
+}
+function linkedRules(theme){
+  return rules(json(linkedColourKey(theme),{}));
+}
+function updateLinkedColour(value){
+  const selector=linkedTarget(selected);
+  if(!selector)return;
+  const key=linkedColourKey(session.meta.theme),items=json(key,{});
+  const record=items[selector]||{selector,colours:{}};
+  if(value)record.colours[channel]=value;else delete record.colours[channel];
+  items[selector]=record;
+  try{localStorage.setItem(key,JSON.stringify(items));}catch{}
+}
 function paint(){
-  session.style.textContent=rules(session.entry.targets);
+  session.style.textContent=rules(session.entry.targets)+linkedRules(session.meta.theme);
 }
 function closePanel(){
   selected?.removeAttribute('data-review-picked');selected=null;
@@ -178,7 +199,7 @@ function colourState(){
     (rgb.length>=3&&rgb[3]!=='0'?'#'+rgb.slice(0,3).map(x=>Number(x).toString(16).padStart(2,'0')).join(''):'');
   $('.hex').value=current;$('.hex').placeholder='Original';$('input[type=color]').value=current||'#ffffff';
 }
-function setColour(v){if(!/^#[0-9a-f]{6}$/i.test(v))return;edit(item=>{item.colours[channel]=v.toLowerCase();});colourState();}
+function setColour(v){if(!/^#[0-9a-f]{6}$/i.test(v))return;updateLinkedColour(v.toLowerCase());edit(item=>{item.colours[channel]=v.toLowerCase();});colourState();}
 function select(el){
   selected?.removeAttribute('data-review-picked');selected=el;el.setAttribute('data-review-picked','');
   $('textarea').value=session.entry.targets[selector(el)]?.comment||'';
@@ -231,7 +252,7 @@ for(const b of ui.querySelectorAll('[data-channel]'))b.onclick=()=>{
 };
 $('input[type=color]').oninput=e=>setColour(e.target.value);
 $('.hex').oninput=e=>setColour(e.target.value);
-$('.reset').onclick=()=>{edit(item=>{delete item.colours[channel];});colourState();};
+$('.reset').onclick=()=>{updateLinkedColour(null);edit(item=>{delete item.colours[channel];});colourState();};
 for(const hex of palette){const b=document.createElement('button');b.style.background=hex;b.setAttribute('aria-label','Use '+hex);b.onclick=()=>setColour(hex);$('.palette').append(b);}
 $('.export').onclick=()=>{
   save(true);
@@ -239,13 +260,13 @@ $('.export').onclick=()=>{
   const all=new Map(unsaved);
   try{
     for(const entry of records())if(!all.has(keyFor(entry)))all.set(keyFor(entry),entry);
-    for(const k of Object.keys(localStorage).filter(k=>['pigeon.home.colours.v2','pigeon.phone.home.design.v1','pigeon-library-category-layout'].includes(k)||k.startsWith('pigeon-style-'))){
+    for(const k of Object.keys(localStorage).filter(k=>['pigeon.home.colours.v2','pigeon.phone.home.design.v1','pigeon-library-category-layout'].includes(k)||k.startsWith('pigeon-style-')||k.startsWith('pigeon.linked-navigation.v1.'))){
       prefs[k]=json(k,localStorage.getItem(k));
     }
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.25',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.26',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };

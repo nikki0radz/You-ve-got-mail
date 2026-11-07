@@ -30,3 +30,22 @@ export function colourButton(label,accessible,initial,apply){
   };
   return button;
 }
+
+// The note editor exposes the most useful inks without opening a second sheet.
+export function noteSwatches(label,accessible,initial,apply){
+  const row=document.createElement('div');
+  row.className='quick-ink';row.setAttribute('role','group');row.setAttribute('aria-label',accessible);
+  const title=document.createElement('span');title.textContent=label;row.append(title);
+  const values=label==='Paper'
+    ? [['Cream','#fff9ed'],['Peach','#f2d5bf'],['Lilac','#dbc6d4'],['Clear','transparent']]
+    : [['Forest','#283c30'],['Plum','#634961'],['Cream','#fff9ed'],['Black','#000000']];
+  if(!values.some(([,value])=>value===initial))values.push(['Current colour',initial]);
+  for(const [name,value] of values){
+    const dot=document.createElement('button');dot.type='button';dot.title=name;
+    dot.setAttribute('aria-label',name);dot.setAttribute('aria-pressed',String(value===initial));
+    dot.style.setProperty('--dot',value);if(value==='transparent')dot.dataset.clear='';
+    dot.onclick=()=>{for(const other of row.querySelectorAll('button'))other.setAttribute('aria-pressed',String(other===dot));apply(value);};
+    row.append(dot);
+  }
+  return row;
+}

@@ -1,5 +1,7 @@
 // Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
 export const looks = {
+  separator: ['Fine rule','Dash and dot','Airmail stripe','Envelope seal','Double rule'].map(name=>[name]),
+  wheelrim: ['Stitched circle','Plain artwork','Ink ring','Soft stamp','Paper disc'].map(name=>[name]),
   recipientfont: ['Rounded 17','Coiny 18','Lilita 20','Handwritten 22','Classic 18','Fredoka 20'].map(x=>[x]),
   timeheading: ['Ruled heading','Postage label','Centred script','Ticket stub','Small capitals','Ribbon'].map(x=>[x]),
   permissionactions: ['Underlined list','Postage stamps','Ticket stubs','Numbered steps','Pill pairs','Plain rows'].map(x=>[x]),
