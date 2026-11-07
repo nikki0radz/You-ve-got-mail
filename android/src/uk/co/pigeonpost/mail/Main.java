@@ -53,7 +53,7 @@ public class Main extends Activity {
                     if(path.startsWith("/mail-art/")&&path.endsWith(".png")){
                         try{return new WebResourceResponse("image/png",null,new FileInputStream(Mail.image(Main.this,path.substring(10,path.length()-4))));}catch(IOException ignored){}
                     }
-                    try{String mime=path.endsWith(".mjs")||path.endsWith(".js")?"text/javascript":path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".json")?"application/json":path.endsWith(".png")?"image/png":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".woff")?"font/woff":path.endsWith(".webp")?"image/webp":"application/octet-stream";
+                    try{String mime=path.endsWith(".mjs")||path.endsWith(".js")?"text/javascript":path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".json")?"application/json":path.endsWith(".png")?"image/png":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".woff2")?"font/woff2":path.endsWith(".woff")?"font/woff":path.endsWith(".webp")?"image/webp":"application/octet-stream";
                         return new WebResourceResponse(mime,null,getAssets().open("site"+path));
                     }catch(IOException ignored){}
                 }
