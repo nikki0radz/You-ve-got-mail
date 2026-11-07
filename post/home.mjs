@@ -16,5 +16,5 @@ export function header(state,showColours=false){
 }
 export function home(state){
   const on=state.receiving;
-  return `<section class="header-board" data-open="${on}"><div class="courier-stand post-office-home"><img class="post-office-art" src="${folder}post-office.png" alt="Pigeon at the post office"><div class="post-office-controls"><label class="mail-toggle"><input id="receiving" type="checkbox" role="switch" aria-label="Open to mail" ${on?'checked':''}><img class="mail-status-art" src="${folder}mail-${on?'open':'closed'}.webp" width="1064" height="314" alt=""></label></div></div></section><div id="home-wheel"></div>`;
+  return `<section class="header-board" data-open="${on}"><div class="courier-stand post-office-home"><img class="post-office-art" src="${folder}post-office.png" alt="Pigeon at the post office"><div class="post-office-controls"><label class="mail-toggle"><input id="receiving" type="checkbox" role="switch" aria-label="Open to mail" ${on?'checked':''}><img class="mail-status-art" src="${folder}mail-${on?'open':'closed'}.webp" width="1064" height="314" alt=""><span class="mail-status-hint" aria-hidden="true">tap to change status</span></label></div></div></section><div id="home-wheel"></div>`;
 }

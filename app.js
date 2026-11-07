@@ -3,7 +3,7 @@ import {openPhoneStudio,closePhoneStudio} from './design/phone-home.mjs';
 import {settingsPage,wireSettings} from './post/settings.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
 import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom} from './post/mailbox.mjs';
-import {header,home,demoPeople} from './post/home.mjs?v=mail-sign-1';
+import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
 import {installSocial} from './post/social.mjs';
 import {openShop,backInShop} from './shop/shop.mjs';
 import{createId,STORAGE_KEY,FRAMES,COLOURS,loadState,validateMessage,makeMessage,escapeHtml as esc}from'./domain.mjs';

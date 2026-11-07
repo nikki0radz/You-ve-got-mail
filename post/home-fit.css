@@ -4,7 +4,9 @@
 #app:has(.header-board) .draft-label{margin-bottom:3px}
 #app:has(.header-board) .page-content{display:flex;flex-direction:column;min-height:0}
 #app .header-board{width:100%;margin:0 auto 4px}
-#app .post-office-home>img.post-office-art{max-height:clamp(210px,45dvh,440px)}
+/* Keep the shop and its hanging sign on the same scale when the viewport limits the artwork. */
+#app .courier-stand.post-office-home{width:min(100%,clamp(315px,67.5dvh,660px));margin-inline:auto}
+#app .post-office-home>img.post-office-art{width:100%;height:auto;max-height:none;aspect-ratio:3/2}
 #home-wheel{flex:1;display:flex;flex-direction:column;margin:0 -22px;min-height:190px}
 #home-wheel>.wheel{display:flex;flex:1;flex-direction:column;min-height:0}
 #home-wheel>.wheel>p{margin:3px 10px}
@@ -15,8 +17,10 @@
 #app:has(.header-board) .app-nav{margin-top:2px;padding-top:5px}
 @media(max-width:450px){#home-wheel{margin-inline:-19px}}
 @media(max-width:355px){#home-wheel{margin-inline:-14px}}
-@media(max-height:700px){#app .post-office-home>img.post-office-art{max-height:37dvh}#home-wheel{min-height:165px}#home-wheel .category-reel button{flex-basis:26%}#home-wheel .category-reel::before,#home-wheel .category-reel::after{flex-basis:37%}}
-#app .post-office-controls{width:min(94%,340px);margin:0 auto}
+@media(max-height:700px){#app .courier-stand.post-office-home{width:min(100%,55.5dvh)}#home-wheel{min-height:165px}#home-wheel .category-reel button{flex-basis:26%}#home-wheel .category-reel::before,#home-wheel .category-reel::after{flex-basis:37%}}
+/* The counter ends 5.4% above the PNG's bottom. Seat both gold ring centres in the wood. */
+#app .post-office-controls{position:relative;width:min(77%,280px);margin:-7.3% auto 0}
+#app .mail-status-hint{display:block;margin-top:2px;color:var(--mm-text);font:600 13px/1.3 system-ui;text-align:center}
 #app .mail-toggle{display:block;position:relative;cursor:pointer;line-height:0;touch-action:manipulation}
 #app .mail-toggle input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
 #app .mail-status-art{display:block;width:100%;height:auto;pointer-events:none}
