@@ -20,10 +20,21 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           manager="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
           export PATH="$(dirname "$manager"):$ANDROID_HOME/platform-tools:$PATH"
+          # Keep room for the system image and writable emulator userdata on this disposable runner.
+          sudo rm -rf /usr/local/lib/android/sdk/ndk /usr/share/dotnet
+          df -h /; ls -l /dev/kvm || true
           sdkmanager "system-images;android-35;google_apis;x86_64" "emulator"
           echo no | avdmanager create avd -f -n PigeonQA -k "system-images;android-35;google_apis;x86_64" -d pixel_6
-          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
-          timeout 360 adb wait-for-device
+          adb start-server
+          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -cores 2 -memory 2048 -partition-size 2048 -no-metrics > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
+          emu_pid=$!
+          trap 'tail -45 "$RUNNER_TEMP/pigeon-emulator.log"' ERR
+          for i in {1..60}; do
+            kill -0 "$emu_pid"
+            if adb devices | grep -q 'emulator-'; then break; fi
+            sleep 2
+          done
+          timeout 120 adb wait-for-device
           for i in {1..150}; do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
             sleep 2
