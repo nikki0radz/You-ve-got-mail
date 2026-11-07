@@ -43,6 +43,12 @@ public class Main extends Activity {
                 Uri uri=req.getUrl();
                 if(!req.isForMainFrame()&&"data".equals(uri.getScheme())&&uri.toString().startsWith("data:image/"))return null;
                 String path=uri.getPath();
+                if(!req.isForMainFrame() && "https".equals(uri.getScheme())
+                    && "pigeon-post-delivery.nikki0radz.chatgpt.site".equals(uri.getHost())
+                    && uri.getPort()==-1 && path!=null && path.startsWith("/api/art/")
+                    && ("GET".equals(req.getMethod()) || "POST".equals(req.getMethod()) || "OPTIONS".equals(req.getMethod()))) return null;
+                if(!req.isForMainFrame() && "blob".equals(uri.getScheme()) &&
+                    uri.toString().startsWith("blob:https://"+HOST+"/")) return null;
                 if("https".equals(uri.getScheme())&&HOST.equals(uri.getHost())&&path!=null&&path.startsWith("/")&&!path.contains("..")&&!path.contains("\\")){
                     if(path.startsWith("/mail-art/")&&path.endsWith(".png")){
                         try{return new WebResourceResponse("image/png",null,new FileInputStream(Mail.image(Main.this,path.substring(10,path.length()-4))));}catch(IOException ignored){}
@@ -58,6 +64,7 @@ public class Main extends Activity {
             public boolean onShowFileChooser(WebView v,ValueCallback<Uri[]> cb,FileChooserParams params){
                 if(photo!=null)photo.onReceiveValue(null);photo=cb;
                 Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
+                if(params.getMode()==FileChooserParams.MODE_OPEN_MULTIPLE)i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
                 try{startActivityForResult(i,41);}catch(Exception e){photo.onReceiveValue(null);photo=null;}return true;
             }
             public boolean onJsConfirm(WebView v,String url,String msg,JsResult r){new AlertDialog.Builder(Main.this).setMessage(msg).setPositiveButton("Discard",(d,k)->r.confirm()).setNegativeButton("Keep editing",(d,k)->r.cancel()).setOnCancelListener(d->r.cancel()).show();return true;}
@@ -91,7 +98,20 @@ public class Main extends Activity {
     }
     protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
-        if(req==41&&photo!=null){Uri u=res==RESULT_OK&&data!=null?data.getData():null;photo.onReceiveValue(u!=null&&"content".equals(u.getScheme())?new Uri[]{u}:null);photo=null;}
+        if(req==41 && photo!=null){
+            LinkedHashSet<Uri> selected=new LinkedHashSet<>();
+            if(res==RESULT_OK && data!=null){
+                ClipData clips=data.getClipData();
+                if(clips!=null)for(int n=0;n<clips.getItemCount();n++){
+                    Uri u=clips.getItemAt(n).getUri();
+                    if(u!=null && "content".equals(u.getScheme()))selected.add(u);
+                }
+                Uri single=data.getData();
+                if(single!=null && "content".equals(single.getScheme()))selected.add(single);
+            }
+            ValueCallback<Uri[]> callback=photo;photo=null;
+            callback.onReceiveValue(selected.isEmpty()?null:selected.toArray(new Uri[0]));
+        }
         if(req==43 && reviewData!=null){
             String review=reviewData;reviewData=null;
             if(res==RESULT_OK && data!=null && data.getData()!=null){
