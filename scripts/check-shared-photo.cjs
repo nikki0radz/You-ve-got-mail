@@ -53,6 +53,9 @@ async function installFixtures(page) {
     page.on('pageerror',e=>errors.push(e.message));
     await page.route(/^https?:/,route=>{
       const url=new URL(route.request().url());
+      // Exercise offline fallbacks for the optional web font.
+      if(url.hostname==='fonts.googleapis.com'&&url.pathname==='/css2'&&route.request().method()==='GET')
+        return route.fulfill({contentType:'text/css',body:''});
       if(url.origin!==base.origin||url.pathname.startsWith('/api/')){
         unexpected.push(url.pathname);return route.abort();
       }
@@ -71,6 +74,7 @@ async function installFixtures(page) {
       await page.evaluate(group=>window.openFixture(group),sample.group);
       await page.locator('[data-grid]').click();
       await page.getByRole('button',{name:'Edit '+sample.name,exact:true}).click();
+      await page.locator('#parcel-shop [data-upload]').waitFor();
       const skip=page.getByRole('button',{name:'Continue without a photo'});
       if(sample.withoutPhoto)await skip.click();
       else {
