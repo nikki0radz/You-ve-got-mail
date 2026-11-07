@@ -94,7 +94,7 @@ function openReceipt(key){
 }
 function review(){
   steps.dataset.reviewScreen="dispatch";
-  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Send now</button><button type="button" id="later">Schedule for later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
+  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
@@ -141,7 +141,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.18.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.19.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';
@@ -208,8 +208,9 @@ async function start(){
       fitPhoto(host,item,{photo:img,zoom:1,panX:.5,panY:.5},back,back);return;
     }
     if(page==='banners'||page==='ink'||page==='stickerPicker'){
-      choose();await browse('Notes','Sticky note');
-      document.querySelector(page==='banners'?'[data-tool=note]':page==='stickerPicker'?'[data-tool=second]':'.colour-chip')?.click();return;
+      choose();if(page==='stickerPicker'){await browse('Stickers');return;}
+      await browse('Notes','Sticky note');
+      if(page==='ink')document.querySelector('.colour-chip')?.click();return;
     }
     const picks={library:['Photos'],gallery:['Photos'],notes:['Notes','Sticky note'],frames:['Photos','Instant print'],flowers:['Flowers','Big Romance'],pigeons:['Stickers','All in'],love:['Love notes','Bee mine'],reminders:['Reminders','Take your meds']};
     if(picks[page]){choose();await browse(...picks[page]);if(page==='gallery')document.querySelector('[data-grid]')?.click();return;}

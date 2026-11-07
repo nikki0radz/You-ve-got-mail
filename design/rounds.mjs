@@ -23,3 +23,18 @@ rounds.dispatch.groups=[
 ];
 
 rounds.decline=reviewGroup('decline','Pigeon choice','.decline-pigeon');
+
+// One versioned group per decision, shared by the phone and the workroom.
+export const feedbackGroups=[
+  ['recipient','Recipient','.recipient-choice','.recipient-choice'],
+  ['deliverytime','Now / Later','.timing-options, .dispatch-timing','.timing-options, .dispatch-timing'],
+  ['mailbox','Inbox layout','.mailbox-layout','.mailbox-layout .page-heading'],
+  ['settingsbuttons','Settings buttons','.post-settings','.post-setting[data-section="alerts"] summary']
+].map(([key,title,selector,anchor])=>({
+  ...reviewGroup(key,title,selector),key,selector,anchor,id:'frame-feedback-'+key+'-01'
+}));
+const [recipient,time,mailbox,settings]=feedbackGroups;
+rounds.recipient={...recipient,groups:[time]};rounds.schedule=rounds.recipient;
+rounds.inbox=mailbox;rounds.sent=mailbox;rounds.settings=settings;
+
+rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-review-timing-01'?time:group);

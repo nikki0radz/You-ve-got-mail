@@ -65,10 +65,6 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   let gridScroll=0,previewURL,backFromItem;
   let disposeReel;
   const chosenDesign=options.wheel?selections.reply:guest?selections.invitation:selections.app;
-  const layoutKey='pigeon-library-category-layout';
-  let layout='tabs';
-  try{if(localStorage.getItem(layoutKey)==='menu')layout='menu';}catch{}
-
   const trigger=document.activeElement;
   if(dialog.open)return;
   // A close event is queued by the browser. Finish the previous session before reopening.
@@ -92,7 +88,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     dialog.scrollTop=0;
   };
   const report=e=>{const line=dialog.querySelector('.parcel-error');if(line)line.textContent=e.message||String(e);};
-  const backButton='<button class="secondary" data-prev>‹ Back</button>';
+  const backButton='<button class="secondary" data-prev><span aria-hidden="true">←</span> Back</button>';
   const chooseItem=it=>{current=it;step=0;dirty=false;
     if(studio){
       disposeReel?.();disposeReel=null;
@@ -113,10 +109,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   const designKey=item=>item.category+'/'+item.name;
   function controls(){
     const keys=['All',...availableCategories];
-    const filter=layout==='tabs'
-      ? '<div class="library-tabs" role="group" aria-label="Categories">'+keys.map(key=>'<button type="button" data-category="'+esc(key)+'" aria-pressed="'+(key===group)+'">'+esc(displayName(key))+'</button>').join('')+'</div>'
-      : '<select class="library-menu" aria-label="Category">'+keys.map(key=>'<option value="'+esc(key)+'" '+(key===group?'selected':'')+'>'+esc(displayName(key))+'</option>').join('')+'</select>';
-    return '<section class="library-filter" aria-label="Library filters"><div class="library-filter-head"><span>Categories</span><div class="library-layout" role="group" aria-label="Category layout">'+['tabs','menu'].map(key=>'<button type="button" data-layout="'+key+'" aria-pressed="'+(key===layout)+'">'+(key==='tabs'?'Tabs':'Menu')+'</button>').join('')+'</div></div>'+filter+'</section>';
+    return '<section class="library-filter" aria-label="Categories"><div class="library-tabs" role="group" aria-label="Categories">'+keys.map(key=>'<button type="button" data-category="'+esc(key)+'" aria-pressed="'+(key===group)+'">'+esc(displayName(key))+'</button>').join('')+'</div></section>';
   }
   function library(grid=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
@@ -142,13 +135,6 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     dialog.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>filter(b.dataset.category));
     const tab=dialog.querySelector('.library-tabs [aria-pressed=true]');
     if(tab)tab.parentElement.scrollLeft=tab.offsetLeft-(tab.parentElement.clientWidth-tab.offsetWidth)/2;
-    dialog.querySelectorAll('[data-layout]').forEach(b=>b.onclick=()=>{
-      if(layout===b.dataset.layout)return;
-      layout=b.dataset.layout;try{localStorage.setItem(layoutKey,layout);}catch{}
-      if(grid)gridScroll=dialog.scrollTop;
-      library(grid);
-      dialog.querySelector('.library-layout [aria-pressed=true]').focus({preventScroll:true});
-    });
     const remember=item=>chosenDesign.set(group,designKey(item));
     const pick=item=>{
       remember(item);if(grid)gridScroll=dialog.scrollTop;

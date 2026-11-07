@@ -3,8 +3,8 @@ import {stylePicker,wireStyle} from './style-choices.mjs';
 const pad=n=>String(n).padStart(2,'0');
 const dayValue=d=>[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
 export function dispatchControls(host,draft){
-  host.innerHTML=stylePicker('timing','Timing layout',['Pocket switch','Postage cards','Timetable rows'])+
-    '<fieldset class="timing-options"><legend>When should it arrive?</legend><div>'+[['now','Now','As soon as possible'],['later','Later','Pick a delivery time']].map(([key,label,sub])=>'<label><input type="radio" name="post-time" value="'+key+'"><span><b>'+label+'</b><small>'+sub+'</small></span></label>').join('')+'</div></fieldset>'+
+  host.innerHTML=
+    '<fieldset class="timing-options"><legend>When should it arrive?</legend><div>'+[['now','Now'],['later','Later']].map(([key,label])=>'<label><input type="radio" name="post-time" value="'+key+'"><span><b>'+label+'</b></span></label>').join('')+'</div></fieldset>'+
     '<section class="schedule-panel" hidden>'+stylePicker('calendar','Date style',['Postmarked calendar','Diary slip','Quick booking'])+'<div class="date-content"></div><small>Times are local to you · up to 30 days ahead</small></section>';
   const panel=host.querySelector('.schedule-panel'),content=host.querySelector('.date-content');
   let month;const today=new Date(),last=new Date(today.getTime()+30*86400000);
@@ -31,7 +31,7 @@ export function dispatchControls(host,draft){
   }
   function timing(){panel.hidden=!draft.later;for(const r of host.querySelectorAll('[name=post-time]'))r.checked=(r.value==='later')===draft.later;}
   for(const r of host.querySelectorAll('[name=post-time]'))r.onchange=()=>{draft.later=r.value==='later';timing();};
-  wireStyle(host,'timing',i=>host.dataset.layout=i);wireStyle(panel,'calendar',i=>{panel.dataset.layout=i;draw(i);});timing();
+  wireStyle(panel,'calendar',i=>{panel.dataset.layout=i;draw(i);});timing();
 }
 export function decorateReceipt(host,later){
   const titles=later?['Flight booked!','One pigeon on standby','Stamped for later']:['Parcel sent!','Pigeon dispatched!','Signed, sealed, posted!'];

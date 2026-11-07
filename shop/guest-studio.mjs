@@ -11,6 +11,7 @@ function phoneBackground(){
 const button=(label,key)=>'<button type="button" data-tool="'+key+'">'+label+'</button>';
 
 export function startGuestStudio(dialog,item,back,onReady){
+  const pairedPreview=document.documentElement.dataset.screen==='postcard-composer';
   const ratio=item.rect[3]/item.rect[2];
   const state={art:contain(makeLayer(ratio)),words:item.labelPatch?item.name:'',crop:{photo:null,zoom:1,panX:.5,panY:.5},note:null,second:null};
   let dirty=false,active='art',serial=0,editing='',busy=false,noteMoved=false;
@@ -43,6 +44,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function startText(key){
     const el=dialog.querySelector('[data-layer='+key+']');if(!el||(key==='art'&&!item.textBox))return;
+    if(key==='note'&&!pairedPreview){dialog.querySelector('.parcel-note textarea')?.focus();return;}
     const existing=el.querySelector('textarea');if(existing){existing.focus();return;}
     document.activeElement?.blur();editing=key;select(key);
     const isNote=key==='note';let box;
@@ -101,8 +103,16 @@ export function startGuestStudio(dialog,item,back,onReady){
       contain(l);if(key==='art')attachNote();layout();
     };
   }
+  function uploadStep(){
+    serial++;dialog.classList.add('guest-studio');dialog.dataset.reviewScreen='upload / '+item.name;
+    dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span aria-hidden="true">←</span> Back</button></div><h2>Choose your photo</h2><p class="studio-tip"></p><button type="button" class="studio-primary" data-upload>Upload photo</button><input hidden type="file" accept="image/*"><p class="studio-error" role="alert"></p>';
+    dialog.querySelector('.studio-tip').textContent='Pick a photo for '+item.name+'. You can drag and pinch it to fit next.';
+    const file=dialog.querySelector('input');dialog.querySelector('[data-upload]').onclick=()=>file.click();
+    file.onchange=()=>upload(file);tool('back').onclick=leave;dialog.oncancel=e=>{e.preventDefault();leave();};dialog.scrollTop=0;
+  }
   function openCrop(crop){
-    const cancelCrop=()=>show();
+    dialog.dataset.reviewScreen='fit / '+item.name;
+    const cancelCrop=()=>!pairedPreview&&!state.crop.photo?uploadStep():show();
     dialog.oncancel=e=>{e.preventDefault();cancelCrop();};
     fitPhoto(dialog,item,crop,applied=>{state.crop=applied;dirty=true;show();},cancelCrop);
   }
@@ -136,14 +146,34 @@ export function startGuestStudio(dialog,item,back,onReady){
   function show(){
     dialog.dataset.reviewScreen="placement / "+item.name;
     serial++;editing='';busy=false;dialog.classList.add('guest-studio');dialog.oncancel=e=>{e.preventDefault();leave();};
-    dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back">‹ Designs</button><small>PLACEMENT PREVIEW</small></div><h2></h2><p class="studio-tip">Drag to move. Pull the corner to resize.'+(item.labelPatch?' Tap the reminder to change its wording.':item.textBox?' Tap the paper to write.':'')+'</p><div class="sample-phone" aria-label="Example frosted phone screen">'+phoneBackground()+layer('art','Artwork')+(state.second?layer('second',state.second.name+' sticker'):'')+(state.note?layer('note','Note banner'):'')+'</div><div class="studio-photo">'+(item.maskSheet?button(state.crop.photo?'Edit picture':'Upload photo','photo'):'')+'</div><div class="studio-tools">'+button(state.note?'Note options':'+ Add note','note')+button(state.second?'Edit sticker':'+ Add sticker','second')+'</div><div class="banner-options" hidden><small>CHOOSE YOUR BANNER</small><div>'+bannerNames.map((s,i)=>'<button class="style-'+i+'" data-style="'+i+'">'+s+'</button>').join('')+'</div>'+(state.note?button('Edit text','edit-note')+button('Remove note','remove-note'):'')+'</div><section class="sticker-options" aria-label="Choose a sticker" hidden><small>CHOOSE A STICKER</small><div class="sticker-grid"></div>'+(state.second?button('Remove sticker','remove-second'):'')+'</section><input hidden type="file" accept="image/*" data-file="main"><p role="alert" class="studio-error"></p><button class="studio-primary" data-tool="ready">Ready for post　›</button>';
+    dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span aria-hidden="true">←</span> Designs</button><small>PLACEMENT PREVIEW</small></div><h2></h2><p class="studio-tip">Drag to move. Pull the corner to resize.'+(item.labelPatch?' Tap the reminder to change its wording.':item.textBox?' Tap the paper to write.':'')+'</p><div class="sample-phone" aria-label="Example frosted phone screen">'+phoneBackground()+layer('art','Artwork')+(state.second?layer('second',state.second.name+' sticker'):'')+(state.note?layer('note','Note banner'):'')+'</div><div class="studio-photo">'+(item.maskSheet?button(state.crop.photo?'Edit picture':'Upload photo','photo'):'')+'</div><div class="studio-tools">'+button(state.note?'Note options':'+ Add note','note')+button(state.second?'Edit sticker':'+ Add sticker','second')+'</div><div class="banner-options" hidden><small>CHOOSE YOUR BANNER</small><div>'+bannerNames.map((s,i)=>'<button class="style-'+i+'" data-style="'+i+'">'+s+'</button>').join('')+'</div>'+(state.note?button('Edit text','edit-note')+button('Remove note','remove-note'):'')+'</div><section class="sticker-options" aria-label="Choose a sticker" hidden><small>CHOOSE A STICKER</small><div class="sticker-grid"></div>'+(state.second?button('Remove sticker','remove-second'):'')+'</section><input hidden type="file" accept="image/*" data-file="main"><p role="alert" class="studio-error"></p><button class="studio-primary" data-tool="ready">Ready for post　›</button>';
     dialog.querySelector('h2').textContent=item.name;
     const stage=dialog.querySelector('.sample-phone'),artEl=stage.querySelector('[data-layer=art]');
+    if(!pairedPreview){
+      for(const el of dialog.querySelectorAll('.studio-tools,.banner-options,.sticker-options'))el.remove();
+      const field=document.createElement('label');field.className='parcel-note';field.textContent='Add a note (optional)';
+      const input=document.createElement('textarea');input.rows=1;input.maxLength=180;input.value=state.note?.text||'';
+      field.append(input);dialog.querySelector('.studio-error').before(field);
+      input.oninput=()=>{
+        const text=input.value;dirty=true;
+        let el=stage.querySelector('[data-layer=note]');
+        if(!text.trim()){state.note=null;noteMoved=false;el?.remove();select('art');return;}
+        const note=state.note||makeLayer(.3);state.note=note;
+        Object.assign(note,{style:3,text,font:'Rounded',fill:'#fff9ed',ink:'#283c30'});
+        const ctx=document.createElement('canvas').getContext('2d');ctx.font=fontSpec(note.font,24);
+        note.width=clamp(Math.ceil(ctx.measureText(text).width)+54,110,500);
+        const lines=text.split('\n').reduce((sum,line)=>sum+Math.max(1,Math.ceil(ctx.measureText(line).width/(note.width-46))),0);
+        note.ratio=Math.min(420,32+32*lines)/note.width;
+        attachNote();contain(note);
+        if(!el){stage.insertAdjacentHTML('beforeend',layer('note','Optional note'));el=stage.lastElementChild;bindLayer(el);}
+        layout();paintNote();
+      };
+    }
     for(const el of stage.querySelectorAll('.move-layer'))bindLayer(el);
     if(item.textBox&&!state.words)artEl.querySelector('.layer-image').dataset.hint='Tap to write';
     if(state.note&&!state.note.text)stage.querySelector('[data-layer=note] .layer-image').dataset.hint='Tap to write';
     if(state.second){const image=state.second.image;image.alt='';stage.querySelector('[data-layer=second] .layer-image').append(image);}
-    if(item.textBox||state.note){
+    if(item.textBox||(pairedPreview&&state.note)){
       const controls=document.createElement('div');controls.className='studio-colours';
       function row(fields){
         const group=document.createElement('div');group.className='ink-row';
@@ -163,16 +193,17 @@ export function startGuestStudio(dialog,item,back,onReady){
         if(item.category==='Notes')fields.unshift(['Paper','Note paper colour',state,'paper','#fff1cd',paintArt]);
         row(fields);
       }
-      if(state.note)row([
+      if(pairedPreview&&state.note)row([
         ['Banner','Banner colour',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote],
         ['Text','Banner text colour',state.note,'ink','#283c30',paintNote]
       ]);
-      dialog.querySelector('.sticker-options').before(controls);
+      (dialog.querySelector('.sticker-options')||dialog.querySelector('.parcel-note')).before(controls);
     }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]');
     if(item.maskSheet){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(pairedPreview){
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
     const removeNote=tool('remove-note');
     if(removeNote)styles.after(removeNote);
@@ -199,18 +230,33 @@ export function startGuestStudio(dialog,item,back,onReady){
       tool('edit-note').onclick=()=>startText('note');
       removeNote.onclick=()=>{state.note=null;noteMoved=false;active='art';dirty=true;show();tool('note').focus();};
     }
-    tool('ready').onclick=async()=>{
+    }
+    if(!pairedPreview && !window.Pigeon && !document.querySelector('.guest')){
+      const exports=document.createElement('div');exports.className='parcel-exports';
+      exports.innerHTML=button('Save PNG','save')+button('Share PNG','share');
+      tool('ready').after(exports);
+      for(const el of exports.children)el.onclick=()=>finish(el.dataset.tool);
+    }
+    tool('ready').onclick=()=>finish('ready');
+    async function finish(action){
       if(busy)return;
       const error=dialog.querySelector('.studio-error');
       if(item.maskSheet&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
       if(item.textBox&&!state.words.trim()){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
       busy=true;const ready=tool('ready');ready.disabled=true;
-      try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);}
+      try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);
+        else{
+          const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+          if(!blob)throw Error('Could not save this picture.');
+          const file=new File([blob],'pigeon-post.png',{type:'image/png'});
+          if(action==='share'&&navigator.canShare?.({files:[file]}))await navigator.share({files:[file]});
+          else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+        }}
       catch(e){grabError(e);}finally{busy=false;ready.disabled=false;}
     };
     dialog.scrollTop=0;
   }
   function reopen(){if(!dialog.open)dialog.showModal();show();}
-  show();
+  if(item.maskSheet&&!pairedPreview)uploadStep();else show();
 }

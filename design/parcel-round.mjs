@@ -1,5 +1,9 @@
 // Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
 export const looks = {
+  recipient: ['Address label','Portrait chips','Address book','Postage stamps','Ticket list'].map(x=>[x]),
+  deliverytime: ['Forest capsule','Postage ticket','Signal light','Pocket track','Airmail switch'].map(x=>[x]),
+  mailbox: ['Letter stack','Sorting trays','Postmaster’s ledger','Address book first','Ticket roll'].map(x=>[x]),
+  settingsbuttons: ['Postage stamps','Parcel tabs','Illustrated list','Pocket cards','Mail tickets'].map(x=>[x]),
   header: [
     ['Counter welcome', 'Your post office', 'The courier is at the counter.'],
     ['Return address', 'Pigeon Post HQ', 'Set your sign for incoming mail.'],

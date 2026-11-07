@@ -10,6 +10,8 @@ export function setupHomeColours({app,getTheme,setTheme,isHome}){
   function apply(){
     const page=colours[getTheme()]?.page,carousel=colours[getTheme()]?.carousel;
     for(const name of ['--mm-bg','--mm-text','--mm-sub','--shop-card','--shop-ink','--home-selected'])app.style.removeProperty(name);
+    if(page){app.style.setProperty('--review-nav',page);app.style.setProperty('--review-nav-ink',ink(page));}
+    else{app.style.removeProperty('--review-nav');app.style.removeProperty('--review-nav-ink');}
     app.removeAttribute('data-custom-home');if(!isHome())return;
     if(page){const text=ink(page);app.style.setProperty('--mm-bg',page);app.style.setProperty('--mm-text',text);app.style.setProperty('--mm-sub',text);app.style.setProperty('--home-selected',(text==='#20342a'||text==='#000000')?'#ffffff77':'#ffffff33');app.dataset.customHome='';}
     if(carousel){app.style.setProperty('--shop-card',carousel);app.style.setProperty('--shop-ink',ink(carousel));}

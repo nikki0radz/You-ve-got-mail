@@ -1,3 +1,4 @@
+import {feedbackGroups} from './rounds.mjs';
 import {selector,label,describe,layout,screen} from './live-review-model.mjs';
 import {freezeFrame} from './review-freeze.mjs';
 
@@ -58,10 +59,50 @@ function rules(items){
     return css?item.selector+'{'+css+'}':'';
   }).join('\n');
 }
+const optionKey=group=>'pigeon-style-'+group.id;
+function optionNumber(group){
+  const number=Number(json(optionKey(group),0));
+  return Number.isInteger(number)&&number>=1&&number<=group.options.length?number:0;
+}
+function applyOptions(root){
+  for(const group of feedbackGroups){
+    const el=root.querySelector(group.selector);
+    if(!el)continue;
+    const n=optionNumber(group);
+    if(n)el.dataset.reviewLook=group.key+'-'+n;
+  }
+}
+function numberControls(doc,root){
+  for(const group of feedbackGroups){
+    const target=root.querySelector(group.selector),anchor=root.querySelector(group.anchor);
+    if(!target||!anchor)continue;
+    const row=doc.createElement('aside');
+    row.className='element-numbers';row.dataset.reviewUi='options';row.setAttribute('role','group');
+    row.setAttribute('aria-label',group.title+' design options');
+    group.options.forEach((option,i)=>{
+      const b=doc.createElement('button');b.type='button';b.textContent=String(i+1);
+      b.setAttribute('aria-label',group.title+' '+(i+1)+' · '+option.name);
+      b.setAttribute('aria-pressed',String(optionNumber(group)===i+1));
+      row.append(b);
+    });
+    // Keep the controls adjacent to their element in the scrolling phone copy.
+    if(anchor.matches('summary'))anchor.parentElement.before(row);else anchor.before(row);
+    row.choose=button=>{
+      const n=Number(button.textContent);
+      target.dataset.reviewLook=group.key+'-'+n;
+      for(const b of row.children)b.setAttribute('aria-pressed',String(b===button));
+      try{localStorage.setItem(optionKey(group),String(n));}catch{}
+      session.entry.choices??={};
+      session.entry.choices[group.id]={group:group.title,number:n,name:group.options[n-1].name};
+      save(true);
+    };
+  }
+}
 function sync(force=false){
   if(session)return;
   const root=rootNow(),host=root.matches('dialog[open]')?root:document.body;
   if(dock.parentNode!==host)host.append(dock);
+  applyOptions(root);
   const key=keyFor(screen(document,root));
   if(force||key!==lastLiveKey){lastLiveKey=key;liveStyle.textContent=rules((unsaved.get(key)||json(key,{targets:{}})).targets);}
 }
@@ -138,15 +179,15 @@ function begin(){
   const style=doc.createElement('style');doc.head.append(style);
   const mark=doc.createElement('style');mark.textContent='[data-review-picked]{outline:3px dashed #b13b79!important;outline-offset:-3px!important}';doc.head.append(mark);
   const entry=unsaved.get(keyFor(meta))||json(keyFor(meta),{...meta,targets:{}});
-  session={doc,root:twin,meta,entry,style};paint();save(true);
+  session={doc,root:twin,meta,entry,style};paint();save(true);numberControls(doc,twin);
   freeze.append(dock);
   $('.switch').setAttribute('aria-checked','true');$('.export').hidden=false;$('.hint').hidden=false;
-  doc.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();pick(e.target);},true);
+  doc.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();const b=e.target.closest('.element-numbers button');if(b)b.parentElement.choose(b);else pick(e.target);},true);
   // Disabled HTML controls do not dispatch click in every WebView.
   doc.addEventListener('pointerup',e=>{if(e.target.matches(':disabled'))pick(e.target);},true);
   doc.addEventListener('beforeinput',e=>e.preventDefault(),true);
   doc.addEventListener('pointerdown',e=>{if(e.target.closest('input,textarea,select,label,summary,a,button'))e.preventDefault();},true);
-  doc.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();back();}else if(['Enter',' '].includes(e.key)){e.preventDefault();pick(e.target);}},true);
+  doc.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();back();}else if(['Enter',' '].includes(e.key)&&!e.target.closest('.element-numbers')){e.preventDefault();pick(e.target);}},true);
   doc.addEventListener('cancel',e=>{e.preventDefault();back();},true);
   doc.addEventListener('submit',e=>e.preventDefault(),true);
 }
@@ -174,7 +215,7 @@ $('.export').onclick=()=>{
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.18',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.19',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };

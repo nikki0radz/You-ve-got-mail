@@ -33,7 +33,7 @@ const round=Object.hasOwn(rounds,screen)?rounds[screen]:null;
 let comparison=round&&initial.comparison?.id===round.id?initial.comparison:{id:round?.id,active:0,states:{}};
 const optionGroups=round?[round,...(round.groups||[])]:[];
 const anchors=round&&anchorOptions($('round'),frames[0],optionGroups.map(group=>{
-  const first=group.options[0].changes[0];return first.selector||composerElements[first.element]?.[1];
+  const first=group.options[0].changes[0];return group.anchor||first.selector||composerElements[first.element]?.[1];
 }));
 const prefix=i=>optionGroups.length>1?String.fromCharCode(65+i):'';
 function picks(){return optionGroups.map((g,i)=>i===0?comparison.active||0:comparison.picks?.[g.id]||0);}
@@ -94,6 +94,7 @@ function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,pro
 function dimensions(){
   anchors?.schedule();
   const main=phoneSize(profile);
+  if(!main.measured && round?.id.startsWith('frame-feedback-'))Object.assign(main,{width:384,height:751});
   const available=window.innerHeight-$('bench').getBoundingClientRect().top-window.scrollY-82;
   const zoom=$('zoom').value==='fit'?Math.max(.45,Math.min(1,available/(main.height+(main.insets?.top||0)+(main.insets?.bottom||0)+10))):Number($('zoom').value);
   frames.forEach((f,i)=>{

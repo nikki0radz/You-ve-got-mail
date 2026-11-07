@@ -24,7 +24,12 @@ function page(title,body,back){
   delete d.dataset.receipt;if(!d.open)d.showModal();
   d.innerHTML='<header><span>PIGEON POST</span><button data-x aria-label="Close">×</button></header><h2>'+esc(title)+'</h2>'+body+'<p class="mb-error" role="alert"></p>';
   d.querySelector('[data-x]').onclick=()=>d.close();
-  if(back){d.insertAdjacentHTML('beforeend',button('back','‹ Back'));action('back',back);}
+  if(back){
+    const footer=d.querySelector('.reply-actions');
+    if(footer)footer.insertAdjacentHTML('afterbegin',button('back','<span aria-hidden="true">←</span> Back'));
+    else d.insertAdjacentHTML('beforeend',button('back','<span aria-hidden="true">←</span> Back'));
+    action('back',back);
+  }
 }
 function action(key,fn){
   const btn=el().querySelector('[data-mb="'+key+'"]');if(!btn)return;
@@ -53,7 +58,7 @@ async function friendsPage(refresh){
 export function replyTo(id,refresh){
   const m=findRow(id);if(!m)return;const sender=m.sender||'sender';Pigeon.markRead(id);
   const intro=()=>{page('Reply to '+sender+'?',bird+'<div class="mail-dock">'+button('sticker','Send a sticker')+button('text','Quick text')+'</div>');
-    action('text',()=>{page('A note for '+sender,'<label>Your reply<textarea maxlength="500" placeholder="Write a quick reply…" rows="4"></textarea></label>'+button('send','Send reply'),intro);el().querySelector('textarea').focus();action('send',async()=>{let text=el().querySelector('textarea').value.trim();if(!text)throw Error('Write your reply first.');await post('reply',{id,text});done();});});
+    action('text',()=>{page('A note for '+sender,'<label><textarea aria-label="Your reply" maxlength="500" placeholder="Write a quick reply…" rows="4"></textarea></label><div class="reply-actions">'+button('send','Send reply')+'</div>',intro);el().querySelector('textarea').focus();action('send',async()=>{let text=el().querySelector('textarea').value.trim();if(!text)throw Error('Write your reply first.');await post('reply',{id,text});done();});});
     action('sticker',()=>{el().close();openReplyShop(async(png,name,category,reopen)=>{const image=await scaled(png);page('Reply to '+sender+'?', '<img class="mail-proof" src="'+image+'" alt="'+esc(name)+'"><div class="mail-dock">'+button('edit','✎ Edit')+button('send','Send sticker')+'</div>');action('edit',()=>{el().close();reopen();});action('send',async()=>{await post('reply',{id,image});done();});},'Stickers',intro);});
   };
   function done(){page(m.remote?'Reply sent':'Test reply saved',bird+button('done','Back to mailbox'));action('done',()=>{el().close();refresh();});}
@@ -73,9 +78,21 @@ export function composeFrom(category,refresh,example){
   const review=async(png,name,group,reopen)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=snapshot.friends||[];const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a pigeon',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+image+'" alt="'+esc(name)+'"><label>Recipient<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel　✉</button>'+button('edit','✎ Edit parcel'));
+    page('Who is it for?','<img class="mail-proof small" src="'+image+'" alt="'+esc(name)+'"><section class="recipient-choice"><label>Recipient<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="recipient-people" role="group" aria-label="Recipient"></div></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel　✉</button>'+button('edit','✎ Edit parcel'));
     const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
-    target.onchange=()=>draft.target=target.value;
+    const list=el().querySelector('.recipient-people');
+    const updateTarget=()=>{
+      draft.target=target.value;
+      [...list.children].forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===target.selectedIndex)));
+    };
+    for(const option of target.options){
+      const person=document.createElement('button');person.type='button';person.disabled=option.disabled;
+      const avatar=document.createElement('i');avatar.setAttribute('aria-hidden','true');
+      avatar.textContent=option.value==='self'?'✉':option.textContent.trim().charAt(0).toUpperCase();
+      person.append(avatar,document.createTextNode(option.textContent));
+      person.onclick=()=>{target.value=option.value;updateTarget();};list.append(person);
+    }
+    target.onchange=updateTarget;updateTarget();
     dispatchControls(el().querySelector('.delivery-controls'),draft);
     action('edit',()=>{el().close();reopen();});
     action('send',async()=>{const selected=target.value,later=draft.later,when=later?new Date(draft.day+'T'+draft.clock).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
