@@ -3,6 +3,7 @@ const {chromium}=require('playwright'), assert=require('node:assert/strict'),fs=
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
 try{
  const page=await browser.newPage({viewport:{width:360,height:800},hasTouch:true,isMobile:true});
+ page.setDefaultTimeout(12000);
  page.on('pageerror',e=>console.error('PageError',e));
  const base=process.argv[2] || 'http://127.0.0.1:3000/';
  await page.goto(base+'guest.html?preview=1');
@@ -28,12 +29,17 @@ try{
  await page.goto(base);await page.locator('[data-id=settings][data-action=tab]').click();
  await toggle.click();await frame.locator('[data-section=delivery] summary').click();
  await page.getByPlaceholder('What would you change here?').fill('Settings note');await toggle.click();
- await page.locator('[data-section=account] summary').click();await page.locator('[data-action=profile]').click();
+ await page.locator('[data-section=account] summary').click();await page.locator('[data-section=account] [data-action=profile]').click();
  await toggle.click();await frame.locator('#social-flow h2').click();await page.getByPlaceholder('What would you change here?').fill('Profile note');await toggle.click();
  await page.locator('#social-flow [data-x]').click();
  await page.locator('[data-id=home][data-action=tab]').click(); await toggle.click(); await frame.locator('.wheel-paper h3').click();await page.locator('.target').selectOption({label:'Carousel background'});
  await page.getByRole('button',{name:'Use #a1c6bc'}).click();await toggle.click();
  assert.equal(await page.locator('.wheel-paper').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(161, 198, 188)');
+ await page.evaluate(()=>window.Pigeon={saveReview:data=>window.exportedReview=JSON.parse(data)});
+ await toggle.click();await page.getByRole('button',{name:'Export design'}).click();
+ const native=await page.evaluate(()=>window.exportedReview);
+ assert(native.views.some(v=>v.targets['#accept']?.comment==='More space above the button'));
+ assert(native.views.some(v=>Object.values(v.targets).some(t=>t.comment==='Profile note')));
  console.log('Passed review, persistence, reset, multi-screen export, nested dialogs and carousel on phone viewport');
 }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
