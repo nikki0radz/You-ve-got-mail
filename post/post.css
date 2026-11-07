@@ -6,7 +6,7 @@
 .postal-header>strong{flex:1;font-size:clamp(18px,5vw,24px);line-height:1}
 .profile-link,.postal-label button,.postal-person,.postal-cat,.add-pill,.quick-post,.postal-arrow{background:none;border:0;color:inherit;cursor:pointer}
 .profile-link{display:grid;justify-items:center;font-size:10px;font-weight:800;gap:2px}
-.profile-link img{width:31px;height:31px;border:1.5px solid var(--mm-edge);background:var(--mm-panel);border-radius:50%;object-fit:contain}
+.profile-link img{width:clamp(48px,15vw,56px);height:auto;aspect-ratio:1;border:1.5px solid var(--mm-edge);background:var(--mm-panel);border-radius:50%;object-fit:contain}
 .postal-theme{position:relative;display:flex;background:var(--mm-panel);border-radius:20px;padding:2px;cursor:pointer}
 .postal-theme input,.postal-switch input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
 .postal-theme:focus-within,.postal-switch:focus-within{outline:2px solid var(--mm-text);outline-offset:2px}

@@ -71,7 +71,6 @@
 /* Home review adjustments */
 html[data-workroom=home] .header-board .style-choice{display:none}
 html[data-workroom=home] #home-wheel .wheel-paper{background:var(--shop-card)}
-html[data-workroom=home] .postal-header .profile-link img{width:42px;height:42px}
 html[data-workroom=home] .postal-header .postal-theme{align-self:center}
 html[data-workroom=home] .header-board[data-open=true] .mail-sign span{font-size:0}
 html[data-workroom=home] .header-board[data-open=true] .mail-sign span::after{content:'📬';font-size:19px}

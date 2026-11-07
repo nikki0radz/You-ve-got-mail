@@ -1,7 +1,7 @@
 import {readLook} from './parcel-round.mjs';
 import {safeAppearance} from './appearance.mjs';
 import {buttons,layouts} from './templates.mjs';
-export const screen='postcard-composer', appVersion='0.1.20';
+export const screen='postcard-composer', appVersion='0.1.21';
 export const elements={
   background:['Popup background','#parcel-shop'],row:['Composer toolbar','.studio-tools'],note:['Add note','[data-tool=note]'],second:['Add sticker','[data-tool=second]'],
   ready:['Ready for post','[data-tool=ready]'],photo:['Upload photo','[data-tool=photo]'],back:['Designs','[data-tool=back]'],
