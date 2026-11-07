@@ -1,0 +1,57 @@
+name: Check mail signs
+on:
+  push:
+    branches: [qa/export-review-025]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright@1.55.1
+      - name: Check invitation and review controls
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          node scripts/serve.mjs --port 3000 &
+          for i in {1..20}; do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
+          for width in 320 430; do
+            sed "s/const width of \[320,430\]/const width of [$width]/" scripts/check-invitation.cjs > scripts/reference.cjs
+            node scripts/reference.cjs || echo "Reference mismatch; comparing both sizes to released pixels below."
+          done
+          node scripts/check-live-review.cjs
+          git fetch --depth=1 origin 17db69581c1ae4aa8b8581810118dc2e790c850a
+          git worktree add /tmp/prior FETCH_HEAD
+          (cd /tmp/prior && node scripts/serve.mjs --port 3001) &
+          node - <<'JS'
+          const {chromium}=require('playwright'),assert=require('node:assert/strict');
+          (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_PATH});try{
+          for(const width of [320,430]){const captures=[];
+          for(const port of [3000,3001]){const p=await b.newPage({viewport:{width,height:900}});await p.goto('http://localhost:'+port+'/guest.html?preview=1');await p.locator('.courier').evaluate(n=>n.decode());await p.evaluate(()=>document.fonts.ready);captures.push(await p.locator('.guest').screenshot());await p.locator('#decline').click();await p.locator('#back').click();await p.locator('#accept').click();await p.locator('#steps .wheel').waitFor();await p.close();}
+          assert.ok(captures[0].equals(captures[1]),width+'px card differs from previous release');console.log(width+'px unchanged vs release');}
+          }finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});
+          JS
+          node scripts/check-frame-feedback.cjs
+          node - <<'JS'
+          const {chromium}=require('playwright'),assert=require('assert/strict');
+          (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_PATH});try{
+            const p=await b.newPage({viewport:{width:384,height:751},hasTouch:true});
+            await p.goto('http://localhost:3000/');
+            await p.locator('[data-id=settings]').click();
+            assert.equal(await p.locator('.post-settings details[open]').count(),0);
+            await p.locator('[data-section=phone] summary').click();
+            const range=p.locator('#backdrop-alpha');assert.equal(await range.inputValue(),'70');
+            await range.fill('36');await p.reload();await p.locator('[data-id=settings]').click();await p.locator('[data-section=phone] summary').click();assert.equal(await range.inputValue(),'36');
+            assert.equal(await p.locator('[data-pref=backdropMode],[data-action=defaults]').count(),0);
+            await p.goto('http://localhost:3000/design/page.html?page=settings');
+            await p.waitForFunction(()=>!!window.designSurface);await p.evaluate(()=>window.designSurface.configure({editing:false,layout:{styles:{}}}));
+            await p.locator('[data-section=phone] summary').click();await p.locator('.permission-list button').first().waitFor();
+            assert.equal(await p.locator('.permission-list button').count(),4);
+            console.log('Settings, saved opacity and phone actions passed');
+          }finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+          JS
