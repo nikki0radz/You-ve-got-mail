@@ -71,6 +71,7 @@ export async function composePNG(item, draft, density = 1) {
   const [, , sw, sh] = item.rect;
   const scale = Math.min(574 / sw, 574 / sh);
   const width = sw * scale, height = sh * scale, x = (640-width)/2, y = (640-height)/2;
+  let overlay;
   if (draft.photo && mask) {
     const [l,t,r,b] = item.opening;
     const pw = (r-l)*width, ph = (b-t)*height;
@@ -83,7 +84,7 @@ export async function composePNG(item, draft, density = 1) {
     layer.globalCompositeOperation='destination-in';
     if(item.sharedId)layer.drawImage(mask,x,y,width,height);
     else layer.drawImage(mask,...item.rect,x,y,width,height);
-    ctx.drawImage(photo,0,0,640,640);
+    if(item.photoOnTop)overlay=photo;else ctx.drawImage(photo,0,0,640,640);
   }
   ctx.save();
   if (item.artClip && !item.master) {
@@ -101,6 +102,7 @@ export async function composePNG(item, draft, density = 1) {
   }
   ctx.drawImage(source,...region,x,y,width,height);
   ctx.restore();
+  if(overlay)ctx.drawImage(overlay,0,0,640,640);
   const originalLabel=item.labelPatch&&draft.words===item.name&&!draft.font&&!draft.ink;
   if(item.labelPatch&&!originalLabel)ctx.drawImage(reminderRepair(item,sheet),x,y,width,height);
   if (item.textBox&&!originalLabel) {

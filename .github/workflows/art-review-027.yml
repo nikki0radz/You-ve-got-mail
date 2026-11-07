@@ -21,3 +21,4 @@ jobs:
           for i in $(seq 1 20); do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
           node scripts/check-invitation.cjs http://localhost:3000/
           node scripts/check-frame-feedback.cjs http://localhost:3000/
+          node scripts/check-shared-photo.cjs http://localhost:3000/

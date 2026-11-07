@@ -8,7 +8,7 @@ const subjects={frame:'frame',postcard:'postcard',flowers:'flowers',love:'love n
 const categorySubjects=new Map([
   ['photos','frame'],['photo frames','frame'],['frames','frame'],['postcards','postcard'],
   ['stickers','sticker'],['pigeons','pigeon'],['notes','note'],['love notes','love note'],['flowers','flowers'],
-  ['reminders','reminder'],['hugs','hug']
+  ['reminders','reminder'],['hugs','hug'],['uncategorised','sticker']
 ]);
 const extraPrefix='shared/';
 let records=()=>[];
@@ -30,7 +30,7 @@ export function sharedDesigns(){
       deliveryKind:kind==='flowers'?'flowers':kind==='frame'?'a framed photo':'a '+subject,
       sharedId:id,kind,category:sharedCategory(category),name:title||fallback,
       useLabel:title?'Use '+title:buttonSubject==='flowers'?'Use these flowers':'Use this '+buttonSubject,
-      master:src,rect:[0,0,width,height],ink:'#283c30'
+      master:src,photoArea:record.photoArea,rect:[0,0,width,height],ink:'#283c30'
     };
     if(textArea){
       const {x,y,w,h,rotation}=textArea;
@@ -67,7 +67,8 @@ export function findFrameOpening(rgba,width,height){
 }
 
 export async function prepareSharedFrame(item){
-  if(item.kind!=='frame'||item.maskSheet)return item;
+  if(!item.sharedId || !['frame','postcard'].includes(item.kind) || item.maskSheet)return item;
+  if(item.photoArea)return rectangularOpening(item,item.photoArea);
   const image=new Image();image.src=item.master;await image.decode();
   const scale=Math.min(1,640/Math.max(image.naturalWidth,image.naturalHeight));
   const mask=document.createElement('canvas');
@@ -76,7 +77,9 @@ export async function prepareSharedFrame(item){
   context.drawImage(image,0,0,mask.width,mask.height);
   const source=context.getImageData(0,0,mask.width,mask.height);
   const hole=findFrameOpening(source.data,mask.width,mask.height);
-  if(!hole||hole.pixels.length<4)throw new Error('This frame needs a transparent, enclosed photo opening. Upload a PNG with the centre cut out or use it as a sticker.');
+  // Opaque cards and open-ended frames still accept a picture in an inset area.
+  if(!hole||hole.pixels.length<Math.max(4,mask.width*mask.height*.008))
+    return rectangularOpening(item,defaultPhotoArea(item.kind,item.textBox));
   const fill=context.createImageData(mask.width,mask.height);
   for(const pixel of hole.pixels)fill.data[pixel*4+3]=255;
   context.putImageData(fill,0,0);
@@ -85,4 +88,19 @@ export async function prepareSharedFrame(item){
   const brush=expanded.getContext('2d');
   for(const [x,y] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]])brush.drawImage(mask,x,y);
   return {...item,maskSheet:expanded.toDataURL('image/png'),opening:hole.opening};
+}
+
+export function defaultPhotoArea(kind,textBox){
+  if(kind==='frame')return {x:.15,y:.15,w:.7,h:.7};
+  const [left,top,right,bottom]=textBox||[.12,.58,.88,.84];
+  const candidates=[[.08,.08,.92,top-.025],[.08,bottom+.025,.92,.92],
+    [.08,.08,left-.025,.92],[right+.025,.08,.92,.92]];
+  const [x,y,r,b]=candidates.filter(([x,y,r,b])=>r-x>=.1&&b-y>=.1)
+    .sort((a,b)=>(b[2]-b[0])*(b[3]-b[1])-(a[2]-a[0])*(a[3]-a[1]))[0]||[.1,.1,.9,.48];
+  return {x,y,w:r-x,h:b-y};
+}
+function rectangularOpening(item,{x,y,w,h}){
+  const mask=document.createElement('canvas');mask.width=512;mask.height=512;
+  mask.getContext('2d').fillRect(x*512,y*512,w*512,h*512);
+  return {...item,maskSheet:mask.toDataURL('image/png'),opening:[x,y,x+w,y+h],photoOnTop:true};
 }

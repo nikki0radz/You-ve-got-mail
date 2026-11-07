@@ -12,6 +12,7 @@ const button=(label,key)=>'<button type="button" data-tool="'+key+'">'+label+'</
 
 export function startGuestStudio(dialog,item,back,onReady){
   const pairedPreview=document.documentElement.dataset.screen==='postcard-composer';
+  const optionalPhoto=item.sharedId && item.kind==='postcard';
   const ratio=item.rect[3]/item.rect[2];
   const state={art:contain(makeLayer(ratio)),words:item.labelPatch?item.name:'',crop:{photo:null,zoom:1,panX:.5,panY:.5},note:null,second:null};
   let dirty=false,active='art',serial=0,editing='',busy=false,noteMoved=false;
@@ -79,7 +80,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     const key=el.dataset.layer,l=state[key],stage=el.parentElement;
     if(!pairedPreview&&key==='art'&&item.maskSheet){
       const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent='✎';
-      action.setAttribute('aria-label','Edit framed photo');action.onclick=()=>openCrop(state.crop);el.append(action);
+      action.setAttribute('aria-label','Edit framed photo');action.onclick=()=>state.crop.photo?openCrop(state.crop):dialog.querySelector('[data-file=main]').click();el.append(action);
     }
     let gesture=null;
     el.onpointerdown=e=>{
@@ -115,6 +116,9 @@ export function startGuestStudio(dialog,item,back,onReady){
     dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span class="back-arrow" aria-hidden="true"></span> Back</button></div><h2>Choose your photo</h2><p class="studio-tip"></p><button type="button" class="studio-primary" data-upload>Upload photo</button><input hidden type="file" accept="image/*"><p class="studio-error" role="alert"></p>';
     dialog.querySelector('.studio-tip').textContent='Pick a photo for '+item.name+'. You can drag and pinch it to fit next.';
     const file=dialog.querySelector('input');dialog.querySelector('[data-upload]').onclick=()=>file.click();
+    if(optionalPhoto){
+      const skip=document.createElement('button');skip.type='button';skip.className='studio-link';skip.textContent='Continue without a photo';skip.onclick=show;file.after(skip);
+    }
     file.onchange=()=>upload(file);tool('back').onclick=leave;dialog.oncancel=e=>{e.preventDefault();leave();};dialog.scrollTop=0;
   }
   function openCrop(crop){
@@ -252,8 +256,8 @@ export function startGuestStudio(dialog,item,back,onReady){
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]');
-    if(item.maskSheet&&pairedPreview){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
-    if(!pairedPreview)dialog.querySelector('.studio-photo').remove();
+    if(item.maskSheet&&(pairedPreview||item.sharedId)){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(!pairedPreview&&!(item.sharedId&&item.maskSheet))dialog.querySelector('.studio-photo').remove();
     if(pairedPreview){
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
     const removeNote=tool('remove-note');
@@ -292,8 +296,8 @@ export function startGuestStudio(dialog,item,back,onReady){
     async function finish(action){
       if(busy)return;
       const error=dialog.querySelector('.studio-error');
-      if(item.maskSheet&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
-      if(item.textBox&&!state.words.trim()){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
+      if(item.maskSheet&&!optionalPhoto&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
+      if(item.textBox&&!state.words.trim()&&!(optionalPhoto&&state.crop.photo)){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
       busy=true;const ready=tool('ready');ready.disabled=true;
       try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);

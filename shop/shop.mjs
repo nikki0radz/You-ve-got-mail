@@ -258,7 +258,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       catalog=[...uploaded,...catalog];
       availableCategories=[...new Set([...availableCategories,...uploaded.map(item=>item.category)])];
     }
-    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(catalog.find(it=>it.category===group&&it.name===initialDesign));}else if(options.wheel)wheel();else library();}
+    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(await prepareSharedFrame(catalog.find(it=>it.category===group&&it.name===initialDesign)));}else if(options.wheel)wheel();else library();}
   }
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }
