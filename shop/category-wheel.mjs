@@ -10,6 +10,12 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   root.innerHTML='<button type="button" class="wheel-back pocket-back"><span class="back-arrow" aria-hidden="true"></span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
+  if(root.id==='home-wheel'){
+    const divider=document.createElement('hr');
+    divider.className='home-divider';divider.dataset.baseLook=divider.dataset.reviewLook='separator-5';
+    root.querySelector('.wheel').prepend(divider);
+    rail.dataset.baseLook=rail.dataset.reviewLook='wheelrim-4';
+  }
   const cards=slots.map((key,slot)=>{
     const button=document.createElement('button'),face=document.createElement('span'),img=new Image();
     button.type='button';img.alt='';img.draggable=false;

@@ -1,5 +1,5 @@
 import {fonts,fontSpec,writingBox} from './lettering.mjs';
-import {colourButton,noteSwatches} from './colour-wheel.mjs';
+import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
 import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
@@ -28,6 +28,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function layout(){
     const stage=dialog.querySelector('.sample-phone');if(!stage)return;
+    if(!pairedPreview&&state.note)stage.parentElement.style.setProperty('--note-top',state.note.y/H*100+'%');
     for(const el of stage.querySelectorAll('.move-layer')){
       const l=state[el.dataset.layer];Object.assign(el.style,{left:l.x/W*100+'%',top:l.y/H*100+'%',width:l.width/W*100+'%',height:l.width*l.ratio/H*100+'%'});
     }
@@ -76,14 +77,9 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function bindLayer(el){
     const key=el.dataset.layer,l=state[key],stage=el.parentElement;
-    if(!pairedPreview&&(key==='note'||(key==='art'&&item.maskSheet))){
-      const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent=key==='note'?'×':'✎';
-      action.setAttribute('aria-label',key==='note'?'Delete note':'Edit framed photo');
-      action.onclick=()=>{
-        if(key==='art')openCrop(state.crop);
-        else{const input=dialog.querySelector('.parcel-note textarea');input.value='';input.dispatchEvent(new Event('input'));input.focus();}
-      };
-      el.append(action);
+    if(!pairedPreview&&key==='art'&&item.maskSheet){
+      const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent='✎';
+      action.setAttribute('aria-label','Edit framed photo');action.onclick=()=>openCrop(state.crop);el.append(action);
     }
     let gesture=null;
     el.onpointerdown=e=>{
@@ -201,8 +197,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       function row(fields,destination=controls){
         const group=document.createElement('div');group.className='ink-row';
         for(const [label,accessible,object,key,initial,repaint] of fields){
-          const control=object===noteStyle?noteSwatches:colourButton;
-          group.append(control(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
+          group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
         }
         const object=fields[0][2],repaint=fields[0][5],picker=document.createElement('select');
         picker.setAttribute('aria-label',object===state?'Note font':'Banner font');picker.className='note-font';
@@ -243,6 +238,16 @@ export function startGuestStudio(dialog,item,back,onReady){
         row([['Ink','Optional note text colour',noteStyle,'ink','#283c30',update],['Paper','Optional note box colour',noteStyle,'fill','#fff9ed',update]],tray);
       }
       if(controls.childElementCount)(dialog.querySelector('.sticker-options')||dialog.querySelector('.parcel-note')).before(controls);
+    }
+    if(!pairedPreview){
+      const frame=document.createElement('div');frame.className='stage-frame';stage.before(frame);frame.append(stage);
+      const erase=document.createElement('button');erase.type='button';erase.className='delete-note';erase.setAttribute('aria-label','Delete note');
+      const mark=document.createElement('span');mark.textContent='×';erase.append(mark);
+      erase.onclick=()=>{
+        const input=dialog.querySelector('.parcel-note textarea');
+        input.value='';input.dispatchEvent(new Event('input'));input.focus();
+      };
+      frame.append(erase);
     }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
