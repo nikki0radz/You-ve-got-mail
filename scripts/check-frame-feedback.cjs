@@ -39,6 +39,16 @@ const {chromium}=require('playwright');
     await page.getByLabel('Add a note (optional)').fill('Test note');
     await page.locator('[data-layer=note] canvas').waitFor();
     assert.equal(await page.locator('[data-tool=second]').count(),0);
+    await page.getByRole('button',{name:'Edit framed photo'}).click();
+    await page.locator('[data-cancel]').click();
+    const note=page.getByLabel('Add a note (optional)');
+    assert.equal(await note.inputValue(),'Test note');
+    await page.locator('[data-layer=note]').click();
+    await page.getByRole('button',{name:'Delete note'}).click();
+    assert.equal(await note.inputValue(),'');
+    await note.fill('Signed, sealed, delivered.');
+    await page.locator('.note-tools summary').click();
+    await page.locator('.note-tools').getByRole('button',{name:'Coiny',exact:true}).click();
     await page.locator('[data-tool=ready]').click();
     await page.locator('.dispatch-timing').waitFor();
     await page.locator('#later').click();
@@ -50,12 +60,29 @@ const {chromium}=require('playwright');
     await page.goto(base+'design/index.html?page=recipient');
     const preview=page.frameLocator('iframe').first();
     await preview.locator('.recipient-choice').waitFor();
-    for(const [group,num,selector] of [['Recipient',2,'.recipient-choice'],['Now / Later',5,'.timing-options']]){
+    for(const [group,num,selector] of [['Send to',2,'.recipient-choice'],['Now / Later',5,'.timing-options']]){
       await preview.locator(selector).evaluate(el=>el.scrollIntoView({block:'center'}));
       await page.getByRole('button',{name:new RegExp('^'+group+' · '+num+' · ')}).click();
     }
-    assert.equal(await preview.locator('.timing-options').getAttribute('data-review-look'),'deliverytime-5');
-    assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'recipient-2');
+    assert.equal(await preview.locator('.timing-options').getAttribute('data-review-look'),'whenticks-5');
+    assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'addressing-2');
+    for(const [screen,selector,label,num,look] of [
+      ['inbox','.people-heading','Your people',6,'peoplebar-6'],
+      ['library','.frame-card','Carousel width',2,'railwidth-2'],
+      ['placementPostcard','.note-question','Optional note heading',5,'notetitle-5']]){
+      await page.goto(base+'design/index.html?page='+screen);
+      await preview.locator(selector).evaluate(el=>el.scrollIntoView({block:'center'}));
+      await page.getByRole('button',{name:new RegExp('^'+label+' · '+num+' · ')}).click();
+      assert.equal(await preview.locator(selector).getAttribute('data-review-look'),look);
+    }
+    await page.goto(base+'design/page.html?preview=1&page=placementPostcard');
+    await page.waitForFunction(()=>!!window.designSurface);
+    await page.evaluate(()=>window.designSurface.configure({editing:false,layout:{styles:{}}}));
+    const words=page.getByLabel('Write on this design');
+    await words.fill('A postcard for you');
+    const height=await words.evaluate(el=>el.offsetHeight);
+    await words.fill('A much longer postcard. '.repeat(5));
+    assert.equal(await words.evaluate(el=>el.offsetHeight),height);
     assert.deepEqual(errors,[]);
     console.log('Five choices per target, persisted exports, independent recipient and timing, shared placement and frame upload passed.');
   }finally{await browser.close();}

@@ -15,6 +15,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   const ratio=item.rect[3]/item.rect[2];
   const state={art:contain(makeLayer(ratio)),words:item.labelPatch?item.name:'',crop:{photo:null,zoom:1,panX:.5,panY:.5},note:null,second:null};
   let dirty=false,active='art',serial=0,editing='',busy=false,noteMoved=false;
+  const noteStyle={font:'Rounded',fill:'#fff9ed',ink:'#283c30'};
   const previousCancel=dialog.oncancel;
   const tool=key=>dialog.querySelector('[data-tool="'+key+'"]');
   const leave=()=>{if(!busy&&(!dirty||window.confirm('Discard your changes to this parcel?'))){dialog.classList.remove('guest-studio');dialog.oncancel=previousCancel;back();}};
@@ -45,6 +46,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   function startText(key){
     const el=dialog.querySelector('[data-layer='+key+']');if(!el||(key==='art'&&!item.textBox))return;
     if(key==='note'&&!pairedPreview){dialog.querySelector('.parcel-note textarea')?.focus();return;}
+    if(key==='art'&&!pairedPreview){dialog.querySelector('.art-writing textarea')?.focus();return;}
     const existing=el.querySelector('textarea');if(existing){existing.focus();return;}
     document.activeElement?.blur();editing=key;select(key);
     const isNote=key==='note';let box;
@@ -74,9 +76,18 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function bindLayer(el){
     const key=el.dataset.layer,l=state[key],stage=el.parentElement;
+    if(!pairedPreview&&(key==='note'||(key==='art'&&item.maskSheet))){
+      const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent=key==='note'?'×':'✎';
+      action.setAttribute('aria-label',key==='note'?'Delete note':'Edit framed photo');
+      action.onclick=()=>{
+        if(key==='art')openCrop(state.crop);
+        else{const input=dialog.querySelector('.parcel-note textarea');input.value='';input.dispatchEvent(new Event('input'));input.focus();}
+      };
+      el.append(action);
+    }
     let gesture=null;
     el.onpointerdown=e=>{
-      if(e.target.closest('textarea')||gesture)return;
+      if(e.target.closest('textarea,.layer-action')||gesture)return;
       e.preventDefault();document.activeElement?.blur();select(key);
       el.setPointerCapture(e.pointerId);
       gesture={id:e.pointerId,x:e.clientX,y:e.clientY,oldX:l.x,oldY:l.y,oldW:l.width,oldH:l.width*l.ratio,resizing:!!e.target.closest('.corner'),moved:false};
@@ -94,7 +105,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     el.onpointerup=e=>{if(!gesture||gesture.id!==e.pointerId)return;const g=gesture;gesture=null;if(!g.moved&&!g.resizing&&(key==='note'||(key==='art'&&item.textBox)))startText(key);};
     el.onpointercancel=el.onlostpointercapture=()=>{gesture=null;};
     el.onkeydown=e=>{
-      if(e.target.closest('textarea'))return;
+      if(e.target.closest('textarea,.layer-action'))return;
       if(e.key==='Enter'&&e.target===el){e.preventDefault();startText(key);return;}
       const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!dir)return;
       e.preventDefault();select(key);dirty=true;if(key==='note')noteMoved=true;
@@ -151,15 +162,16 @@ export function startGuestStudio(dialog,item,back,onReady){
     const stage=dialog.querySelector('.sample-phone'),artEl=stage.querySelector('[data-layer=art]');
     if(!pairedPreview){
       for(const el of dialog.querySelectorAll('.studio-tools,.banner-options,.sticker-options'))el.remove();
-      const field=document.createElement('label');field.className='parcel-note';field.textContent='Add a note (optional)';
-      const input=document.createElement('textarea');input.rows=1;input.maxLength=180;input.value=state.note?.text||'';
+      const field=document.createElement('label');field.className='parcel-note';const heading=document.createElement('span');heading.className='note-question';heading.textContent='Add a note?';heading.dataset.baseLook=heading.dataset.reviewLook='notetitle-1';
+      const optional=document.createElement('small');optional.textContent='Optional';heading.append(' ',optional);field.append(heading);
+      const input=document.createElement('textarea');input.setAttribute('aria-label','Add a note (optional)');input.rows=3;input.maxLength=180;input.value=state.note?.text||'';
       field.append(input);dialog.querySelector('.studio-error').before(field);
       input.oninput=()=>{
         const text=input.value;dirty=true;
         let el=stage.querySelector('[data-layer=note]');
         if(!text.trim()){state.note=null;noteMoved=false;el?.remove();select('art');return;}
         const note=state.note||makeLayer(.3);state.note=note;
-        Object.assign(note,{style:3,text,font:'Rounded',fill:'#fff9ed',ink:'#283c30'});
+        Object.assign(note,{style:3,text,...noteStyle});
         const ctx=document.createElement('canvas').getContext('2d');ctx.font=fontSpec(note.font,24);
         note.width=clamp(Math.ceil(ctx.measureText(text).width)+54,110,500);
         const lines=text.split('\n').reduce((sum,line)=>sum+Math.max(1,Math.ceil(ctx.measureText(line).width/(note.width-46))),0);
@@ -169,13 +181,24 @@ export function startGuestStudio(dialog,item,back,onReady){
         layout();paintNote();
       };
     }
+    if(!pairedPreview){
+      stage.onpointerdown=e=>{if(!e.target.closest('.move-layer')){document.activeElement?.blur();select('');}};
+      if(item.textBox){
+        const label=document.createElement('label');label.className='art-writing';label.textContent='Your words';
+        const input=document.createElement('textarea');input.rows=3;input.maxLength=180;input.value=state.words;
+        input.setAttribute('aria-label','Write on this design');label.append(input);stage.after(label);
+        input.oninput=()=>{state.words=input.value;dirty=true;
+          const image=artEl.querySelector('.layer-image');if(state.words)delete image.dataset.hint;else image.dataset.hint='Tap to write';
+          paintArt();};
+      }
+    }
     for(const el of stage.querySelectorAll('.move-layer'))bindLayer(el);
     if(item.textBox&&!state.words)artEl.querySelector('.layer-image').dataset.hint='Tap to write';
     if(state.note&&!state.note.text)stage.querySelector('[data-layer=note] .layer-image').dataset.hint='Tap to write';
     if(state.second){const image=state.second.image;image.alt='';stage.querySelector('[data-layer=second] .layer-image').append(image);}
-    if(item.textBox||(pairedPreview&&state.note)){
+    if(item.textBox||!pairedPreview||state.note){
       const controls=document.createElement('div');controls.className='studio-colours';
-      function row(fields){
+      function row(fields,destination=controls){
         const group=document.createElement('div');group.className='ink-row';
         for(const [label,accessible,object,key,initial,repaint] of fields){
           group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
@@ -186,7 +209,23 @@ export function startGuestStudio(dialog,item,back,onReady){
           const option=new Option(label,label);option.style.fontFamily=family;picker.append(option);
         }
         picker.value=object.font||'Handwritten';picker.onchange=()=>{object.font=picker.value;dirty=true;repaint();};
-        group.append(picker);controls.append(group);
+        if(pairedPreview)group.append(picker);
+        else{
+          const menu=document.createElement('details');menu.className='type-menu';
+          const summary=document.createElement('summary');menu.append(summary);
+          const list=document.createElement('div');list.setAttribute('role','group');list.setAttribute('aria-label',object===state?'Design font':'Optional note font');menu.append(list);
+          function update(){
+            const current=object.font||(object===state?'Handwritten':'Rounded');
+            summary.textContent='Font · '+current;summary.style.fontFamily=fonts[current][0];
+            for(const btn of list.children)btn.setAttribute('aria-pressed',String(btn.textContent===current));
+          }
+          for(const [name,[family,weight]] of Object.entries(fonts)){
+            const b=document.createElement('button');b.type='button';b.textContent=name;b.style.fontFamily=family;b.style.fontWeight=weight;
+            b.onclick=()=>{object.font=name;dirty=true;update();repaint();menu.open=false;summary.focus();};list.append(b);
+          }
+          update();group.append(menu);
+        }
+        destination.append(group);
       }
       if(item.textBox){
         const fields=[['Text','Design text colour',state,'ink',item.ink,paintArt]];
@@ -197,12 +236,18 @@ export function startGuestStudio(dialog,item,back,onReady){
         ['Banner','Banner colour',state.note,'fill',['#fff1cd','#c7ddcb','#fff9e9'][state.note.style],paintNote],
         ['Text','Banner text colour',state.note,'ink','#283c30',paintNote]
       ]);
-      (dialog.querySelector('.sticker-options')||dialog.querySelector('.parcel-note')).before(controls);
+      if(!pairedPreview){
+        const field=dialog.querySelector('.parcel-note'),tray=document.createElement('div');tray.className='note-tools';field.after(tray);
+        const update=()=>{const input=field.querySelector('textarea');if(input.value.trim())input.dispatchEvent(new Event('input'));};
+        row([['Ink','Optional note text colour',noteStyle,'ink','#283c30',update],['Paper','Optional note box colour',noteStyle,'fill','#fff9ed',update]],tray);
+      }
+      if(controls.childElementCount)(dialog.querySelector('.sticker-options')||dialog.querySelector('.parcel-note')).before(controls);
     }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]');
-    if(item.maskSheet){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(item.maskSheet&&pairedPreview){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(!pairedPreview)dialog.querySelector('.studio-photo').remove();
     if(pairedPreview){
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
     const removeNote=tool('remove-note');
@@ -258,5 +303,8 @@ export function startGuestStudio(dialog,item,back,onReady){
     dialog.scrollTop=0;
   }
   function reopen(){if(!dialog.open)dialog.showModal();show();}
-  if(item.maskSheet&&!pairedPreview)uploadStep();else show();
+  if(item.maskSheet&&['placementFrame','placementPostcard'].includes(document.documentElement.dataset.workroom)){
+    const sample=new Image();sample.src='assets/guest/wheel-031.webp';
+    sample.decode().then(()=>{if(dialog.open){state.crop.photo=sample;show();}}).catch(uploadStep);
+  }else if(item.maskSheet&&!pairedPreview)uploadStep();else show();
 }

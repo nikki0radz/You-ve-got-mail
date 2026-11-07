@@ -1,6 +1,10 @@
 export const fonts={
   Handwritten:['ParcelCaption, cursive',400],
   Rounded:['PostalBaloo, sans-serif',650],
+  Coiny:['ParcelCoiny, sans-serif',400],
+  'Lilita One':['ParcelLilita, sans-serif',400],
+  'Soft script':['ParcelCaption, cursive',700],
+  'Plump slab':['Georgia, serif',900],
   Classic:['Georgia, serif',600],
   Typewriter:['monospace',500]
 };

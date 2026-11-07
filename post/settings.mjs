@@ -13,7 +13,7 @@ const toggle=(key,label)=>'<label class="setting-field"><span>'+label+'</span><i
 const section=(id,name,summary,body,open=false)=>'<details class="post-setting" data-section="'+id+'" '+(open?'open':'')+'><summary><span><b>'+name+'</b><small>'+summary+'</small></span></summary><div class="setting-body">'+body+'</div></details>';
 export function settingsPage(){
   const native=Boolean(window.Pigeon?.deliveryPrefs);
-  return '<section class="post-settings"><header><div><small>PIGEON POST</small><h1>Settings</h1><p>Your rules for incoming mail.</p></div><img src="assets/home/mascot.webp" alt=""></header>'+
+  return '<section class="post-settings" data-review-look="settingsbuttons-3" data-base-look="settingsbuttons-3"><header><div><small>PIGEON POST</small><h1>Settings</h1><p>Your rules for incoming mail.</p></div><img src="assets/home/mascot.webp" alt=""></header>'+
   (!native?'<p class="settings-preview">Browser preview · changes apply here only.</p>':'')+
   section('delivery','Delivery','Choose what happens when a parcel arrives.',
     select('fullPopup','When open',[['true','Full pop-up'],['false','Notification only']])+toggle('onUnlock','Open one second after unlock')+

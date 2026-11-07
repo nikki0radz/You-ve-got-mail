@@ -107,10 +107,6 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     cancel=()=>dialog.close();navigateBack=cancel;dialog.scrollTop=0;
   }
   const designKey=item=>item.category+'/'+item.name;
-  function controls(){
-    const keys=['All',...availableCategories];
-    return '<section class="library-filter" aria-label="Categories"><div class="library-tabs" role="group" aria-label="Categories">'+keys.map(key=>'<button type="button" data-category="'+esc(key)+'" aria-pressed="'+(key===group)+'">'+esc(displayName(key))+'</button>').join('')+'</div></section>';
-  }
   function library(grid=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=group==='All'?catalog:catalog.filter(item=>item.category===group);
@@ -121,20 +117,10 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     if(grid){
       content='<div class="library-grid">'+items.map((item,i)=>'<button type="button" data-design="'+i+'" aria-label="Edit '+esc(item.name)+'"><span class="grid-art"></span><span>'+esc(item.name)+'</span></button>').join('')+'</div>';
     }else{
-      content='<div class="frame-card"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index"><span>All '+unit+'</span><span class="frame-count"></span><button type="button" class="library-see-all" data-grid>See all</button></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>';
+      content='<div class="frame-card" data-base-look="railwidth-1" data-review-look="railwidth-1"><div class="frame-rail" role="group" aria-label="Swipe through '+esc(label)+'"></div><h3 class="frame-name" aria-live="polite"></h3></div><div class="frame-index"><span>All '+unit+'</span><span class="frame-count"></span><button type="button" class="library-see-all" data-grid>See all</button></div><div class="frame-thumbs" role="group" aria-label="All '+esc(label)+'"></div><button class="primary frame-use"></button>';
     }
     const guestLibrary=options===true;
-    shell(label,items.length+' '+unit,(guestLibrary?'':backButton+(options.wheel?'':controls()))+content,back,guestLibrary);
-    function filter(key){
-      if(group===key)return;
-      group=key;gridScroll=0;library(grid);
-      const destination=dialog.querySelector('.library-tabs [aria-pressed=true],.library-menu');
-      destination?.focus({preventScroll:true});
-    }
-    const menu=dialog.querySelector('.library-menu');if(menu)menu.onchange=()=>filter(menu.value);
-    dialog.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>filter(b.dataset.category));
-    const tab=dialog.querySelector('.library-tabs [aria-pressed=true]');
-    if(tab)tab.parentElement.scrollLeft=tab.offsetLeft-(tab.parentElement.clientWidth-tab.offsetWidth)/2;
+    shell(label,items.length+' '+unit,(guestLibrary?'':backButton)+content,back,guestLibrary);
     const remember=item=>chosenDesign.set(group,designKey(item));
     const pick=item=>{
       remember(item);if(grid)gridScroll=dialog.scrollTop;

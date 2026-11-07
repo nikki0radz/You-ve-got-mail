@@ -94,7 +94,7 @@ function cache(){try{localStorage.setItem(CACHE,JSON.stringify({book,version,pro
 function dimensions(){
   anchors?.schedule();
   const main=phoneSize(profile);
-  if(!main.measured && round?.id.startsWith('frame-feedback-'))Object.assign(main,{width:384,height:751});
+  if(!main.measured && /^(frame|parcel)-feedback-/.test(round?.id))Object.assign(main,{width:384,height:751});
   const available=window.innerHeight-$('bench').getBoundingClientRect().top-window.scrollY-82;
   const zoom=$('zoom').value==='fit'?Math.max(.45,Math.min(1,available/(main.height+(main.insets?.top||0)+(main.insets?.bottom||0)+10))):Number($('zoom').value);
   frames.forEach((f,i)=>{

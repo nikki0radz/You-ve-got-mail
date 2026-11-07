@@ -3,7 +3,7 @@ import {readLook} from './parcel-round.mjs';
 import {appearance} from './appearance.mjs';
 import {extraCSS} from './templates.mjs';
 const defs=new Map(),sheet=document.createElement('style');document.head.append(sheet);let editing=true,selected='',stamp='';
-const candidates='button,a,input,select,textarea,summary,label,h1,h2,h3,p,img,nav,header,section,fieldset,article,details,main,div[class],small,strong';
+const candidates='button,a,input,select,textarea,summary,label,h1,h2,h3,p,img,nav,header,section,fieldset,article,details,span.note-question,main,div[class],small,strong';
 const emit=(type,key)=>parent.postMessage({app:'pigeon-studio',type,key},location.origin);
 const kebab=k=>k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
 function locate(n){
@@ -24,7 +24,7 @@ const originals=new WeakMap();
 function reviewNode(node,id){
   const value=reviewStyles[id]?.reviewLook, look=readLook(value);
   if(!look&&!node.hasAttribute('data-review-look'))return;
-  if(look)node.dataset.reviewLook=value;else delete node.dataset.reviewLook;
+  if(look)node.dataset.reviewLook=value;else if(node.dataset.baseLook)node.dataset.reviewLook=node.dataset.baseLook;else delete node.dataset.reviewLook;
   if(node.matches('#when-label'))calendarPreview(node,look?.group==='calendar'?value:null);
   if(node.matches('.decline-pigeon')){
     if(!originals.has(node))originals.set(node,node.getAttribute('src'));

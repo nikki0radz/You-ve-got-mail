@@ -9,6 +9,21 @@ const json = (key,fallback) => {try{return JSON.parse(localStorage.getItem(key))
 const unsaved = new Map();
 const records = () => Object.keys(localStorage).filter(k=>k.startsWith(prefix)).map(k=>json(k,null)).filter(Boolean);
 const keyFor = meta => prefix+JSON.stringify([meta.surface,meta.view,meta.theme]);
+function repairFlowerSwatches(){
+  try{
+    const marker='pigeon.repair.flower-swatches.020';if(localStorage.getItem(marker))return;
+    const key=keyFor({surface:'app',view:'shop / Flowers / 30 designs',theme:'dark'}),entry=json(key,null);
+    if(!entry?.targets)return;
+    const tile='#parcel-shop > div.frame-card > div.frame-rail > button:nth-of-type(';
+    if(!entry.targets[tile+'27)']?.comment?.includes('accidentally changed'))return;
+    for(const n of [27,30,31,32]){
+      const item=entry.targets[tile+n+')'];
+      if(item?.colours&&(n===27||item.colours.background==='#fff9ed'))delete item.colours.background;
+    }
+    localStorage.setItem(key,JSON.stringify(entry));localStorage.setItem(marker,'1');
+  }catch{}
+}
+repairFlowerSwatches();
 const spacer=document.createElement('div');
 spacer.className='review-space';
 document.body.prepend(spacer);
@@ -26,15 +41,17 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-vis
 .switch{display:inline-flex;align-items:center;gap:6px}.track{width:26px;height:16px;background:#67766c;border-radius:12px;padding:2px}.track i{display:block;width:12px;height:12px;background:white;border-radius:100%}
 [aria-checked=true] .track{background:#315846}[aria-checked=true] i{transform:translateX(10px)}
 .panel,.hint{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,440px);text-align:left;border:1px solid #91a390;border-radius:18px 18px 0 0;padding:12px 15px max(12px,env(safe-area-inset-bottom));box-shadow:0 -3px 16px #17291d33}
-.panel{max-height:58dvh;overflow:auto}.panel header,.colours,.panel footer{display:flex;align-items:center;gap:7px}.panel header,.panel footer{justify-content:space-between}.panel header strong{font-size:16px}.panel label{display:block;margin-top:8px;font-size:12px;font-weight:650}.panel select,.panel textarea,.hex{background:#fffdf6;border:1px solid #829584;border-radius:8px;padding:6px}.target,textarea{width:100%}textarea{display:block;resize:vertical;min-height:54px}
+.channels{display:flex;gap:4px;margin:8px 0}.channels [aria-pressed=true]{background:#315846;color:white}.channels button{flex:1}
+.panel{max-height:65dvh;overflow:auto}.panel header,.colours,.panel footer{display:flex;align-items:center;gap:7px}.panel header,.panel footer{justify-content:space-between}.panel header strong{font-size:16px}.panel label{display:block;margin-top:8px;font-size:12px;font-weight:650}.panel select,.panel textarea,.hex{background:#fffdf6;border:1px solid #829584;border-radius:8px;padding:6px}.target,textarea{width:100%}textarea{display:block;resize:vertical;min-height:54px}
 .colours{margin:5px 0;flex-wrap:wrap}.colours input[type=color]{width:35px;height:32px}.hex{width:84px}.palette{display:flex;gap:5px}.palette button{min-height:24px;width:24px;padding:0;border-radius:50%;border:1px solid #778678}
 .hint{width:auto;max-width:95%;white-space:nowrap;padding:6px 12px;bottom:9px;border-radius:14px;font:600 12px system-ui;background:#263e32;color:white;pointer-events:none}.status{font-size:12px}.done{background:#315846;color:white}
 </style><div class="bar"><button class="export" hidden>Export design</button><button class="switch" role="switch" aria-checked="false"><span class="track"><i></i></span>Design mode</button></div>
 <div class="hint" role="status" hidden>Tap an element to mark it up</div>
 <section class="panel" aria-label="Element feedback" hidden><header><strong>Element feedback</strong><button class="done">Done</button></header>
-<label>Selected element<select class="target"></select></label><div class="colours"><select class="property" aria-label="Colour property"><option value="background">Background</option><option value="text">Text</option><option value="border">Border</option></select><input type="color" aria-label="Choose colour"><input class="hex" aria-label="Hex colour" maxlength="7"><button class="reset">Original</button></div><div class="palette"></div>
+<label>Selected element<select class="target"></select></label><div class="channels" role="group" aria-label="Colour property"><button data-channel="background" aria-pressed="true">Background</button><button data-channel="text" aria-pressed="false">Text colour</button><button data-channel="border" aria-pressed="false">Border</button></div><div class="colours"><input type="color" aria-label="Choose colour"><input class="hex" aria-label="Hex colour" maxlength="7"><button class="reset">Original</button></div><div class="palette"></div>
 <label>Comment<textarea rows="2" maxlength="4000" placeholder="What would you change here?"></textarea></label><footer><span class="status" role="status"></span></footer></section>`;
 const $=s=>ui.querySelector(s);
+let channel='background';
 const freeze=document.createElement('dialog');
 freeze.dataset.reviewUi='freeze';freeze.setAttribute('aria-label','Design review');
 document.body.append(freeze);
@@ -82,11 +99,11 @@ function numberControls(doc,root){
     group.options.forEach((option,i)=>{
       const b=doc.createElement('button');b.type='button';b.textContent=String(i+1);
       b.setAttribute('aria-label',group.title+' '+(i+1)+' · '+option.name);
-      b.setAttribute('aria-pressed',String(optionNumber(group)===i+1));
+      b.setAttribute('aria-pressed',String((optionNumber(group)||Number(target.dataset.baseLook?.split('-')[1]))===i+1));
       row.append(b);
     });
     // Keep the controls adjacent to their element in the scrolling phone copy.
-    if(anchor.matches('summary'))anchor.parentElement.before(row);else anchor.before(row);
+    if(anchor.matches('summary,.note-question'))anchor.parentElement.before(row);else anchor.before(row);
     row.choose=button=>{
       const n=Number(button.textContent);
       target.dataset.reviewLook=group.key+'-'+n;
@@ -148,13 +165,13 @@ function edit(write){
   paint();save(false,item.selector);
 }
 function colourState(){
-  const prop=$('.property').value,computed=session.doc.defaultView.getComputedStyle(selected).getPropertyValue(properties[prop]);
+  const prop=channel,computed=session.doc.defaultView.getComputedStyle(selected).getPropertyValue(properties[prop]);
   const rgb=computed.match(/[\d.]+/g)||[];
   const current=session.entry.targets[selector(selected)]?.colours?.[prop]||
     (rgb.length>=3&&rgb[3]!=='0'?'#'+rgb.slice(0,3).map(x=>Number(x).toString(16).padStart(2,'0')).join(''):'');
   $('.hex').value=current;$('.hex').placeholder='Original';$('input[type=color]').value=current||'#ffffff';
 }
-function setColour(v){if(!/^#[0-9a-f]{6}$/i.test(v))return;edit(item=>{item.colours[$('.property').value]=v.toLowerCase();});colourState();}
+function setColour(v){if(!/^#[0-9a-f]{6}$/i.test(v))return;edit(item=>{item.colours[channel]=v.toLowerCase();});colourState();}
 function select(el){
   selected?.removeAttribute('data-review-picked');selected=el;el.setAttribute('data-review-picked','');
   $('textarea').value=session.entry.targets[selector(el)]?.comment||'';
@@ -198,10 +215,14 @@ freeze.addEventListener('cancel',e=>{e.preventDefault();back();});
 $('.switch').onclick=()=>session?finish():begin();
 $('.done').onclick=()=>{closePanel();$('.switch').focus();};
 $('textarea').oninput=e=>edit(item=>{item.comment=e.target.value;});
-$('.property').onchange=colourState;
+for(const b of ui.querySelectorAll('[data-channel]'))b.onclick=()=>{
+  channel=b.dataset.channel;
+  for(const x of ui.querySelectorAll('[data-channel]'))x.setAttribute('aria-pressed',String(x===b));
+  colourState();
+};
 $('input[type=color]').oninput=e=>setColour(e.target.value);
 $('.hex').oninput=e=>setColour(e.target.value);
-$('.reset').onclick=()=>{edit(item=>{delete item.colours[$('.property').value];});colourState();};
+$('.reset').onclick=()=>{edit(item=>{delete item.colours[channel];});colourState();};
 for(const hex of palette){const b=document.createElement('button');b.style.background=hex;b.setAttribute('aria-label','Use '+hex);b.onclick=()=>setColour(hex);$('.palette').append(b);}
 $('.export').onclick=()=>{
   save(true);
@@ -215,7 +236,7 @@ $('.export').onclick=()=>{
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.19',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.20',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };

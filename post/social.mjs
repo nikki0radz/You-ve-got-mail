@@ -15,7 +15,7 @@ export function installSocial(state,save,refresh){
   function show(title,body,back){
     if(!dialog.open){previousFocus=document.activeElement;dialog.showModal();}
     dialog.dataset.reviewScreen=title;
-    dialog.innerHTML=`<header class="social-head">${back?'<button data-prev aria-label="Back">‹</button>':'<span></span>'}<button data-x aria-label="Close">×</button></header><h2>${esc(title)}</h2>${body}<p class="social-alert" role="alert"></p>`;
+    dialog.innerHTML=`<header class="social-head">${back?'<button data-prev aria-label="Back"><span aria-hidden="true">←</span> Back</button>':'<span></span>'}<button data-x aria-label="Close">×</button></header><h2>${esc(title)}</h2>${body}<p class="social-alert" role="alert"></p>`;
     dialog.querySelector('[data-x]').onclick=end;
     if(back)dialog.querySelector('[data-prev]').onclick=back;
     dialog.scrollTop=0;

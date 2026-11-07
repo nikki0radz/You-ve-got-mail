@@ -1,5 +1,10 @@
 // Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
 export const looks = {
+  addressing: ['Letter to a friend','Choose a pigeon','Delivery stops','Sorting pockets','Address seal'].map(x=>[x]),
+  whenticks: ['Postmark circles','Pencil checklist','Punch tickets','Wax seals','Airmail stamps'].map(x=>[x]),
+  peoplebar: ['Address book tab','Contacts counter','Stamped directory','Slim divider','Post office sign','Address slip'].map(x=>[x]),
+  railwidth: [['Inset card'],['Edge to edge']],
+  notetitle: ['Handwritten question','Postage stamp','Ruled heading','Speech bubble','Paper ribbon'].map(x=>[x]),
   recipient: ['Address label','Portrait chips','Address book','Postage stamps','Ticket list'].map(x=>[x]),
   deliverytime: ['Forest capsule','Postage ticket','Signal light','Pocket track','Airmail switch'].map(x=>[x]),
   mailbox: ['Letter stack','Sorting trays','Postmaster’s ledger','Address book first','Ticket roll'].map(x=>[x]),

@@ -26,15 +26,21 @@ rounds.decline=reviewGroup('decline','Pigeon choice','.decline-pigeon');
 
 // One versioned group per decision, shared by the phone and the workroom.
 export const feedbackGroups=[
-  ['recipient','Recipient','.recipient-choice','.recipient-choice'],
-  ['deliverytime','Now / Later','.timing-options, .dispatch-timing','.timing-options, .dispatch-timing'],
+  ['addressing','Send to','.recipient-choice','.recipient-choice'],
+  ['whenticks','Now / Later','.timing-options, .dispatch-timing','.timing-options, .dispatch-timing'],
   ['mailbox','Inbox layout','.mailbox-layout','.mailbox-layout .page-heading'],
-  ['settingsbuttons','Settings buttons','.post-settings','.post-setting[data-section="alerts"] summary']
+  ['settingsbuttons','Settings buttons','.post-settings','.post-setting[data-section="alerts"] summary'],
+  ['peoplebar','Your people','.people-heading','.people-heading'],
+  ['railwidth','Carousel width','.frame-card','.frame-card'],
+  ['notetitle','Optional note heading','.note-question','.note-question']
 ].map(([key,title,selector,anchor])=>({
-  ...reviewGroup(key,title,selector),key,selector,anchor,id:'frame-feedback-'+key+'-01'
+  ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+'-02'
 }));
-const [recipient,time,mailbox,settings]=feedbackGroups;
+const [recipient,time,mailbox,settings,people,rail,note]=feedbackGroups;
 rounds.recipient={...recipient,groups:[time]};rounds.schedule=rounds.recipient;
-rounds.inbox=mailbox;rounds.sent=mailbox;rounds.settings=settings;
+rounds.inbox={...mailbox,groups:[people]};rounds.sent=rounds.inbox;
+for(const page of ['library','stickerPicker','picker--pigeons','picker--notes','picker--postcards','picker--reminders','picker--flowers','picker--love'])rounds[page]=rail;
+for(const page of ['banners','notes','love','flowers','reminders','pigeons','placementFrame','placementPostcard'])rounds[page]=note;
+rounds.settings=settings;
 
 rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-review-timing-01'?time:group);

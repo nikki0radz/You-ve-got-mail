@@ -10,6 +10,8 @@ for(const [id,category] of Object.entries(pickerCategories)){
   pages['picker--'+id]=[label+' picker','One-time link'];
   pages['gallery--'+id]=[label+' full gallery','One-time link'];
 }
+pages.placementFrame=['Place a framed photo','One-time link'];
+pages.placementPostcard=['Place a postcard','One-time link'];
 pages.library[0]='Photo frames picker';
 pages.gallery[0]='Photo frames full gallery';
 pages.stickerPicker=['Sticker library','One-time link'];
