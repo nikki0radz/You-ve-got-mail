@@ -49,7 +49,7 @@ const {chromium}=require('playwright');
     await note.fill('Signed, sealed, delivered.');
     await page.getByRole('button',{name:'Optional note box colour'}).click();
     await page.locator('.ink-picker').getByRole('button',{name:'Transparent'}).click();
-    assert.equal(await page.locator('.ink-picker').count(),0);
+    await page.locator('.ink-picker').waitFor({state:'detached'});
     await page.locator('.note-tools summary').click();
     for(const name of ['Chewy','Fredoka']){
       assert.equal(await page.locator('.note-tools').getByRole('button',{name,exact:true}).count(),1);
