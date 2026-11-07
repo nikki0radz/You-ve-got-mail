@@ -1,7 +1,7 @@
 import {fonts,fontSpec,writingBox} from './lettering.mjs';
-import {colourButton,noteSwatches} from './colour-wheel.mjs';
+import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
-import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
+import {catalogueDesigns,catalogueImage,catalogueThumbnail} from './catalogue.mjs';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
 
 const apps=[['☀','Weather','#e9ad61'],['♫','Music','#ae748b'],['✆','Phone','#65a184'],['✉','Mail','#779cb1'],['◉','Camera','#787785'],['☷','Notes','#d8aa60'],['☁','Cloud','#799dba'],['✿','Photos','#b48c9f']];
@@ -12,8 +12,9 @@ const button=(label,key)=>'<button type="button" data-tool="'+key+'">'+label+'</
 
 export function startGuestStudio(dialog,item,back,onReady){
   const pairedPreview=document.documentElement.dataset.screen==='postcard-composer';
+  const optionalPhoto=item.sharedId && item.kind==='postcard';
   const ratio=item.rect[3]/item.rect[2];
-  const state={art:contain(makeLayer(ratio)),words:item.labelPatch?item.name:'',crop:{photo:null,zoom:1,panX:.5,panY:.5},note:null,second:null};
+  const state={art:contain(makeLayer(ratio)),words:item.labelPatch?(item.originalName||item.name):'',crop:{photo:null,zoom:1,panX:.5,panY:.5},note:null,second:null};
   let dirty=false,active='art',serial=0,editing='',busy=false,noteMoved=false;
   const noteStyle={font:'Rounded',fill:'#fff9ed',ink:'#283c30'};
   const previousCancel=dialog.oncancel;
@@ -28,6 +29,7 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function layout(){
     const stage=dialog.querySelector('.sample-phone');if(!stage)return;
+    if(!pairedPreview&&state.note)stage.parentElement.style.setProperty('--note-top',state.note.y/H*100+'%');
     for(const el of stage.querySelectorAll('.move-layer')){
       const l=state[el.dataset.layer];Object.assign(el.style,{left:l.x/W*100+'%',top:l.y/H*100+'%',width:l.width/W*100+'%',height:l.width*l.ratio/H*100+'%'});
     }
@@ -76,14 +78,9 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function bindLayer(el){
     const key=el.dataset.layer,l=state[key],stage=el.parentElement;
-    if(!pairedPreview&&(key==='note'||(key==='art'&&item.maskSheet))){
-      const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent=key==='note'?'×':'✎';
-      action.setAttribute('aria-label',key==='note'?'Delete note':'Edit framed photo');
-      action.onclick=()=>{
-        if(key==='art')openCrop(state.crop);
-        else{const input=dialog.querySelector('.parcel-note textarea');input.value='';input.dispatchEvent(new Event('input'));input.focus();}
-      };
-      el.append(action);
+    if(!pairedPreview&&key==='art'&&item.maskSheet){
+      const action=document.createElement('button');action.type='button';action.className='layer-action';action.textContent='✎';
+      action.setAttribute('aria-label','Edit framed photo');action.onclick=()=>state.crop.photo?openCrop(state.crop):dialog.querySelector('[data-file=main]').click();el.append(action);
     }
     let gesture=null;
     el.onpointerdown=e=>{
@@ -119,6 +116,9 @@ export function startGuestStudio(dialog,item,back,onReady){
     dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span class="back-arrow" aria-hidden="true"></span> Back</button></div><h2>Choose your photo</h2><p class="studio-tip"></p><button type="button" class="studio-primary" data-upload>Upload photo</button><input hidden type="file" accept="image/*"><p class="studio-error" role="alert"></p>';
     dialog.querySelector('.studio-tip').textContent='Pick a photo for '+item.name+'. You can drag and pinch it to fit next.';
     const file=dialog.querySelector('input');dialog.querySelector('[data-upload]').onclick=()=>file.click();
+    if(optionalPhoto){
+      const skip=document.createElement('button');skip.type='button';skip.className='studio-link';skip.textContent='Continue without a photo';skip.onclick=show;file.after(skip);
+    }
     file.onchange=()=>upload(file);tool('back').onclick=leave;dialog.oncancel=e=>{e.preventDefault();leave();};dialog.scrollTop=0;
   }
   function openCrop(crop){
@@ -132,23 +132,33 @@ export function startGuestStudio(dialog,item,back,onReady){
     try{const img=await readPhoto(source);if(input.isConnected)openCrop({photo:img,zoom:1,panX:.5,panY:.5});}
     catch(e){grabError(e);}
   }
-  function bindStickerPicker(panel){
-    for(const [id,name] of guestSelection.Stickers){
-      const pick=document.createElement('button'),img=new Image();
-      pick.type='button';img.alt='';img.src=guestMaster(id);
-      pick.append(img,name);pick.setAttribute('aria-pressed',String(state.second?.id===id));
-      pick.onclick=async()=>{
-        if(busy)return;
-        busy=true;
-        try{
-          await img.decode();if(!panel.isConnected)return;
-          const position=state.second||makeLayer(1,170,700);
-          state.second=contain({...position,id,name,image:img,ratio:img.naturalHeight/img.naturalWidth});
-          active='second';dirty=true;show();tool('second').focus();
-        }catch(e){grabError(e);}finally{busy=false;}
-      };
-      panel.querySelector('.sticker-grid').append(pick);
-    }
+  async function bindStickerPicker(panel){
+    const grid=panel.querySelector('.sticker-grid');
+    if(grid.dataset.loading)return;grid.dataset.loading='true';
+    try{
+      const designs=(await catalogueDesigns()).filter(item=>item.kind==='sticker'&&!item.textBox);
+      if(!panel.isConnected)return;
+      grid.replaceChildren();
+      if(!designs.length)grid.textContent='No stickers available.';
+      for(const sticker of designs){
+        const id=sticker.catalogueId,name=sticker.name,pick=document.createElement('button');
+        pick.type='button';pick.innerHTML=catalogueThumbnail(sticker);pick.append(document.createTextNode(name));
+        pick.setAttribute('aria-pressed',String(state.second?.id===id));
+        pick.onclick=async()=>{
+          if(busy)return;busy=true;
+          try{
+            const source=await catalogueImage(sticker);
+            const img=new Image();if(source instanceof HTMLCanvasElement)img.src=source.toDataURL();
+            else{if(/^https?:/i.test(source.src))img.crossOrigin='anonymous';img.src=source.src;}
+            await img.decode();if(!panel.isConnected)return;
+            const position=state.second||makeLayer(1,170,700);
+            state.second=contain({...position,id,name,image:img,ratio:img.naturalHeight/img.naturalWidth});
+            active='second';dirty=true;show();tool('second').focus();
+          }catch(error){grabError(error);}finally{busy=false;}
+        };
+        grid.append(pick);
+      }
+    }catch(error){grabError(error);}finally{delete grid.dataset.loading;}
     if(state.second)tool('remove-second').onclick=()=>{state.second=null;active='art';dirty=true;show();tool('second').focus();};
   }
   function layer(key,label){
@@ -201,8 +211,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       function row(fields,destination=controls){
         const group=document.createElement('div');group.className='ink-row';
         for(const [label,accessible,object,key,initial,repaint] of fields){
-          const control=object===noteStyle?noteSwatches:colourButton;
-          group.append(control(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
+          group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
         }
         const object=fields[0][2],repaint=fields[0][5],picker=document.createElement('select');
         picker.setAttribute('aria-label',object===state?'Note font':'Banner font');picker.className='note-font';
@@ -244,17 +253,27 @@ export function startGuestStudio(dialog,item,back,onReady){
       }
       if(controls.childElementCount)(dialog.querySelector('.sticker-options')||dialog.querySelector('.parcel-note')).before(controls);
     }
+    if(!pairedPreview){
+      const frame=document.createElement('div');frame.className='stage-frame';stage.before(frame);frame.append(stage);
+      const erase=document.createElement('button');erase.type='button';erase.className='delete-note';erase.setAttribute('aria-label','Delete note');
+      const mark=document.createElement('span');mark.textContent='×';erase.append(mark);
+      erase.onclick=()=>{
+        const input=dialog.querySelector('.parcel-note textarea');
+        input.value='';input.dispatchEvent(new Event('input'));input.focus();
+      };
+      frame.append(erase);
+    }
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]');
-    if(item.maskSheet&&pairedPreview){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
-    if(!pairedPreview)dialog.querySelector('.studio-photo').remove();
+    if(item.maskSheet&&(pairedPreview||item.sharedId)){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(!pairedPreview&&!(item.sharedId&&item.maskSheet))dialog.querySelector('.studio-photo').remove();
     if(pairedPreview){
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
     const removeNote=tool('remove-note');
     if(removeNote)styles.after(removeNote);
     function togglePanel(panel){
-      if(panel===stickers&&!stickers.querySelector('.sticker-grid button'))bindStickerPicker(stickers);
+      if(panel===stickers)bindStickerPicker(stickers);
       const opening=panel.hidden;styles.hidden=true;stickers.hidden=true;panel.hidden=!opening;
       if(removeNote){
         if(styles.hidden)styles.after(removeNote);
@@ -287,8 +306,8 @@ export function startGuestStudio(dialog,item,back,onReady){
     async function finish(action){
       if(busy)return;
       const error=dialog.querySelector('.studio-error');
-      if(item.maskSheet&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
-      if(item.textBox&&!state.words.trim()){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
+      if(item.maskSheet&&!optionalPhoto&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
+      if(item.textBox&&!state.words.trim()&&!(optionalPhoto&&state.crop.photo)){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
       busy=true;const ready=tool('ready');ready.disabled=true;
       try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);

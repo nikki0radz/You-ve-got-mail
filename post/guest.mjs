@@ -2,7 +2,8 @@ import {fitPreview} from '../shop/preview-image.mjs';
 import {scaled} from '../shop/transport-image.mjs';
 import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=complete-stickers';
 import {openShop} from '../shop/shop.mjs?guest-library=8';
-import {guestSelection,guestMaster} from '../shop/guest-selection.mjs?v=complete-stickers';
+import {catalogueDesigns} from '../shop/catalogue.mjs';
+import {refreshMainArt} from '../shop/main-art.mjs';
 const designPreview=document.documentElement.dataset.screen==='postcard-composer';
 const preview=designPreview||(!location.hash && new URLSearchParams(location.search).get('preview')==='1');
 const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
@@ -26,48 +27,30 @@ function invitation(){
   };
 }
 let lastCategory='Photos';
-let choicesLoaded=false, preloadGeneration=0;
-async function loadChoices(){
-  steps.dataset.reviewScreen="loading choices";
-  if(choicesLoaded){choose();return;}
-  const generation=++preloadGeneration;
-  steps.innerHTML='<section class="flight dispatch-envelope" aria-live="polite"><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt=""></div><h2>Loading your options</h2><p>Our pigeon is gathering your designs…</p><progress max="1" value="0" aria-label="Loading designs"></progress><p data-progress></p><button type="button" data-back><span class="back-arrow" aria-hidden="true"></span> Back</button></section>';
-  steps.querySelector('[data-back]').onclick=()=>{preloadGeneration++;invitation();};
-  const progress=steps.querySelector('progress'),message=steps.querySelector('[data-progress]');
-  const masters=Object.values(guestSelection).flat().map(([id])=>guestMaster(id));
-  const examples=[...guestSelection.Photos,guestSelection.Postcards.find(([id])=>id===105)].map(([id])=>'assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp');
-  const paths=[...new Set([...masters,...examples])];progress.max=paths.length;
-  let next=0,done=0;const failed=[];
-  async function worker(){
-    while(next<paths.length&&generation===preloadGeneration){
-      const path=paths[next++];
-      try{await new Promise((resolve,reject)=>{
-        const image=new Image(),timer=setTimeout(()=>{image.src='';reject(new Error('Timed out'));},20000);
-        image.onload=async()=>{try{if(image.decode)await image.decode();clearTimeout(timer);resolve();}catch(error){clearTimeout(timer);reject(error);}};image.onerror=()=>{clearTimeout(timer);reject(new Error('Image failed'));};image.src=path;
-      });}catch{failed.push(path);}
-      if(generation!==preloadGeneration)return;
-      progress.value=++done;message.textContent=done+' of '+paths.length+' ready';
-    }
+let choiceGeneration=0;
+function refreshArtwork(){if(!document.hidden)refreshMainArt().catch(()=>{});}
+window.addEventListener('online',refreshArtwork);
+document.addEventListener('visibilitychange',refreshArtwork);
+window.addEventListener('shared-art-updated',()=>{if(steps.dataset.reviewScreen==='categories')choose();});
+refreshArtwork();
+function loadChoices(){choose();}
+async function choose(){
+  const generation=++choiceGeneration;
+  steps.dataset.reviewScreen='categories';status.textContent='';
+  try{
+    const designs=await catalogueDesigns();
+    if(generation!==choiceGeneration||steps.dataset.reviewScreen!=='categories')return;
+    mountCategoryWheel(steps,{initialCategory:lastCategory,designs,onBack:invitation,onSelect:key=>{lastCategory=key;},onBrowse:category=>browse(category)});
+  }catch{
+    status.textContent='The artwork could not load. Try again.';
+    steps.innerHTML='<button type="button">Try again</button>';
+    steps.querySelector('button').onclick=choose;
   }
-  await Promise.all(Array.from({length:4},worker));
-  if(generation!==preloadGeneration)return;
-  if(failed.length){
-    steps.querySelector('h2').textContent='A few designs didn’t load';
-    steps.querySelector('.flight>p').textContent='Check your connection and try again.';
-    message.textContent=failed.length+' of '+paths.length+' could not be loaded.';
-    const retry=document.createElement('button');retry.type='button';retry.textContent='Try again';retry.onclick=loadChoices;steps.querySelector('.flight').append(retry);return;
-  }
-  choicesLoaded=true;choose();
-}
-function choose(){
-  steps.dataset.reviewScreen="categories";
-  status.textContent='';
-  mountCategoryWheel(steps,{initialCategory:lastCategory,onBack:invitation,onBrowse:category=>browse(category)});
 }
 function browse(category,initialDesign=null){
   lastCategory=category;
-  return openShop(async(image,name,group,reopen)=>{
-    draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,previewImage:image,image:await scaled(image),kind:kinds[group],reopen};
+  return openShop(async(image,name,group,reopen,kind)=>{
+    draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,previewImage:image,image:await scaled(image),kind:kind||kinds[group]||'a parcel',reopen};
     review();
   },category,true,initialDesign);
 }
@@ -142,7 +125,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.26.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.28.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';

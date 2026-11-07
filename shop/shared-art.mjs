@@ -46,9 +46,24 @@ function reset(scope){
 }
 export const sharedItems=()=>Array.from(known.values());
 function addLocal(row){
-  if (active!==row.scope || known.has(row.id)) return false;
+  const existing=known.get(row.id);
+  if (active!==row.scope || (existing && existing.seq>=row.seq)) return false;
   const {blob,scope,...metadata}=row;
-  known.set(row.id,{...metadata,src:URL.createObjectURL(blob)});return true;
+  known.set(row.id,{...metadata,src:existing?.src || URL.createObjectURL(blob)});return true;
+}
+// A refresh and an edit can finish in either order. Keep the newest metadata on disk.
+async function cacheOriginal(row) {
+  await transaction('items','readwrite',s=>{
+    const lookup=s.get([row.scope,row.id]);
+    lookup.onsuccess=()=>{if (!lookup.result || lookup.result.seq<=row.seq) s.put(row);};
+  });
+  if(addLocal(row)) window.dispatchEvent(new Event('shared-art-updated'));
+}
+export async function updateArtwork(entry,values) {
+  const res=await api(entry.scope,'/items/'+entry.id+'?revision='+entry.seq,{
+    method:'POST',headers:{'X-Art-Meta':encodeURIComponent(JSON.stringify(values))}
+  });
+  await cacheOriginal({...await res.json(),scope:entry.scope,blob:entry.blob});
 }
 async function api(scope,path,options={}){
   const res=await fetch(endpoint+path,{...options,cache:'no-store',credentials:'omit',headers:{Authorization:'Bearer '+scope,...options.headers}});
@@ -83,11 +98,10 @@ async function refresh(scope) {
     more=page.more;
     for(const item of page.items) {
       if(scope!==active) return;
-      if(!known.has(item.id)){
-        const blob=await (await api(scope,'/items/'+item.id)).blob();
-        const row={...item,scope,blob};
-        await saveEntry('items',row);
-        if(addLocal(row)) window.dispatchEvent(new Event('shared-art-updated'));
+      if((known.get(item.id)?.seq || 0)<item.seq){
+        const existing=await readEntry('items',scope,item.id);
+        const blob=existing?.blob || await (await api(scope,'/items/'+item.id)).blob();
+        await cacheOriginal({...item,scope,blob});
       }
       if(scope!==active) return;
       cursor=item.seq;
@@ -110,8 +124,7 @@ export async function publishEntry(row){
   });
   const record=await res.json();
   const saved={...record,scope:row.scope,blob:row.blob};
-  await saveEntry('items',saved);
-  if(addLocal(saved)) window.dispatchEvent(new Event('shared-art-updated'));
+  await cacheOriginal(saved);
   await deleteEntry('queue',row.scope,row.id);
   return record;
 }

@@ -39,7 +39,7 @@ export const feedbackGroups=[
   ['recipientfont','Recipient lettering','.recipient-people','.recipient-people'],
   ['timeheading','Timing heading','.timing-options legend, .dispatch-timing legend','.timing-options legend, .dispatch-timing legend'],
   ['permissionactions','Permission buttons','.permission-list','.permission-list'],
-  ['separator','Home divider','#home-wheel > .wheel > p','#home-wheel > .wheel > p'],
+  ['separator','Home divider','#home-wheel .home-divider','#home-wheel .home-divider'],
   ['wheelrim','Category artwork surround','#home-wheel .category-reel','#home-wheel .category-reel']
 ].map(([key,title,selector,anchor])=>({
   ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+(['sendrow','catalogfont','receiptfont'].includes(key)?'-03':'-02')

@@ -1,0 +1,24 @@
+name: Shared artwork design regression
+on:
+  push:
+    branches: [qa/art-review-027]
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.56.1
+      - run: npx playwright install chromium
+      - name: Run approved invitation comparisons and design flow checks
+        run: |
+          node scripts/serve.mjs > /tmp/pigeon-serve.log 2>&1 &
+          for i in $(seq 1 20); do curl -fsS http://localhost:3000/ >/dev/null && break; sleep 1; done
+          node scripts/check-invitation.cjs http://localhost:3000/
+          node scripts/check-frame-feedback.cjs http://localhost:3000/
+          node scripts/check-shared-photo.cjs http://localhost:3000/

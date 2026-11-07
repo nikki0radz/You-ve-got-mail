@@ -1,21 +1,29 @@
 import {shopCategoryName} from './shared-designs.mjs';
-import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
+import {wheelChoices,catalogueThumbnail} from './catalogue.mjs';
 
 const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for their screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
 
 
-export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse,additional=[],onSelect}){
-  const categories=[...new Set([...Object.keys(guestSelection),...additional.map(it=>it.category)])];
+export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse,designs,onSelect}){
+  const choices=wheelChoices(designs),categories=choices.map(item=>item.category);
   const first=Math.max(0,categories.indexOf(initialCategory));
   root.innerHTML='<button type="button" class="wheel-back pocket-back"><span class="back-arrow" aria-hidden="true"></span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
+  if(root.id==='home-wheel'){
+    const divider=document.createElement('div');divider.setAttribute('role','separator');divider.setAttribute('aria-label','Home divider');
+    divider.className='home-divider';divider.dataset.baseLook=divider.dataset.reviewLook='separator-5';
+    root.querySelector('.wheel').prepend(divider);
+    rail.dataset.baseLook=rail.dataset.reviewLook='wheelrim-4';
+  }
+  if(!categories.length){
+    root.querySelector('.wheel > p').hidden=true;rail.hidden=true;
+    root.querySelector('.caption').textContent='No artwork is available yet.';return;
+  }
+  const byCategory=new Map(choices.map(item=>[item.category,item]));
   const cards=slots.map((key,slot)=>{
-    const button=document.createElement('button'),face=document.createElement('span'),img=new Image();
-    button.type='button';img.alt='';img.draggable=false;
-    const choice=Object.hasOwn(guestSelection,key)?guestSelection[key][0]:null;
-    img.src=choice?(key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+String(choice[0]).padStart(3,'0')+'.webp':guestMaster(choice[0])):additional.find(it=>it.category===key).master;
-    face.append(img);button.append(face);rail.append(button);
+    const button=document.createElement('button'),face=document.createElement('span');
+    button.type='button';face.innerHTML=catalogueThumbnail(byCategory.get(key));button.append(face);rail.append(button);
     button.onclick=()=>{if(performance.now()<suppressUntil)return;if(Math.abs(position()-slot)<.05)onBrowse(key);else move(slot);};
     return button;
   });
