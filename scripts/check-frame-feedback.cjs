@@ -31,6 +31,8 @@ const {chromium}=require('playwright');
     assert.equal(choices['frame-feedback-mailbox-01'].number,3);
     assert.equal(exported.preferences['pigeon-style-frame-feedback-settingsbuttons-01'],4);
     await page.goto(base+'design/page.html?preview=1&page=frames');
+    await page.waitForFunction(()=>!!window.designSurface);
+    await page.evaluate(()=>window.designSurface.configure({editing:false,layout:{styles:{}}}));
     await page.locator('[data-upload]').waitFor();
     await page.locator('#parcel-shop input[type=file]').setInputFiles(path.join(__dirname,'../tests/fixtures/invitation/approved-320.png'));
     await page.locator('[data-ok]').click();
