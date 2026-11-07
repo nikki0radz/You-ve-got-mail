@@ -17,6 +17,13 @@ const {chromium}=require('playwright');
     assert.equal(await frame.getByRole('group',{name:'Settings buttons design options'}).count(),0);
     await toggle.click();
     await page.locator('[data-action=tab][data-id=home]').click();
+    const divider=page.locator('#home-wheel .home-divider');
+    assert.equal(await divider.getAttribute('data-review-look'),'separator-5');
+    assert.equal(await page.locator('#home-wheel .category-reel').getAttribute('data-review-look'),'wheelrim-4');
+    const sign=await page.locator('.mail-status-hint').boundingBox(),line=await divider.boundingBox(),swipe=await page.locator('#home-wheel .wheel>p').boundingBox();
+    assert(sign.y+sign.height<=line.y&&line.y+line.height<=swipe.y);
+    if(await page.locator('html').getAttribute('data-theme')!=='light')await page.locator('.postal-theme').click();
+    assert.equal(await page.locator('#home-wheel .wheel-paper').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(242, 213, 191)');
     await toggle.click();
     const options=frame.getByRole('group',{name:'Home divider design options'});
     assert.deepEqual(await options.locator('button').allTextContents(),['1','2','3','4','5']);
@@ -50,12 +57,27 @@ const {chromium}=require('playwright');
     const note=page.getByLabel('Add a note (optional)');
     assert.equal(await note.inputValue(),'Test note');
     await page.locator('[data-layer=note]').click();
-    await page.getByRole('button',{name:'Delete note'}).click();
+    const erase=page.getByRole('button',{name:'Delete note'});
+    const area=await page.locator('.sample-phone').boundingBox(),hit=await erase.boundingBox(),mark=await erase.locator('span').boundingBox();
+    assert(hit.x>=area.x+area.width+4&&mark.width<=16&&mark.height<=16);
+    assert.equal(await note.inputValue(),'Test note');
+    await erase.click();
     assert.equal(await note.inputValue(),'');
     await note.fill('Signed, sealed, delivered.');
-    const paper=page.getByRole('group',{name:'Optional note box colour'});
-    await paper.getByRole('button',{name:'Clear',exact:true}).click();
-    assert.equal(await paper.getByRole('button',{name:'Clear',exact:true}).getAttribute('aria-pressed'),'true');
+    const paper=page.getByRole('button',{name:'Optional note box colour'});
+    const ink=page.getByRole('button',{name:'Optional note text colour'});
+    assert.equal(await page.locator('.note-tools .colour-chip i').count(),2);
+    await ink.click();
+    let picker=page.getByRole('dialog',{name:'Optional note text colour'});
+    assert.equal(await picker.locator('.ink-swatches button').count(),20);
+    await picker.getByRole('button',{name:'Cherry',exact:true}).click();
+    await ink.click();assert.equal(await picker.getByRole('button',{name:'Cherry',exact:true}).getAttribute('aria-pressed'),'true');
+    await picker.getByRole('button',{name:'Cancel',exact:true}).click();
+    await paper.click();picker=page.getByRole('dialog',{name:'Optional note box colour'});
+    assert.equal(await picker.locator('.ink-swatches button').count(),21);
+    await picker.getByRole('button',{name:'Transparent',exact:true}).click();
+    await paper.click();assert.equal(await picker.getByRole('button',{name:'Transparent',exact:true}).getAttribute('aria-pressed'),'true');
+    await picker.getByRole('button',{name:'Cancel',exact:true}).click();
     await page.locator('.note-tools summary').click();
     for(const [name,family] of [['Chewy','ParcelChewy'],['Fredoka','ParcelFredoka'],['Bubblegum Sans','ParcelBubblegum'],['DynaPuff','ParcelDynaPuff']]){
       assert.equal(await page.locator('.note-tools').getByRole('button',{name,exact:true}).count(),1);
@@ -80,6 +102,7 @@ const {chromium}=require('playwright');
     assert.equal(await preview.locator('.timing-options').getAttribute('data-review-look'),'whenticks-5');
     assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'sendrow-2');
     for(const [screen,selector,label,num,look] of [
+      ['home','#home-wheel .home-divider','Home divider',3,'separator-3'],
       ['recipient','.recipient-people','Recipient lettering',4,'recipientfont-4'],
       ['recipient','.timing-options legend','Timing heading',3,'timeheading-3'],
       ['inbox','.people-heading','Your people',6,'peoplebar-6'],

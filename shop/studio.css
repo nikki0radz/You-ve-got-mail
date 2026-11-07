@@ -61,7 +61,7 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 .sticker-options small{font:700 11px monospace;letter-spacing:.1em;color:#415c49}
 .sticker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0}
 #parcel-shop.guest-studio .sticker-grid button{border-radius:14px;display:grid;justify-items:center;font-size:12px}
-.sticker-grid img{height:48px;width:100%;object-fit:contain}
+.sticker-grid :is(img,svg){height:48px;width:100%;object-fit:contain}
 #parcel-shop.guest-studio .sticker-grid [aria-pressed=true]{outline:2px solid #365a40}
 
 /* The open note tab and its panel share one paper edge. */

@@ -1,46 +1,16 @@
-import {fonts} from './lettering.mjs';
+import {fonts,isNotePaper} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
-import {guestItems,guestSelection} from './guest-selection.mjs?v=complete-stickers';
+import {catalogueDesigns,catalogueThumbnail,prepareCatalogueDesign} from './catalogue.mjs';
 import {startGuestStudio} from './guest-studio.mjs?v=complete-stickers';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
-import {sharedDesigns,prepareSharedFrame,shopCategoryName as displayName} from './shared-designs.mjs';
+import {shopCategoryName as displayName} from './shared-designs.mjs';
 
-const categories=['Notes','Photos','Postcards','Flowers','Love notes','Reminders','Stickers'];
 const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cce8','Lilac'],['#45634d','Forest']];
-let appCatalog;
-async function getCatalog(){
-  if(appCatalog)return appCatalog;
-  const response=await fetch('assets/post/catalog.json?v=editable-reminders');
-  if(!response.ok)throw new Error('The shop could not load. Open it again to retry.');
-  appCatalog=await response.json();return appCatalog;
-}
-function miniature(item){
-  const [x,y,w,h]=item.rect;
-  const clip=item.artClip?' style="clip-path:path(evenodd, &quot;'+esc(item.artClip)+'&quot;)"':'';
-  return '<svg viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><g'+clip+'><svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'" overflow="hidden"><image href="'+esc(item.sheet)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg></g></svg>';
-}
-// Six approved previews already show the sample cat in the finished design.
-const catPreviews=new Map([...guestSelection.Photos,guestSelection.Postcards.find(([id])=>id===105)]
-  .map(([id,name])=>[name,'assets/guest/wheel-'+String(id).padStart(3,'0')+'.webp']));
-let maskSerial=0;
 const selections={app:new Map(),invitation:new Map(),reply:new Map()};
-function reelPreview(item){
-  if(item.sharedId)return '<img alt="" draggable="false" src="'+esc(item.master)+'">';
-  const cat=(item.category==='Photos'||item.category==='Postcards') && catPreviews.get(item.name);
-  if(cat||(item.master&&!item.maskSheet))return '<img alt="" draggable="false" src="'+esc(cat||item.master)+'">';
-  if(!item.maskSheet)return miniature(item);
-  const [x,y,w,h]=item.rect,[left,top,right,bottom]=item.opening;
-  const key='reel-mask-'+(++maskSerial);
-  // Crop the unobstructed photo from the approved Instant print example.
-  const sample='<svg x="'+left*w+'" y="'+top*h+'" width="'+(right-left)*w+'" height="'+(bottom-top)*h+'" viewBox="25 29 141 120" preserveAspectRatio="xMidYMid slice"><image href="assets/guest/wheel-031.webp" width="193" height="205"/></svg>';
-  const crop=path=>'<svg width="'+w+'" height="'+h+'" viewBox="'+[x,y,w,h].join(' ')+'"><image href="'+esc(path)+'" width="'+item.sheetWidth+'" height="'+item.sheetHeight+'"/></svg>';
-  const foreground=item.master?'<image href="'+esc(item.master)+'" width="'+w+'" height="'+h+'"/>':crop(item.sheet);
-  return '<svg aria-hidden="true" viewBox="0 0 '+w+' '+h+'"><defs><mask id="'+key+'" maskUnits="userSpaceOnUse" x="0" y="0" width="'+w+'" height="'+h+'">'+crop(item.maskSheet)+'</mask></defs><g mask="url(#'+key+')">'+sample+'</g>'+foreground+'</svg>';
-}
 
 export function backInShop(){
   const dialog=document.querySelector('#parcel-shop[open]');
@@ -96,25 +66,35 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       disposeReel?.();disposeReel=null;
       startGuestStudio(dialog,it,backFromItem,async(image,name,category,reopen)=>{
         const resume=()=>{dialog.onclose=cleanup;reopen();};
-        await onTest(image,name,category,resume,it.deliveryKind);completed=true;dialog.close();
+        const current=(await catalogueDesigns()).find(design=>design.catalogueId===it.catalogueId);
+        if(!current){
+          group='All';dialog.classList.remove('guest-studio');await updateSharedListing();
+          library();report(new Error('This picture was removed. Choose another design.'));return;
+        }
+        await onTest(image,current.name,current.category,resume,current.deliveryKind);completed=true;dialog.close();
       });
       return;
     }
-    draft={words:it.labelPatch?it.name:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
+    draft={words:it.labelPatch?(it.originalName||it.name):'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
   function wheel(){
     disposeReel?.();disposeReel=null;
-    mountCategoryWheel(dialog,{initialCategory:group,additional:catalog.filter(item=>item.sharedId),onBack:()=>dialog.close(),onBrowse:category=>{
+    mountCategoryWheel(dialog,{initialCategory:group,designs:catalog,onBack:()=>dialog.close(),onBrowse:category=>{
       group=category;gridScroll=0;library();
     }});
     cancel=()=>dialog.close();navigateBack=cancel;dialog.scrollTop=0;
   }
-  const designKey=item=>item.sharedId||item.category+'/'+item.name;
+  const designKey=item=>item.catalogueId;
   function library(grid=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=group==='All'?catalog:catalog.filter(item=>item.category===group);
-    if(group==='Photos')items.sort((a,b)=>Number(b.name==='Instant print')-Number(a.name==='Instant print'));
+    if(guest)items.sort((a,b)=>(a.guestRank??Infinity)-(b.guestRank??Infinity));
+    if(group==='Photos')items.sort((a,b)=>Number(b.originalName==='Instant print')-Number(a.originalName==='Instant print'));
     const label=group==='All'?'All designs':displayName(group),unit=group==='Photos'?'frames':'designs';
     const back=grid?()=>library():options.wheel?wheel:()=>dialog.close();
+    if(!items.length){
+      shell(label,'0 designs',backButton+'<p class="empty-library">No artwork is available yet.</p>',back);
+      return;
+    }
     let content;
     if(grid){
       content='<div class="library-grid">'+items.map((item,i)=>'<button type="button" data-design="'+i+'" aria-label="Edit '+esc(item.name)+'"><span class="grid-art"></span><span>'+esc(item.name)+'</span></button>').join('')+'</div>';
@@ -126,14 +106,14 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     const remember=item=>chosenDesign.set(group,designKey(item));
     const pick=async item=>{
       const rail=dialog.querySelector('.frame-rail,.library-grid');
-      try{item=await prepareSharedFrame(item);}catch(error){if(rail?.isConnected)report(error);return;}
+      try{item=await prepareCatalogueDesign(item);}catch(error){if(rail?.isConnected)report(error);return;}
       if(!dialog.open||!rail?.isConnected)return;
       remember(item);if(grid)gridScroll=dialog.scrollTop;
       backFromItem=()=>library(grid);chooseItem(item);
     };
     if(grid){
       const tiles=[...dialog.querySelectorAll('[data-design]')];
-      const paint=tile=>{tile.querySelector('.grid-art').innerHTML=reelPreview(items[Number(tile.dataset.design)]);};
+      const paint=tile=>{tile.querySelector('.grid-art').innerHTML=catalogueThumbnail(items[Number(tile.dataset.design)]);};
       const observer=new IntersectionObserver(entries=>{
         for(const {target,isIntersecting} of entries)if(isIntersecting){paint(target);observer.unobserve(target);}
       },{root:dialog,rootMargin:'300px'});
@@ -146,7 +126,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     }else{
       dialog.querySelector('[data-grid]').onclick=()=>{gridScroll=0;library(true);};
       const first=Math.max(0,items.findIndex(item=>designKey(item)===chosenDesign.get(group)));
-      disposeReel=mountFrameReel(dialog,items,first,reelPreview,remember,pick);
+      disposeReel=mountFrameReel(dialog,items,first,catalogueThumbnail,remember,pick);
     }
   }
   function confirmExit(action){
@@ -175,7 +155,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     }
     const editableColours=[];
     if(page==='Write'){
-      if(current.category==='Notes')editableColours.push(['Paper','Note paper colour','paper','#fff1cd']);
+      if(isNotePaper(current))editableColours.push(['Paper','Note paper colour','paper','#fff1cd']);
       editableColours.push(['Text','Design text colour','ink',current.ink]);
     }
     if(page==='Finishing touches')editableColours.push(['Banner','Banner colour','noteFill','#fff4da'],['Text','Banner text colour','noteInk','#273d31']);
@@ -239,26 +219,20 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   function scheduleListingUpdate(){
     clearTimeout(refreshTimer);refreshTimer=setTimeout(updateSharedListing,300);
   }
-  function updateSharedListing(){
-    const uploaded=sharedDesigns();
-    catalog=[...uploaded,...catalog.filter(item=>!item.sharedId)];
-    availableCategories=[...new Set([...categories,...catalog.map(item=>item.category)])];
-    if(!dialog.open)return;
+  async function updateSharedListing(){
+    const items=await catalogueDesigns();
+    if(!dialog.open||dialog.onclose!==cleanup)return;
+    catalog=items;availableCategories=[...new Set(items.map(item=>item.category))];
     if(dialog.querySelector('.category-reel'))wheel();
-    else if(dialog.querySelector('.frame-rail,.library-grid')){
+    else if(dialog.querySelector('.frame-rail,.library-grid,.empty-library')){
       if(!availableCategories.includes(group))group='All';
       library(Boolean(dialog.querySelector('.library-grid')));
     }
   }
-  try{catalog=await getCatalog();availableCategories=categories;
-    if(guest){catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
-    if(options!==true&&dialog.open){
-      window.addEventListener('shared-art-updated',scheduleListingUpdate);
-      const uploaded=sharedDesigns();
-      catalog=[...uploaded,...catalog];
-      availableCategories=[...new Set([...availableCategories,...uploaded.map(item=>item.category)])];
-    }
-    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(catalog.find(it=>it.category===group&&it.name===initialDesign));}else if(options.wheel)wheel();else library();}
+  try{
+    window.addEventListener('shared-art-updated',scheduleListingUpdate);
+    catalog=await catalogueDesigns();availableCategories=[...new Set(catalog.map(item=>item.category))];
+    if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(await prepareCatalogueDesign(catalog.find(it=>it.category===group&&it.name===initialDesign)));}else if(options.wheel)wheel();else library();}
   }
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}
 }
