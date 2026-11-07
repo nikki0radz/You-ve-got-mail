@@ -17,6 +17,8 @@ jobs:
           expected=142badb55b65e41cd7055324b5e7ce9954778b4725e88504fc4b3c0ae17a2aa0
           curl --fail --silent --show-error --location "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/$file" -o "$file"
           echo "$expected  $file" | sha256sum -c -
-          gh release create android-0.1.28 "$file" --repo "$GITHUB_REPOSITORY" --target "6c78eba9635bfcc47efd1605ed37581c7f3b62c8" --title "Android 0.1.28" --notes "Archived signed installer." --latest=false
+          if ! gh release view android-0.1.28 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create android-0.1.28 "$file" --repo "$GITHUB_REPOSITORY" --target "6c78eba9635bfcc47efd1605ed37581c7f3b62c8" --title "Android 0.1.28" --notes "Archived signed installer." --latest=false
+          fi
           curl --retry 3 --fail --silent --show-error --location "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.28/$file" -o checked.apk
           echo "$expected  checked.apk" | sha256sum -c -
