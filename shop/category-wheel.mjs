@@ -1,10 +1,11 @@
-import {collectionName} from '../domain.mjs';
+import {shopCategoryName} from './shared-designs.mjs';
 import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
 
 const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for their screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
-const categories=Object.keys(guestSelection);
 
-export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse}){
+
+export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse,additional=[],onSelect}){
+  const categories=[...new Set([...Object.keys(guestSelection),...additional.map(it=>it.category)])];
   const first=Math.max(0,categories.indexOf(initialCategory));
   root.innerHTML='<button type="button" class="wheel-back pocket-back"><span class="back-arrow" aria-hidden="true"></span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
@@ -12,8 +13,8 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   const cards=slots.map((key,slot)=>{
     const button=document.createElement('button'),face=document.createElement('span'),img=new Image();
     button.type='button';img.alt='';img.draggable=false;
-    const id=String(guestSelection[key][0][0]).padStart(3,'0');
-    img.src=key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+id+'.webp':guestMaster(guestSelection[key][0][0]);
+    const choice=Object.hasOwn(guestSelection,key)?guestSelection[key][0]:null;
+    img.src=choice?(key==='Photos'||key==='Postcards'?'assets/guest/wheel-'+String(choice[0]).padStart(3,'0')+'.webp':guestMaster(choice[0])):additional.find(it=>it.category===key).master;
     face.append(img);button.append(face);rail.append(button);
     button.onclick=()=>{if(performance.now()<suppressUntil)return;if(Math.abs(position()-slot)<.05)onBrowse(key);else move(slot);};
     return button;
@@ -32,10 +33,10 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
       card.style.zIndex=String(Math.round(100*(1-d)));
     });
     if(nearest===selected)return;
-    selected=nearest;const key=slots[selected],label=collectionName(key);
-    cards.forEach((card,i)=>{card.tabIndex=i===selected?0:-1;card.setAttribute('aria-current',String(i===selected));card.setAttribute('aria-label',(i===selected?'Browse ':'Show ')+collectionName(slots[i]).toLowerCase());});
+    selected=nearest;const key=slots[selected],label=shopCategoryName(key);
+    cards.forEach((card,i)=>{card.tabIndex=i===selected?0:-1;card.setAttribute('aria-current',String(i===selected));card.setAttribute('aria-label',(i===selected?'Browse ':'Show ')+shopCategoryName(slots[i]).toLowerCase());});
     root.querySelector('.wheel-paper small').textContent=(categories.indexOf(key)+1)+' / '+categories.length;
-    root.querySelector('.wheel-paper h3').textContent=label;root.querySelector('.caption').textContent=captions[key];
+    root.querySelector('.wheel-paper h3').textContent=label;root.querySelector('.caption').textContent=captions[key]||'';onSelect?.(key);
   }
   rail.onscroll=()=>{paint();clearTimeout(timer);timer=setTimeout(()=>{
     if(drag||!rail.isConnected)return;

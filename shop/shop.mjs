@@ -6,7 +6,8 @@ import {startGuestStudio} from './guest-studio.mjs?v=complete-stickers';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
-import {escapeHtml as esc,collectionName as displayName} from '../domain.mjs';
+import {escapeHtml as esc} from '../domain.mjs';
+import {sharedDesigns,prepareSharedFrame,shopCategoryName as displayName} from './shared-designs.mjs';
 
 const categories=['Notes','Photos','Postcards','Flowers','Love notes','Reminders','Stickers'];
 const palette=[['','None'],['#fff1d4','Cream'],['#c1d6bc','Pale forest'],['#d9cce8','Lilac'],['#45634d','Forest']];
@@ -28,6 +29,7 @@ const catPreviews=new Map([...guestSelection.Photos,guestSelection.Postcards.fin
 let maskSerial=0;
 const selections={app:new Map(),invitation:new Map(),reply:new Map()};
 function reelPreview(item){
+  if(item.sharedId)return '<img alt="" draggable="false" src="'+esc(item.master)+'">';
   const cat=(item.category==='Photos'||item.category==='Postcards') && catPreviews.get(item.name);
   if(cat||(item.master&&!item.maskSheet))return '<img alt="" draggable="false" src="'+esc(cat||item.master)+'">';
   if(!item.maskSheet)return miniature(item);
@@ -63,14 +65,14 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   let catalog,availableCategories;
   let current,group,draft,step=0,latest=0,dirty=false,finished;
   let gridScroll=0,previewURL,backFromItem;
-  let disposeReel;
+  let disposeReel,refreshTimer;
   const chosenDesign=options.wheel?selections.reply:guest?selections.invitation:selections.app;
   const trigger=document.activeElement;
   if(dialog.open)return;
   // A close event is queued by the browser. Finish the previous session before reopening.
   dialog.onclose?.();
   dialog.showModal();
-  const cleanup=()=>{if(dialog.open)return;dialog.onclose=null;disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
+  const cleanup=()=>{if(dialog.open)return;clearTimeout(refreshTimer);window.removeEventListener('shared-art-updated',scheduleListingUpdate);dialog.onclose=null;disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
   let navigateBack=()=>cancel();
@@ -94,19 +96,19 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       disposeReel?.();disposeReel=null;
       startGuestStudio(dialog,it,backFromItem,async(image,name,category,reopen)=>{
         const resume=()=>{dialog.onclose=cleanup;reopen();};
-        await onTest(image,name,category,resume);completed=true;dialog.close();
+        await onTest(image,name,category,resume,it.deliveryKind);completed=true;dialog.close();
       });
       return;
     }
     draft={words:it.labelPatch?it.name:'',extra:'',photo:null,zoom:1,panX:.5,panY:.5,shape:'Rounded',background:'',border:'',framePos:{x:.5,y:.45,size:.85},secondPos:{x:.78,y:.78,size:.3},second:null,layer:'framePos'};edit();};
   function wheel(){
     disposeReel?.();disposeReel=null;
-    mountCategoryWheel(dialog,{initialCategory:group,onBack:()=>dialog.close(),onBrowse:category=>{
+    mountCategoryWheel(dialog,{initialCategory:group,additional:catalog.filter(item=>item.sharedId),onBack:()=>dialog.close(),onBrowse:category=>{
       group=category;gridScroll=0;library();
     }});
     cancel=()=>dialog.close();navigateBack=cancel;dialog.scrollTop=0;
   }
-  const designKey=item=>item.category+'/'+item.name;
+  const designKey=item=>item.sharedId||item.category+'/'+item.name;
   function library(grid=false){
     dialog.classList.remove('editing');dirty=false;cancel=()=>dialog.close();
     const items=group==='All'?catalog:catalog.filter(item=>item.category===group);
@@ -122,7 +124,10 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     const guestLibrary=options===true;
     shell(label,items.length+' '+unit,(guestLibrary?'':backButton)+content,back,guestLibrary);
     const remember=item=>chosenDesign.set(group,designKey(item));
-    const pick=item=>{
+    const pick=async item=>{
+      const rail=dialog.querySelector('.frame-rail,.library-grid');
+      try{item=await prepareSharedFrame(item);}catch(error){if(rail?.isConnected)report(error);return;}
+      if(!dialog.open||!rail?.isConnected)return;
       remember(item);if(grid)gridScroll=dialog.scrollTop;
       backFromItem=()=>library(grid);chooseItem(item);
     };
@@ -231,8 +236,28 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       }catch(e){if(e.name!=='AbortError')report(e)}
     });paint();
   }
+  function scheduleListingUpdate(){
+    clearTimeout(refreshTimer);refreshTimer=setTimeout(updateSharedListing,300);
+  }
+  function updateSharedListing(){
+    const uploaded=sharedDesigns();
+    catalog=[...uploaded,...catalog.filter(item=>!item.sharedId)];
+    availableCategories=[...new Set([...categories,...catalog.map(item=>item.category)])];
+    if(!dialog.open)return;
+    if(dialog.querySelector('.category-reel'))wheel();
+    else if(dialog.querySelector('.frame-rail,.library-grid')){
+      if(!availableCategories.includes(group))group='All';
+      library(Boolean(dialog.querySelector('.library-grid')));
+    }
+  }
   try{catalog=await getCatalog();availableCategories=categories;
     if(guest){catalog=guestItems(catalog);availableCategories=Object.keys(guestSelection);}
+    if(options!==true&&dialog.open){
+      window.addEventListener('shared-art-updated',scheduleListingUpdate);
+      const uploaded=sharedDesigns();
+      catalog=[...uploaded,...catalog];
+      availableCategories=[...new Set([...availableCategories,...uploaded.map(item=>item.category)])];
+    }
     if(dialog.open){group=availableCategories.includes(initialCategory)?initialCategory:'All';if(initialDesign&&catalog.some(it=>it.category===group&&it.name===initialDesign)){backFromItem=library;chooseItem(catalog.find(it=>it.category===group&&it.name===initialDesign));}else if(options.wheel)wheel();else library();}
   }
   catch(e){shell('Shop unavailable','Pick & post','<button class="secondary" data-prev>Close</button>',()=>dialog.close());report(e);}

@@ -3,6 +3,8 @@ export const fonts={
   Rounded:['PostalBaloo, sans-serif',650],
   Chewy:['ParcelChewy, sans-serif',400],
   Fredoka:['ParcelFredoka, sans-serif',650],
+  'DynaPuff':['ParcelDynaPuff, sans-serif',700],
+  'Bubblegum Sans':['ParcelBubblegum, sans-serif',700],
   Coiny:['ParcelCoiny, sans-serif',400],
   'Lilita One':['ParcelLilita, sans-serif',400],
   'Soft script':['ParcelCaption, cursive',700],
@@ -14,6 +16,6 @@ export function fontSpec(key,size){
   const [family,weight]=fonts[key]||fonts.Handwritten;return weight+' '+size+'px '+family;
 }
 export function writingBox(item){
-  const [l,t,r,b]=item.textBox;if(item.category!=='Notes')return [l,t,r,b];
+  const [l,t,r,b]=item.textBox;if(item.sharedId||item.category!=='Notes')return [l,t,r,b];
   return [Math.max(.03,l-.027),Math.max(.03,t-.018),Math.min(.97,r+.027),Math.min(.97,b+.018)];
 }

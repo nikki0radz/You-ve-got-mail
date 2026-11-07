@@ -1,5 +1,5 @@
 import {fonts,fontSpec,writingBox} from './lettering.mjs';
-import {colourButton} from './colour-wheel.mjs';
+import {colourButton,noteSwatches} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
 import {guestSelection,guestMaster} from './guest-selection.mjs?v=complete-stickers';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
@@ -201,7 +201,8 @@ export function startGuestStudio(dialog,item,back,onReady){
       function row(fields,destination=controls){
         const group=document.createElement('div');group.className='ink-row';
         for(const [label,accessible,object,key,initial,repaint] of fields){
-          group.append(colourButton(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
+          const control=object===noteStyle?noteSwatches:colourButton;
+          group.append(control(label,accessible,object[key]||initial,value=>{object[key]=value;dirty=true;repaint();}));
         }
         const object=fields[0][2],repaint=fields[0][5],picker=document.createElement('select');
         picker.setAttribute('aria-label',object===state?'Note font':'Banner font');picker.className='note-font';

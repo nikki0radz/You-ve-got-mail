@@ -1,18 +1,23 @@
 import {reminderRepair} from './reminder-label.mjs';
 import {fontSpec,writingBox} from './lettering.mjs';
 const sheets = new Map();
+const importedImages = new Map();
 
 export function loadSheet(url) {
-  if (!sheets.has(url)) {
+  // A few decoded phone-size masters can take hundreds of MB. Keep only the
+  // currently edited original and its cutout in memory; the PNGs remain on disk.
+  const cache=url.startsWith('blob:')||url.startsWith('data:')?importedImages:sheets;
+  if (!cache.has(url)) {
+    if(cache===importedImages && cache.size>=2)cache.delete(cache.keys().next().value);
     const promise = new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => { sheets.delete(url); reject(new Error('Could not load the artwork. Please try again.')); };
+      image.onerror = () => { if(cache.get(url)===promise)cache.delete(url); reject(new Error('Could not load the artwork. Please try again.')); };
       image.src = url;
     });
-    sheets.set(url, promise);
+    cache.set(url, promise);
   }
-  return sheets.get(url);
+  return cache.get(url);
 }
 
 export function writeText(context, value, rect, colour, font, centerInk=false) {
@@ -76,7 +81,8 @@ export async function composePNG(item, draft, density = 1) {
     layer.imageSmoothingQuality = 'high';
     layer.drawImage(draft.photo, x+l*width+(pw-draft.photo.width*fit)*draft.panX, y+t*height+(ph-draft.photo.height*fit)*draft.panY, draft.photo.width*fit, draft.photo.height*fit);
     layer.globalCompositeOperation='destination-in';
-    layer.drawImage(mask, ...item.rect, x,y,width,height);
+    if(item.sharedId)layer.drawImage(mask,x,y,width,height);
+    else layer.drawImage(mask,...item.rect,x,y,width,height);
     ctx.drawImage(photo,0,0,640,640);
   }
   ctx.save();
@@ -99,7 +105,12 @@ export async function composePNG(item, draft, density = 1) {
   if(item.labelPatch&&!originalLabel)ctx.drawImage(reminderRepair(item,sheet),x,y,width,height);
   if (item.textBox&&!originalLabel) {
     const [l,t,r,b]=writingBox(item);
-    writeText(ctx,draft.words,[x+l*width,y+t*height,(r-l)*width,(b-t)*height],draft.ink||item.ink,draft.font);
+    const boxWidth=(r-l)*width, boxHeight=(b-t)*height;
+    ctx.save();
+    ctx.translate(x+(l+r)*width/2,y+(t+b)*height/2);
+    ctx.rotate((item.textRotation||0)*Math.PI/180);
+    writeText(ctx,draft.words,[-boxWidth/2,-boxHeight/2,boxWidth,boxHeight],draft.ink||item.ink,draft.font,true);
+    ctx.restore();
   }
   if (draft.extra.trim()) {
     ctx.fillStyle=draft.noteFill||'#fff4da'; ctx.beginPath(); ctx.roundRect(10,643,620,116,18); ctx.fill();

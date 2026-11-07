@@ -38,7 +38,9 @@ export const feedbackGroups=[
   ['receiptfont','Parcel title font','.post-receipt > strong','.post-receipt > strong'],
   ['recipientfont','Recipient lettering','.recipient-people','.recipient-people'],
   ['timeheading','Timing heading','.timing-options legend, .dispatch-timing legend','.timing-options legend, .dispatch-timing legend'],
-  ['permissionactions','Permission buttons','.permission-list','.permission-list']
+  ['permissionactions','Permission buttons','.permission-list','.permission-list'],
+  ['separator','Home divider','#home-wheel > .wheel > p','#home-wheel > .wheel > p'],
+  ['wheelrim','Category artwork surround','#home-wheel .category-reel','#home-wheel .category-reel']
 ].map(([key,title,selector,anchor])=>({
   ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+(['sendrow','catalogfont','receiptfont'].includes(key)?'-03':'-02')
 }));
@@ -51,3 +53,7 @@ for(const page of ['banners','notes','love','flowers','reminders','pigeons','pla
 rounds.settings={...settings,groups:[permissionActions]};rounds.dispatch.groups.push(timeHeading);
 
 rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-review-timing-01'?time:group);
+
+rounds.home.groups.push(...feedbackGroups.filter(group=>['separator','wheelrim'].includes(group.key)));
+// The selected looks stay in the exported workroom vocabulary for older reviews.
+export const approvedLooks = {mailbox:3, settingsbuttons:3, peoplebar:4, railwidth:1, notetitle:3, receiptfont:2, permissionactions:5};
