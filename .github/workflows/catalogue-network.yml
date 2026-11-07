@@ -23,7 +23,7 @@ jobs:
           keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/qa.p12" -alias pigeonpost -storepass android -keypass android -keyalg RSA -dname "CN=Offline QA" -validity 1
           echo android > "$RUNNER_TEMP/qa.pass"
           MAIL_KEYSTORE="$RUNNER_TEMP/qa.p12" MAIL_PASSWORD_FILE="$RUNNER_TEMP/qa.pass" bash android/build.sh "$GITHUB_WORKSPACE/phone-qa.apk"
-      - name: Start Android and verify the offline native picker
+      - name: Verify catalogue networking in the running Android WebView
         shell: bash
         run: |
           set -eu
@@ -56,23 +56,27 @@ jobs:
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
             sleep 2
           done
-          adb install phone-qa.apk
+          adb install -g phone-qa.apk
           adb shell input keyevent KEYCODE_WAKEUP
           adb shell wm dismiss-keyguard
-          adb shell am start -n uk.co.pigeonpost.mail/.Main
+          adb logcat -c
+          adb shell am start -W -n uk.co.pigeonpost.mail/.Main
           sleep 4
-          adb shell input keyevent KEYCODE_BACK
+
           for n in {1..33}; do
             adb shell uiautomator dump /sdcard/network.xml >/dev/null || true
             adb shell cat /sdcard/network.xml > "$RUNNER_TEMP/ui.xml" || true
+            python -c 'import os,re,subprocess;from xml.etree import ElementTree as E;p=os.environ["RUNNER_TEMP"]+"/ui.xml";r=E.parse(p).getroot();matches=[n for n in r.iter("node") if n.get("text","").lower()=="later" or n.get("content-desc","").lower()=="later"];coords=[list(map(int,re.findall(r"[0-9]+",n.get("bounds","")))) for n in matches];[subprocess.run(["adb","shell","input","tap",str((a+c)//2),str((b+d)//2)]) for a,b,c,d in coords]' || true
             if grep -q "PASS Catalogue items" "$RUNNER_TEMP/ui.xml"; then
               echo "PASS Real appassets WebView GET /items, dummy POST /unlock, GET /files and OPTIONS"
               exit 0
             fi
-            if grep -q 'FAIL ' "$RUNNER_TEMP/ui.xml"; then cat "$RUNNER_TEMP/ui.xml"; exit 1; fi
+            if grep -q 'FAIL ' "$RUNNER_TEMP/ui.xml"; then cat "$RUNNER_TEMP/ui.xml"; adb logcat -d -s chromium AndroidRuntime | tail -80; exit 1; fi
             sleep 2
           done
           cat "$RUNNER_TEMP/ui.xml"
+          adb shell dumpsys activity activities | grep mResumedActivity || true
+          adb logcat -d -s chromium AndroidRuntime | tail -80
           exit 1
       - name: Record outcome
         if: always()
