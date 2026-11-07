@@ -15,7 +15,7 @@ export function settingsPage(){
   const native=Boolean(window.Pigeon?.deliveryPrefs);
   return '<section class="post-settings" data-review-look="settingsbuttons-3" data-base-look="settingsbuttons-3"><header><div><small>PIGEON POST</small><h1>Settings</h1><p>Your rules for incoming mail.</p></div><img src="assets/home/mascot.webp" alt=""></header>'+
   (!native?'<p class="settings-preview">Browser preview · changes apply here only.</p>':'')+
-  link('art-uploads','Upload pictures','Add PNGs to your shared artwork library.')+
+  link('art-uploads','Artwork manager','Upload PNGs and organise the main library.')+
   section('delivery','Delivery','Choose what happens when a parcel arrives.',
     select('fullPopup','When open',[['true','Full pop-up'],['false','Notification only']])+toggle('onUnlock','Open one second after unlock')+
     select('closedInbox','When closed',[['true','Inbox only'],['false','Completely closed']]))+

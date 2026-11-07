@@ -23,3 +23,4 @@ jobs:
           node scripts/check-frame-feedback.cjs http://localhost:3000/
           node scripts/check-shared-photo.cjs http://localhost:3000/
           node scripts/check-public-catalogue.cjs http://localhost:3000/
+          node scripts/check-catalogue-manager.cjs http://localhost:3000/

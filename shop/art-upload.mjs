@@ -81,8 +81,9 @@ function drawLibrary(){
   const needle=query.trim().toLowerCase();
   const items=catalogue.filter(r=>(!filter||r.category===filter)&&[r.name,r.category,r.kind,...r.tags||[]].some(v=>(v||'').toLowerCase().includes(needle)));
   const pages=Math.ceil(items.length/12);
-  const bulk=by('[data-bulk]');const dest=bulk.querySelector('[data-dest]')?.value||filter,bulkKind=bulk.querySelector('[data-bulk-kind]')?.value||'';
-  bulk.innerHTML=selecting?'<section class="art-sort"><strong>'+selected.size+' selected</strong>'+action('page-select','Select this page')+'<label>Move to<select data-dest>'+[...categories().keys()].map(c=>opt(c,c,dest)).join('')+'</select></label><label>Artwork type<select data-bulk-kind>'+opt('','Keep current type',bulkKind)+Object.entries(kinds).map(([k,v])=>opt(k,v,bulkKind)).join('')+'</select></label><div class="art-actions">'+action('move','Apply to selected','primary')+action('delete','Delete selected')+'</div></section>':'';
+  const bulk=by('[data-bulk]');const dest=bulk.querySelector('[data-dest]')?.value??'',bulkKind=bulk.querySelector('[data-bulk-kind]')?.value||'';
+  const bulkTags=bulk.querySelector('[data-bulk-tags]')?.value||'';
+  bulk.innerHTML=selecting?'<section class="art-sort"><strong>'+selected.size+' selected</strong>'+action('page-select','Select this page')+'<label>Move to<select data-dest>'+opt('','Keep current category',dest)+[...categories().keys()].map(c=>opt(c,c,dest)).join('')+'</select></label><label>Artwork type<select data-bulk-kind>'+opt('','Keep current type',bulkKind)+Object.entries(kinds).map(([k,v])=>opt(k,v,bulkKind)).join('')+'</select></label><label>Replace tags (optional)<input data-bulk-tags maxlength="700" placeholder="food, brunch" value="'+esc(bulkTags)+'"></label><div class="art-actions">'+action('move','Apply to selected','primary')+action('delete','Delete selected')+'</div></section>':'';
   for(const control of bulk.querySelectorAll('[data-art=move],[data-art=delete]'))control.disabled=!selected.size||busy;
   page=Math.max(0,Math.min(page,pages-1));
   const tiles=items.slice(page*12,page*12+12).map(item=>{
@@ -147,7 +148,7 @@ async function details(row){
   const original=await catalogueImage(row.design);if(!dialog.open)return;
   view='edit';feedback='';
   header('Picture details','<div class="art-stage"><img alt="Selected artwork"><div class="art-box"></div></div>'+
-    '<label>Display name (optional)<input data-name maxlength="96" value="'+esc(row.name)+'"></label><div class="art-fields">'+chooser(row.category,row.kind)+'</div>'+
+    '<label>Display name (optional)<input data-name maxlength="96" value="'+esc(row.name||'')+'"></label><div class="art-fields">'+chooser(row.category,row.kind)+'</div>'+
     '<label>Search tags<input data-tags maxlength="700" value="'+esc((row.tags||[]).join(', '))+'" placeholder="food, romance, funny"></label><section class="art-area"><label>Area to edit<select data-area><option value="text">Postcard text area</option><option value="photo">Photo area</option></select></label><label data-photo-mode>Photo placement<select data-placement><option value="auto">Automatic</option><option value="custom">Draw a photo area</option></select></label><p data-area-tip></p><div class="art-coordinates">'+
     [['x','Left'],['y','Top'],['w','Width'],['h','Height'],['rotation','Angle °']].map(([k,n])=>'<label>'+n+'<input type="number" step="any" data-coord="'+k+'"></label>').join('')+'</div></section>'+
     '<div class="art-actions">'+action('cancel-edit','Back')+action('save-edit','Save details','primary')+'</div>'+action('delete-one','Delete picture','art-link'));
@@ -232,7 +233,7 @@ export async function openArtworkUploads(){
           case 'lock':if(!busy&&!reading){lockManager();selected.clear();ownerLogin();}break;
           case 'select':selecting=!selecting;selected.clear();overview();break;
           case 'page-select':for(const tile of dialog.querySelectorAll('[data-item]'))selected.add(tile.dataset.item);drawLibrary();break;
-          case 'move':await batchAction([...selected],{action:'move',category:by('[data-dest]').value,kind:by('[data-bulk-kind]').value});break;
+          case 'move':await batchAction([...selected],{action:'move',category:by('[data-dest]').value,kind:by('[data-bulk-kind]').value,tags:by('[data-bulk-tags]').value.trim()?by('[data-bulk-tags]').value.split(',').map(s=>s.trim()).filter(Boolean):undefined});break;
           case 'delete':await deleteRows([...selected]);break;
           case 'categories':if(!busy&&!reading)categoryPage();break;
           case 'import':if(!busy&&!reading)await importPage();break;
