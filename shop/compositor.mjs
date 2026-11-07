@@ -1,5 +1,5 @@
 import {reminderRepair} from './reminder-label.mjs';
-import {fontSpec,writingBox} from './lettering.mjs';
+import {fontSpec,isNotePaper,writingBox} from './lettering.mjs';
 const sheets = new Map();
 const importedImages = new Map();
 
@@ -95,7 +95,7 @@ export async function composePNG(item, draft, density = 1) {
   }
   let source=sheet;
   let region=item.master?[]:item.rect;
-  if(item.category==='Notes'&&draft.paper){
+  if(isNotePaper(item)&&draft.paper){
     const tinted=document.createElement('canvas');tinted.width=Math.ceil(width*density);tinted.height=Math.ceil(height*density);
     const ink=tinted.getContext('2d');ink.drawImage(sheet,...region,0,0,tinted.width,tinted.height);
     ink.globalCompositeOperation='source-atop';ink.globalAlpha=.48;ink.fillStyle=draft.paper;ink.fillRect(0,0,tinted.width,tinted.height);

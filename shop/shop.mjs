@@ -1,4 +1,4 @@
-import {fonts} from './lettering.mjs';
+import {fonts,isNotePaper} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
 import {catalogueDesigns,catalogueThumbnail,prepareCatalogueDesign} from './catalogue.mjs';
@@ -155,7 +155,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     }
     const editableColours=[];
     if(page==='Write'){
-      if(current.category==='Notes')editableColours.push(['Paper','Note paper colour','paper','#fff1cd']);
+      if(isNotePaper(current))editableColours.push(['Paper','Note paper colour','paper','#fff1cd']);
       editableColours.push(['Text','Design text colour','ink',current.ink]);
     }
     if(page==='Finishing touches')editableColours.push(['Banner','Banner colour','noteFill','#fff4da'],['Text','Banner text colour','noteInk','#273d31']);

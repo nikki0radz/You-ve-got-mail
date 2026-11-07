@@ -35,8 +35,8 @@ async function bundledRecords(){
 function mergeBuiltin(base,override) {
   const {design:original,...defaults}=base;
   const row={...defaults,...override},details=recordDesign(row);
-  const design={...original,name:details.name,useLabel:details.useLabel,category:details.category,kind:row.kind};
-  if(base.category!==row.category||base.kind!==row.kind)design.deliveryKind=details.deliveryKind;
+  const design={...original,notePaper:base.category==='Notes'&&base.kind===row.kind,name:details.name,useLabel:details.useLabel,category:details.category,kind:row.kind};
+  design.deliveryKind=base.kind===row.kind&&base.category==='Notes'?'a note':details.deliveryKind;
   if(row.textArea)Object.assign(design,{textBox:details.textBox,textRotation:details.textRotation});
   else if(base.kind!==row.kind)delete design.textBox;
   if(base.kind!==row.kind && row.kind!=='reminder')delete design.labelPatch;

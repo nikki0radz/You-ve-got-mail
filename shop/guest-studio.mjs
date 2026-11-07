@@ -1,4 +1,4 @@
-import {fonts,fontSpec,writingBox} from './lettering.mjs';
+import {fonts,fontSpec,isNotePaper,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
 import {catalogueDesigns,catalogueImage,catalogueThumbnail} from './catalogue.mjs';
@@ -239,7 +239,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       }
       if(item.textBox){
         const fields=[['Text','Design text colour',state,'ink',item.ink,paintArt]];
-        if(item.category==='Notes')fields.unshift(['Paper','Note paper colour',state,'paper','#fff1cd',paintArt]);
+        if(isNotePaper(item))fields.unshift(['Paper','Note paper colour',state,'paper','#fff1cd',paintArt]);
         row(fields);
       }
       if(pairedPreview&&state.note)row([

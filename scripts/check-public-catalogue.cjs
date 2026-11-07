@@ -30,6 +30,8 @@ const {chromium}=require('playwright');
     assert.deepEqual(records.source,records.expected);
     const frame=records.records.find(item=>item.name==='Instant print'),second=records.records.find(item=>item.name==='Tape deck');
     manifest=[{id:frame.id,category:'Keepsakes',name:'Renamed frame',seq:1},{id:second.id,hidden:true,seq:1,category:'Photo frames'}];
+    const note=records.records.find(item=>item.category==='Notes');
+    manifest.push({id:note.id,category:'Frames',name:'Renamed note',kind:'sticker',textArea:null,seq:1});
     const refresh=()=>page.evaluate(async()=>{const {refreshAfterWrite}=await import('./shop/main-art.mjs');await refreshAfterWrite();});
     await refresh();
     const tile=page.locator('#home-wheel .category-reel button[aria-label$="keepsakes"]').first();
@@ -38,9 +40,11 @@ const {chromium}=require('playwright');
       const api=await import('./shop/catalogue.mjs'),list=await api.catalogueRecords(),all=await api.catalogueRecords({includeHidden:true});
       const row=list.find(r=>r.name==='Renamed frame');
       return {visible:list.length,all:all.length,removed:list.some(r=>r.name==='Tape deck'),kind:row.kind,
-        category:row.design.category,thumbnail:api.catalogueThumbnail(row.design)};
+        category:row.design.category,thumbnail:api.catalogueThumbnail(row.design),
+        note:list.find(r=>r.name==='Renamed note').design};
     });
     assert.equal(view.visible,220);assert.equal(view.all,221);assert(!view.removed);assert.equal(view.kind,'frame');
+    assert.equal(view.note.category,'shared/Frames');assert.equal(view.note.deliveryKind,'a note');assert(view.note.notePaper&&view.note.textBox);
     assert.equal(view.category,'shared/Keepsakes');assert(view.thumbnail.includes('wheel-031.webp'));
 
     for(const audience of ['app','reply','guest']){
