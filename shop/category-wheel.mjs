@@ -11,7 +11,7 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   root.querySelector('.wheel-back').onclick=onBack;
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
   if(root.id==='home-wheel'){
-    const divider=document.createElement('hr');
+    const divider=document.createElement('div');divider.setAttribute('role','separator');divider.setAttribute('aria-label','Home divider');
     divider.className='home-divider';divider.dataset.baseLook=divider.dataset.reviewLook='separator-5';
     root.querySelector('.wheel').prepend(divider);
     rail.dataset.baseLook=rail.dataset.reviewLook='wheelrim-4';

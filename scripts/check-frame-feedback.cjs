@@ -102,6 +102,7 @@ const {chromium}=require('playwright');
     assert.equal(await preview.locator('.timing-options').getAttribute('data-review-look'),'whenticks-5');
     assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'sendrow-2');
     for(const [screen,selector,label,num,look] of [
+      ['home','#home-wheel .home-divider','Home divider',3,'separator-3'],
       ['recipient','.recipient-people','Recipient lettering',4,'recipientfont-4'],
       ['recipient','.timing-options legend','Timing heading',3,'timeheading-3'],
       ['inbox','.people-heading','Your people',6,'peoplebar-6'],
