@@ -3,9 +3,10 @@ import {profilePhoto} from './home.mjs';
 
 const birds=['Poker Face','Scuba','Sad','Comfy','Sleepy','Scholar','Wild Card','Couch Potato','Gamer','Gym Buff','Tipsy','Class Act','Posh','Roadman','Tracksuit Diva','Flirty','Ballerina','Crybaby','Cheerleader','Footballer','Quarterback','Party Animal','Cutie','Singer','Unimpressed','Furious','Knackered','Doctor','Witch','Detective'];
 function readImage(src){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>no(new Error('That image could not be opened.'));img.src=src;});}
-function squarePhoto(image,rect){
-  const canvas=document.createElement('canvas');canvas.width=canvas.height=192;
-  canvas.getContext('2d').drawImage(image,...rect,0,0,192,192);return canvas.toDataURL('image/webp',.9);
+function squarePhoto(image,rect,lossless=false){
+  const canvas=document.createElement('canvas');const side=Math.min(768,Math.round(Math.min(rect[2],rect[3])));canvas.width=canvas.height=side;
+  const ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.drawImage(image,...rect,0,0,side,side);
+  return lossless?canvas.toDataURL('image/png'):canvas.toDataURL('image/webp',.94);
 }
 export function installSocial(state,save,refresh){
   const dialog=document.getElementById('social-flow');
@@ -41,7 +42,7 @@ export function installSocial(state,save,refresh){
     show('Choose your pigeon',`<div class="bird-wall">${tiles}</div>${btn('Use this pigeon','use')}${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
     const use=dialog.querySelector('[data-social=use]');use.disabled=choice<0;
     for(const tile of dialog.querySelectorAll('.bird-choice'))tile.onclick=()=>{choice=Number(tile.dataset.index);for(const b of dialog.querySelectorAll('.bird-choice'))b.setAttribute('aria-pressed',String(b===tile));use.disabled=false;};
-    on('use',async()=>{const i=choice;try{const im=await readImage('assets/home/portraits.webp');if(use.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160])});}catch(e){alert(e.message);}});
+    on('use',async()=>{const i=choice;try{const im=await readImage('assets/home/portraits.webp');if(use.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160],true)});}catch(e){alert(e.message);}});
     const input=dialog.querySelector('input');on('upload',()=>input.click());
     input.onchange=async()=>{const file=input.files[0];if(!file)return;const url=URL.createObjectURL(file);try{const im=await readImage(url);const edge=Math.min(im.width,im.height);if(input.isConnected&&dialog.open)saveProfile({pigeon:null,photo:squarePhoto(im,[(im.width-edge)/2,(im.height-edge)/2,edge,edge])});}catch(e){alert(e.message);}finally{URL.revokeObjectURL(url);}};
   }

@@ -17,8 +17,13 @@ export async function fitPreview(image){
     }
     if(right<left||bottom<top||(left<2&&top<2&&right>=w-2&&bottom>=h-2))return;
     const cropped=document.createElement('canvas');
-    cropped.width=right-left+1;cropped.height=bottom-top+1;
-    cropped.getContext('2d').drawImage(canvas,left,top,cropped.width,cropped.height,0,0,cropped.width,cropped.height);
+    const sx=image.naturalWidth/w,sy=image.naturalHeight/h;
+    const x=Math.max(0,Math.floor((left-1)*sx)),y=Math.max(0,Math.floor((top-1)*sy));
+    const width=Math.min(image.naturalWidth,Math.ceil((right+2)*sx))-x;
+    const height=Math.min(image.naturalHeight,Math.ceil((bottom+2)*sy))-y;
+    const ratio=image.closest('.parcel-thumb')?Math.min(1,144/Math.max(width,height)):1;
+    cropped.width=Math.max(1,Math.round(width*ratio));cropped.height=Math.max(1,Math.round(height*ratio));
+    cropped.getContext('2d').drawImage(image,x,y,width,height,0,0,cropped.width,cropped.height);
     if(image.isConnected)image.src=cropped.toDataURL('image/png');
   }catch{/* Keep the original image when its pixels cannot be read. */}
 }

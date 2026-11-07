@@ -18,6 +18,7 @@ export function selector(el) {
 }
 export function label(el) {
   if (el.id === 'app' || el.localName === 'body') return 'Page background';
+  if (el.matches('.frame-card')) return 'Whole carousel · artwork and name';
   if (el.matches('.wheel-paper')) return 'Carousel background';
   const action = identityAttrs.find(k => el.hasAttribute(k) && simple(el.getAttribute(k)));
   const name = el.id || (action && el.getAttribute(action)) || visibleClass(el) || el.localName;

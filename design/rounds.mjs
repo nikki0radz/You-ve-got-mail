@@ -26,20 +26,23 @@ rounds.decline=reviewGroup('decline','Pigeon choice','.decline-pigeon');
 
 // One versioned group per decision, shared by the phone and the workroom.
 export const feedbackGroups=[
-  ['addressing','Send to','.recipient-choice','.recipient-choice'],
+  ['sendrow','Send to','.recipient-choice','.recipient-choice'],
   ['whenticks','Now / Later','.timing-options, .dispatch-timing','.timing-options, .dispatch-timing'],
   ['mailbox','Inbox layout','.mailbox-layout','.mailbox-layout .page-heading'],
   ['settingsbuttons','Settings buttons','.post-settings','.post-setting[data-section="alerts"] summary'],
   ['peoplebar','Your people','.people-heading','.people-heading'],
   ['railwidth','Carousel width','.frame-card','.frame-card'],
-  ['notetitle','Optional note heading','.note-question','.note-question']
+  ['notetitle','Optional note heading','.note-question','.note-question'],
+  ['catalogfont','Design name font','.frame-name','.frame-name'],
+  ['receiptfont','Parcel title font','.post-receipt > strong','.post-receipt > strong']
 ].map(([key,title,selector,anchor])=>({
-  ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+'-02'
+  ...reviewGroup(key,title,selector),key,selector,anchor,id:['mailbox','settingsbuttons'].includes(key)?'frame-feedback-'+key+'-01':'parcel-feedback-'+key+(['sendrow','catalogfont','receiptfont'].includes(key)?'-03':'-02')
 }));
-const [recipient,time,mailbox,settings,people,rail,note]=feedbackGroups;
+const [recipient,time,mailbox,settings,people,rail,note,catalogFont,receiptFont]=feedbackGroups;
 rounds.recipient={...recipient,groups:[time]};rounds.schedule=rounds.recipient;
 rounds.inbox={...mailbox,groups:[people]};rounds.sent=rounds.inbox;
-for(const page of ['library','stickerPicker','picker--pigeons','picker--notes','picker--postcards','picker--reminders','picker--flowers','picker--love'])rounds[page]=rail;
+for(const page of ['library','stickerPicker','picker--pigeons','picker--notes','picker--postcards','picker--reminders','picker--flowers','picker--love'])rounds[page]={...rail,groups:[catalogFont]};
+rounds.posted=receiptFont;
 for(const page of ['banners','notes','love','flowers','reminders','pigeons','placementFrame','placementPostcard'])rounds[page]=note;
 rounds.settings=settings;
 

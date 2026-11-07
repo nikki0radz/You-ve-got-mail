@@ -162,7 +162,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     const stage=dialog.querySelector('.sample-phone'),artEl=stage.querySelector('[data-layer=art]');
     if(!pairedPreview){
       for(const el of dialog.querySelectorAll('.studio-tools,.banner-options,.sticker-options'))el.remove();
-      const field=document.createElement('label');field.className='parcel-note';const heading=document.createElement('span');heading.className='note-question';heading.textContent='Add a note?';heading.dataset.baseLook=heading.dataset.reviewLook='notetitle-1';
+      const field=document.createElement('label');field.className='parcel-note';const heading=document.createElement('span');heading.className='note-question';heading.textContent='Add a note?';heading.dataset.baseLook=heading.dataset.reviewLook='notetitle-3';
       const optional=document.createElement('small');optional.textContent='Optional';heading.append(' ',optional);field.append(heading);
       const input=document.createElement('textarea');input.setAttribute('aria-label','Add a note (optional)');input.rows=3;input.maxLength=180;input.value=state.note?.text||'';
       field.append(input);dialog.querySelector('.studio-error').before(field);

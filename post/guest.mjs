@@ -67,7 +67,7 @@ function choose(){
 function browse(category,initialDesign=null){
   lastCategory=category;
   return openShop(async(image,name,group,reopen)=>{
-    draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,image:await scaled(image),kind:kinds[group],reopen};
+    draft={sender:draft?.sender||'',time:draft?.time||'',later:draft?.later??false,previewImage:image,image:await scaled(image),kind:kinds[group],reopen};
     review();
   },category,true,initialDesign);
 }
@@ -95,7 +95,7 @@ function openReceipt(key){
 }
 function review(){
   steps.dataset.reviewScreen="dispatch";
-  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing" data-base-look="whenticks-1" data-review-look="whenticks-1"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
+  steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing" data-base-look="whenticks-3" data-review-look="whenticks-3"><legend>When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
@@ -107,7 +107,7 @@ function review(){
     status.textContent=preview?'Preview only. No mail will be sent.':'';
   }
   now.onclick=()=>mode(false);later.onclick=()=>mode(true);mode(draft.later??Boolean(draft.time));
-  steps.querySelector('img').src=draft.image;fitPreview(steps.querySelector('img'));steps.querySelector('#back').onclick=()=>{draft.sender=sender.value;draft.time=whenField.value;draft.reopen();};
+  steps.querySelector('img').src=draft.previewImage||draft.image;fitPreview(steps.querySelector('img'));steps.querySelector('#back').onclick=()=>{draft.sender=sender.value;draft.time=whenField.value;draft.reopen();};
   send.onclick=async()=>{
     const name=sender.value.trim(),value=draft.later?whenField.value:'',when=value?new Date(value).getTime():Date.now();
     if(!preview&&!name){status.textContent='Add your name first.';sender.focus();return;}
@@ -142,7 +142,7 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.21.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.22.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';

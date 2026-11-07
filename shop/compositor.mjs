@@ -15,7 +15,7 @@ export function loadSheet(url) {
   return sheets.get(url);
 }
 
-export function writeText(context, value, rect, colour, font) {
+export function writeText(context, value, rect, colour, font, centerInk=false) {
   if (!value.trim()) return;
   const [x, y, width, height] = rect;
   let lines;
@@ -36,7 +36,15 @@ export function writeText(context, value, rect, colour, font) {
     }
     if (lines.length * size * 1.13 > height) continue;
     context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillStyle = colour;
-    lines.forEach((line, i) => context.fillText(line.trimEnd(), x + width / 2, y + height / 2 + (i - (lines.length - 1) / 2) * size * 1.13));
+    const advance=size*1.13;
+    let baseline=y+height/2-(lines.length-1)*advance/2;
+    if(centerInk){
+      context.textBaseline='alphabetic';
+      let top=Infinity,bottom=-Infinity;
+      lines.forEach((line,i)=>{if(line.trim()){const m=context.measureText(line.trimEnd());top=Math.min(top,i*advance-m.actualBoundingBoxAscent);bottom=Math.max(bottom,i*advance+m.actualBoundingBoxDescent);}});
+      if(Number.isFinite(top+bottom))baseline=y+(height-top-bottom)/2;
+    }
+    lines.forEach((line,i)=>context.fillText(line.trimEnd(),x+width/2,baseline+i*advance));
     return;
   }
 }

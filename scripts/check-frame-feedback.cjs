@@ -65,10 +65,12 @@ const {chromium}=require('playwright');
       await page.getByRole('button',{name:new RegExp('^'+group+' · '+num+' · ')}).click();
     }
     assert.equal(await preview.locator('.timing-options').getAttribute('data-review-look'),'whenticks-5');
-    assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'addressing-2');
+    assert.equal(await preview.locator('.recipient-choice').getAttribute('data-review-look'),'sendrow-2');
     for(const [screen,selector,label,num,look] of [
       ['inbox','.people-heading','Your people',6,'peoplebar-6'],
       ['library','.frame-card','Carousel width',2,'railwidth-2'],
+      ['library','.frame-name','Design name font',3,'catalogfont-3'],
+      ['posted','.post-receipt>strong','Parcel title font',5,'receiptfont-5'],
       ['placementPostcard','.note-question','Optional note heading',5,'notetitle-5']]){
       await page.goto(base+'design/index.html?page='+screen);
       await preview.locator(selector).evaluate(el=>el.scrollIntoView({block:'center'}));
@@ -83,6 +85,23 @@ const {chromium}=require('playwright');
     const height=await words.evaluate(el=>el.offsetHeight);
     await words.fill('A much longer postcard. '.repeat(5));
     assert.equal(await words.evaluate(el=>el.offsetHeight),height);
+    await page.goto(base+'design/page.html?preview=1&page=recipient');
+    await page.locator('.recipient-avatar').first().waitFor();
+    assert.equal(await page.locator('.timing-options').getAttribute('data-review-look'),'whenticks-3');
+    const positions=await page.locator('.recipient-choice').evaluate(el=>{
+      const label=el.querySelector('label').getBoundingClientRect(),people=el.querySelector('.recipient-people').getBoundingClientRect();
+      return [label.right,people.left];
+    });
+    assert(positions[0]<=positions[1]);
+    // A small mask can locate the ink, but the proof must keep the source pixels.
+    const resolution=await page.evaluate(async()=>{
+      const {fitPreview}=await import('./shop/preview-image.mjs');
+      const src=document.createElement('canvas');src.width=1440;src.height=2688;
+      src.getContext('2d').fillRect(70,700,1240,1000);
+      const img=new Image();document.body.append(img);img.src=src.toDataURL();
+      await fitPreview(img);await img.decode();return [img.naturalWidth,img.naturalHeight];
+    });
+    assert(resolution[0]>=1240&&resolution[0]<1280&&resolution[1]>=1000);
     assert.deepEqual(errors,[]);
     console.log('Five choices per target, persisted exports, independent recipient and timing, shared placement and frame upload passed.');
   }finally{await browser.close();}

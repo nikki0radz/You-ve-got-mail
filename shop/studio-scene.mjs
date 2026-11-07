@@ -43,7 +43,7 @@ export function banner(style,text,width=360,height=108,colours={}){
     ctx.roundRect(margin,margin,width-2*margin,height-2*margin,edge*.085);ctx.stroke();
   }
   const [x,y,w,h]=noteBox(style);
-  writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30',colours.font);return c;
+  writeText(ctx,text,[width*x,height*y,width*w,height*h],colours.ink||'#283c30',colours.font,style===3);return c;
 }
 export async function renderParcel(item,state,design=null){
   const canvas=document.createElement('canvas');canvas.width=W*2.4;canvas.height=H*2.4;

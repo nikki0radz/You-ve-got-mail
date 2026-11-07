@@ -1,5 +1,8 @@
 // Identifiers are saved in exported layouts. Keep their meaning stable across revisions.
 export const looks = {
+  sendrow: ['Envelope row','Address slip','Portrait capsule','Postmark label','Airmail edge','Sorting desk'].map(x=>[x]),
+  catalogfont: ['Rounded','Coiny','Lilita One','Handwritten','Serif italic','Typewriter'].map(x=>[x]),
+  receiptfont: ['Rounded','Coiny','Lilita One','Handwritten','Serif italic','Typewriter'].map(x=>[x]),
   addressing: ['Letter to a friend','Choose a pigeon','Delivery stops','Sorting pockets','Address seal'].map(x=>[x]),
   whenticks: ['Postmark circles','Pencil checklist','Punch tickets','Wax seals','Airmail stamps'].map(x=>[x]),
   peoplebar: ['Address book tab','Contacts counter','Stamped directory','Slim divider','Post office sign','Address slip'].map(x=>[x]),

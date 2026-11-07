@@ -1,0 +1,52 @@
+/* One address line, with room for long contact names and more than one recipient. */
+:is(#mail-window,#flow) .recipient-choice[data-review-look^=sendrow-]{
+  display:grid;grid-template-columns:minmax(53px,max-content) minmax(0,1fr);align-items:center;
+  gap:10px;padding:10px 12px;margin:12px 0;border:1px solid #a4b099;border-radius:17px;
+  background:#f5eedc;color:#304833;text-align:left
+}
+:is(#mail-window,#flow) .recipient-choice[data-review-look^=sendrow-]>label{margin:0;font:700 19px/1.1 PostalBaloo,system-ui}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people{display:flex;flex-direction:column;gap:5px;min-width:0}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button{
+  width:100%;display:flex;justify-content:flex-start;gap:9px;align-items:center;min-height:43px;
+  padding:5px 9px;border:1px solid #b5bda9;border-radius:12px;background:#fff9ed;color:#304833;text-align:left
+}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button[aria-pressed=true]{background:#365a40;color:#fff9ed;border-color:#365a40}
+:is(#mail-window,#flow) .recipient-avatar{display:block;width:34px;height:34px;flex:none;object-fit:contain;border-radius:50%;background:#f6eddc}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-2]{border-inline-start:6px double #936c56;background:#fbebd7}
+:is(#mail-window,#flow) [data-review-look=sendrow-2]>label{font:italic 700 20px Georgia,serif}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-3]{border:0;border-radius:26px;background:#d9e6d9}
+:is(#mail-window,#flow) [data-review-look=sendrow-3] .recipient-people button{border-radius:25px}.recipient-choice[data-review-look=sendrow-3] .recipient-avatar{width:42px;height:42px}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-4]{border:2px dotted #a78676;background:#fff6e6}.recipient-choice[data-review-look=sendrow-4]>label{border:2px solid #977663;border-radius:50%;padding:10px 4px;transform:rotate(-6deg)}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-5]{border:4px solid transparent;background:linear-gradient(#fbf4e5,#fbf4e5) padding-box,repeating-linear-gradient(135deg,#ab716a 0 6px,#eee6cf 6px 12px,#64847a 12px 18px) border-box}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-6]{background:#354a42;border-bottom:4px solid #223b31;color:#fff9ed}.recipient-choice[data-review-look=sendrow-6]>label{text-transform:uppercase;letter-spacing:.05em}
+:is(#mail-window,#flow,.guest #steps) [data-review-look=whenticks-3] :is(label span,button:is(#now,#later),input:checked+span,button[aria-pressed=true]:is(#now,#later)){
+  background:#e7ebde;color:#304733;border:1px dashed #91a08a;border-radius:12px
+}
+:is(#mail-window,#flow,.guest #steps) [data-review-look=whenticks-3] :is(label span,button)::before{border-radius:7px;border:2px solid #789077}
+:is(#mail-window,#flow,.guest #steps) [data-review-look=whenticks-3] :is(input:checked+span,button[aria-pressed=true])::before{background:#356241;color:white;border-color:#356241}
+#parcel-shop .note-question[data-review-look=notetitle-3]{font:800 21px/1.2 PostalBaloo,system-ui}
+#parcel-shop.guest-studio .ink-row button.colour-chip{padding:2px 5px;min-height:28px;border:0!important;border-radius:0;box-shadow:none;background:transparent}
+#mail-window button.mb-button[data-mb=reply]:not([aria-pressed=false]){display:block;width:auto;margin:12px 0 2px auto;background:#365a40;border:1px solid #234532;color:#fff9ed;box-shadow:0 3px 0 #243e2d;padding:8px 20px;font:750 20px/1.3 PostalBaloo,system-ui}
+[data-review-look=mailbox-3] :is(.mail-rows,.inbox-list,.empty){padding:0;background:none;border:0}
+[data-review-look=mailbox-3] :is(.mail-row,.inbox-item){border:0;border-block:1px solid var(--mm-edge);margin-block:4px;padding:10px 4px;background:transparent}
+[data-review-look=mailbox-3] .mail-row time{margin-inline-start:auto;flex:0 0 9em;text-align:right;font:600 11px/1.45 system-ui;font-variant-numeric:tabular-nums}
+[data-review-look=mailbox-3] .mail-row>span:not(.mail-dot,.parcel-thumb){min-width:0;overflow-wrap:anywhere}
+#social-flow .photo-booth{transform:none}
+:is(#parcel-shop .frame-name,#mail-window .post-receipt>strong)[data-review-look]{display:block;font:800 24px/1.18 var(--parcel-title-font,PostalBaloo),system-ui}
+:is([data-review-look=catalogfont-2],[data-review-look=receiptfont-2]){--parcel-title-font:ParcelCoiny}
+:is([data-review-look=catalogfont-3],[data-review-look=receiptfont-3]){--parcel-title-font:ParcelLilita}
+:is([data-review-look=catalogfont-4],[data-review-look=receiptfont-4]){--parcel-title-font:ParcelCaption}
+:is([data-review-look=catalogfont-5],[data-review-look=receiptfont-5]){--parcel-title-font:Georgia;font-style:italic!important}
+:is([data-review-look=catalogfont-6],[data-review-look=receiptfont-6]){--parcel-title-font:ui-monospace}
+html[data-theme=dark] :is(#parcel-shop,#mail-window){color:#fff9ed;background:#111c19;border-color:#283f32}
+html[data-theme=dark] #parcel-shop :is(.frame-card,.frame-thumbs button,.library-grid button){background:#111c19;color:#fff9ed;border-color:#283f32}
+html[data-theme=dark] #parcel-shop .frame-name{color:inherit;background:transparent}
+html[data-theme=dark] #parcel-shop :is(.frame-thumbs button[aria-pressed=true],.library-grid button:focus-visible){border:2px solid #a7c7ae}
+html[data-theme=dark] :is(#parcel-shop .parcel-note textarea,#parcel-shop .art-writing textarea,#mail-window textarea){background:#597c66;color:#fff9ed;border-color:#283f32}
+html[data-theme=dark] :is(#parcel-shop,#mail-window) textarea::placeholder{color:#fff9ed;opacity:1}
+html[data-theme=dark] .mail-tabs{background:#597c66;border-color:#111c19}
+html[data-theme=dark] .mail-tabs button{color:#fff9ed}
+html[data-theme=dark] .mail-tabs button[aria-pressed=true]{background:#fff9ed;color:#365a40}
+
+#parcel-shop .frame-card .frame-name{color:inherit}
+#parcel-shop .frame-card>.frame-rail{background:transparent}

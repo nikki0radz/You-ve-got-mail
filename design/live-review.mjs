@@ -73,7 +73,14 @@ function rules(items){
       css+=properties[key]+':'+value+'!important;';
       if(key==='background')css+='background-image:none!important;';
     }
-    return css?item.selector+'{'+css+'}':'';
+    if(!css)return '';
+    let rule=item.selector+'{'+css+'}';
+    if(item.selector.endsWith('div.frame-card')){
+      const children=['.frame-rail','.frame-name'].map(c=>item.selector+' > '+c).join(',');
+      const shared=Object.keys(item.colours||{}).filter(k=>Object.hasOwn(properties,k)).map(k=>properties[k]+':inherit!important;').join('');
+      rule+=children+'{'+shared+'}';
+    }
+    return rule;
   }).join('\n');
 }
 const optionKey=group=>'pigeon-style-'+group.id;
@@ -185,7 +192,9 @@ function pick(el){
   const trail=[];for(let n=el;n&&n.localName!=='html';n=n.parentElement){trail.push(n);if(n===session.root && n.matches('dialog'))break;}
   const choices=$('.target');choices.replaceChildren();
   for(const n of trail)choices.add(new Option(label(n),String(choices.options.length)));
-  choices.onchange=()=>select(trail[choices.selectedIndex]);select(el);
+  const card=el.closest('.frame-card');
+  choices.selectedIndex=card?trail.indexOf(card):0;
+  choices.onchange=()=>select(trail[choices.selectedIndex]);select(trail[choices.selectedIndex]);
 }
 function begin(){
   const root=rootNow(),meta=screen(document,root);
@@ -236,7 +245,7 @@ $('.export').onclick=()=>{
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.21',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.22',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };
