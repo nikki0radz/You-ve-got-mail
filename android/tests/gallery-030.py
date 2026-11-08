@@ -21,7 +21,10 @@ def tap(n):
  x,y,r,b=map(int,re.findall(r'\d+',n['bounds']));adb('shell','input','tap',(x+r)//2,(y+b)//2);time.sleep(.3)
 def bytext(s):
  return search(lambda n:any(s.casefold() in t.casefold() for t in labels(n)))
-def button(s):tap(bytext(s))
+def button(s):
+ if s=='Later':tap(search(lambda n:n.get('resource-id')=='android:id/button2'))
+ else:tap(bytext(s))
+ print('Tapped',s,flush=True)
 p=Path('/tmp/photo-qa');p.mkdir(exist_ok=True)
 def png(color):
  w=h=160
