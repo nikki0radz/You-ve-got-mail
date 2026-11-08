@@ -45,7 +45,7 @@ public class Main extends Activity {
             else v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());
             return Build.VERSION.SDK_INT>=30?WindowInsets.CONSUMED:i.consumeSystemWindowInsets();
         });
-        WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(false);
+        WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);
         web.setWebViewClient(new WebViewClient(){
             public void onPageFinished(WebView v,String url){webReady=true;dispatchIntent();}
             public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){Uri u=req.getUrl();return req.isForMainFrame()||!"https".equals(u.getScheme())||!HOST.equals(u.getHost());}
@@ -150,6 +150,13 @@ public class Main extends Activity {
         i.removeExtra("id");
     }
     protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
+    private boolean isPickedImage(Uri uri){
+        if(uri==null || !"content".equals(uri.getScheme()) || uri.getAuthority()==null)return false;
+        try{
+            String type=getContentResolver().getType(uri);
+            return type!=null && type.startsWith("image/");
+        }catch(SecurityException | IllegalArgumentException inaccessible){return false;}
+    }
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
         if(req==41 && photo!=null){
             LinkedHashSet<Uri> selected=new LinkedHashSet<>();
@@ -157,10 +164,10 @@ public class Main extends Activity {
                 ClipData clips=data.getClipData();
                 if(clips!=null)for(int n=0;n<clips.getItemCount();n++){
                     Uri u=clips.getItemAt(n).getUri();
-                    if(u!=null && "content".equals(u.getScheme()))selected.add(u);
+                    if(isPickedImage(u))selected.add(u);
                 }
                 Uri single=data.getData();
-                if(single!=null && "content".equals(single.getScheme()))selected.add(single);
+                if(isPickedImage(single))selected.add(single);
             }
             ValueCallback<Uri[]> callback=photo;photo=null;
             callback.onReceiveValue(selected.isEmpty()?null:selected.toArray(new Uri[0]));
