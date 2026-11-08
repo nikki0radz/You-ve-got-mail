@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Camera flash regression fixture</title><link rel="stylesheet" href="../shop/studio.css"></head>
+<body style="margin:16px;background:#fff9ed;color:#253e31;font:16px system-ui">
+<h1>Camera flash checks</h1><p>Simulated stream: checks controls and cleanup, not physical flash.</p>
+<label><input type="checkbox" id="hardware" checked> Back camera supports flash</label>
+<button id="open" type="button">Open test camera</button><p id="result" role="status">Ready</p><pre id="events" aria-label="Flash events"></pre><img id="photo" alt="Saved test photo" style="max-width:200px">
+<script type="module">
+import {openFrameCamera} from '../shop/frame-camera.mjs';
+const log=[],events=document.querySelector('#events'),result=document.querySelector('#result');
+function record(value){log.push(value);events.textContent=log.join('\n');}
+Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async getUserMedia({video}){
+ const facing=typeof video.facingMode==='object'?(video.facingMode.exact||video.facingMode.ideal):video.facingMode;
+ const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#739c85';ctx.fillRect(0,0,360,640);ctx.fillStyle='#d89a87';ctx.fillRect(180,0,180,640);ctx.fillStyle='#253e31';ctx.font='28px sans-serif';ctx.fillText('CAMERA TEST',80,200);ctx.fillText(facing==='user'?'FRONT':'BACK',130,280);
+ const stream=canvas.captureStream(15),track=stream.getVideoTracks()[0],settings=track.getSettings.bind(track),stop=track.stop.bind(track);let torch=false;
+ track.getSettings=()=>({...settings(),facingMode:facing,torch});track.getCapabilities=()=>({torch:facing==='environment'&&document.querySelector('#hardware').checked});
+ const pulse=setInterval(()=>{ctx.fillStyle='#253e31';ctx.fillRect(0,630,360,10);track.requestFrame?.();},60);
+ track.applyConstraints=async({advanced})=>{torch=advanced[0].torch;record((facing==='user'?'front':'back')+' torch '+torch);};track.stop=()=>{clearInterval(pulse);record(facing+' stopped');stop();};
+ record('opened '+facing);return stream;
+}}});
+document.querySelector('#open').onclick=async()=>{
+ log.length=0;record('start');result.textContent='Camera open';const file=await openFrameCamera(null);
+ if(!file){result.textContent='Cancelled; no photo saved';return;}
+ const image=await createImageBitmap(file);result.textContent='Saved '+file.name+' · '+image.width+' × '+image.height;image.close();
+ const photo=document.querySelector('#photo');if(photo.dataset.url)URL.revokeObjectURL(photo.dataset.url);photo.dataset.url=URL.createObjectURL(file);photo.src=photo.dataset.url;
+};
+</script></body></html>

@@ -35,6 +35,8 @@ Sharing an invitation automatically starts a temporary live listening session. A
 
 All 30 reminder templates start with the original illustrated wording. Tap the reminder to replace that wording directly, or add a separate note. The guest link offers the four selected reminders. Transparent studio exports start at 1440 × 2688; photo-heavy parcels may reduce colour precision or dimensions to fit the service limit.
 
+The in-app camera has a labelled flash switch for each lens, off by default. Front flash briefly lights the screen white while the camera captures your face. Back flash briefly enables the camera light when the device exposes torch control; unsupported camera views show N/A and still take photos with flash off. Switching cameras or closing the camera releases the light. Physical flash and exposure still need checking on the target phone.
+
 ## Guest delivery
 
 The Android app creates a private mailbox key on the device. The HTTPS delivery service stores hashed credentials, claims a link atomically, and clears the parcel from the server after the receiver saves and acknowledges it. Invitations expire after seven days. The invitation and reply receipt travel in URL fragments on the guest page. Anyone holding an unspent invitation can use it once. Friend mail uses mutually accepted connections. The app stores received history on the device and saves a private receipt for each sent friend parcel.
