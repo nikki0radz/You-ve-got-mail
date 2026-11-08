@@ -48,3 +48,13 @@ html[data-theme=light] #art-upload [data-art=copy]{border:2px solid #365a40}
 #art-upload .art-import-row{display:flex;align-items:center;gap:10px}
 #art-upload .art-import-row input{width:auto}
 #art-upload .art-import-row img{width:50px;height:50px;object-fit:contain}
+
+#art-upload .art-crop-stage{position:relative;display:table;margin:10px auto;max-width:100%;touch-action:none;background:repeating-conic-gradient(#d4ddd6 0 25%,#eff1eb 0 50%) 0/14px 14px}
+#art-upload .art-crop-stage canvas{display:block;max-width:100%;max-height:42dvh;width:auto;height:auto}
+#art-upload .art-crop-box{position:absolute;border:2px dashed #20342a;box-shadow:0 0 0 1px #fff9ed;pointer-events:none}
+
+#art-upload .avatar-controls{display:grid;gap:6px}
+#art-upload .avatar-controls label{display:flex;align-items:center;gap:10px}
+#art-upload .avatar-controls input{margin-left:auto;width:22px;height:22px}
+#art-upload .avatar-sprite{width:52px;height:52px;border-radius:50%;background-image:url('../assets/home/portraits.webp');background-size:600% 500%;flex-shrink:0}
+.bird-choice>img{display:block;width:100%;aspect-ratio:1;object-fit:contain}

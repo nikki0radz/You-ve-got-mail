@@ -1,3 +1,4 @@
+import {offerCamera} from './camera-choice.mjs';
 import {fonts,isNotePaper} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
@@ -208,7 +209,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       }
       dirty=true;paint();
     });
-    const file=dialog.querySelector('[data-photo],[data-second]');
+    const file=dialog.querySelector('[data-photo],[data-second]');offerCamera(file);
     if(file)file.onchange=async()=>{
       if(!file.files[0])return;
       const url=URL.createObjectURL(file.files[0]),img=new Image();img.src=url;previewURL=url;

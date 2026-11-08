@@ -41,3 +41,5 @@ html[data-theme=light] :is(#mail-window,#flow) .recipient-choice .recipient-peop
 .pigeon-handbook summary{font-weight:800;cursor:pointer}
 .pigeon-handbook p{margin:8px 0 12px}
 .pigeon-handbook .installed-version{font-size:13px;color:var(--mm-sub);margin-top:20px}
+
+:is(#mail-window,#flow) .post-receipt,:is(#mail-window,#flow) .post-receipt :is(p,small,strong){color:#20342a}

@@ -19,6 +19,7 @@ import java.util.*;
 public class Main extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> photo;
+    private Uri cameraPhoto;
     private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
@@ -103,6 +104,16 @@ public class Main extends Activity {
     }
     private boolean openPhotoPicker(WebChromeClient.FileChooserParams params){
         boolean multiple=params.getMode()==WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE;
+        if(params.isCaptureEnabled()&&!multiple){
+            try{
+                cameraPhoto=CameraPhotos.create(this);
+                Intent camera=new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT,cameraPhoto)
+                    .putExtra("android.intent.extras.CAMERA_FACING",1).putExtra("android.intent.extra.USE_FRONT_CAMERA",true)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                camera.setClipData(ClipData.newRawUri("Camera photo",cameraPhoto));
+                startActivityForResult(camera,41);return true;
+            }catch(IOException|ActivityNotFoundException|SecurityException unavailable){CameraPhotos.discard(this,cameraPhoto);cameraPhoto=null;toast("No camera app is available. You can still upload a photo.");return false;}
+        }
         boolean pngOnly=false;
         for(String entry:params.getAcceptTypes()){
             for(String token:entry.split(",")){
@@ -203,6 +214,8 @@ public class Main extends Activity {
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
         if(req==41 && photo!=null){
             LinkedHashSet<Uri> selected=new LinkedHashSet<>();
+            final Uri captured=cameraPhoto;cameraPhoto=null;
+            if(res==RESULT_OK&&captured!=null)selected.add(captured);else if(captured!=null)CameraPhotos.discard(this,captured);
             if(res==RESULT_OK && data!=null){
                 ClipData clips=data.getClipData();
                 if(clips!=null)for(int n=0;n<clips.getItemCount();n++){
@@ -222,6 +235,7 @@ public class Main extends Activity {
                     try{copies.add(PickedPhotos.copy(Main.this,source));}
                     catch(IOException | RuntimeException e){reason=e.getMessage();}
                 }
+                if(captured!=null)CameraPhotos.discard(Main.this,captured);
                 final String failure=reason;
                 runOnUiThread(()->{
                     if(isDestroyed()||isFinishing())return;
@@ -336,7 +350,7 @@ public class Main extends Activity {
             try{
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
-                try{data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
+                try{data.put("cameraCapture",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();

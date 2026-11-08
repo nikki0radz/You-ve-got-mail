@@ -1,0 +1,1 @@
+export const birds=['Poker Face','Scuba','Sad','Comfy','Sleepy','Scholar','Wild Card','Couch Potato','Gamer','Gym Buff','Tipsy','Class Act','Posh','Roadman','Tracksuit Diva','Flirty','Ballerina','Crybaby','Cheerleader','Footballer','Quarterback','Party Animal','Cutie','Singer','Unimpressed','Furious','Knackered','Doctor','Witch','Detective'];

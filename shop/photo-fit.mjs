@@ -1,3 +1,4 @@
+import {offerCamera} from './camera-choice.mjs';
 import {artwork,clamp,geometry} from './studio-scene.mjs';
 export async function readPhoto(file){
   if(!file)throw new Error('Choose a picture first.');
@@ -45,5 +46,5 @@ export function fitPhoto(host,item,initial,onApply,onCancel){
   file.onchange=async()=>{if(!file.files[0])return;const ticket=++load;ok.disabled=true;
     try{const img=await readPhoto(file.files[0]);if(ticket!==load||!box.isConnected)return;Object.assign(work,{photo:img,zoom:1,panX:.5,panY:.5});error.textContent='';await paint();}
     catch(e){error.textContent=e.message;}finally{if(ticket===load)ok.disabled=false;file.value='';}
-  };paint();
+  };offerCamera(file);paint();
 }

@@ -36,7 +36,7 @@ async function bundledRecords(){
 function mergeBuiltin(base,override) {
   const {design:original,...defaults}=base;
   const row={...defaults,...override},details=recordDesign(row);
-  const design={...original,notePaper:base.category==='Notes'&&base.kind===row.kind,name:details.name,useLabel:details.useLabel,category:details.category,kind:row.kind};
+  const design={...(row.imageId?details:original),notePaper:base.category==='Notes'&&base.kind===row.kind,name:details.name,useLabel:details.useLabel,category:details.category,kind:row.kind};
   design.deliveryKind=base.kind===row.kind&&base.category==='Notes'?'a note':details.deliveryKind;
   if(row.textArea)Object.assign(design,{textBox:details.textBox,textRotation:details.textRotation});
   else if(base.kind!==row.kind)delete design.textBox;
@@ -49,11 +49,11 @@ function mergeBuiltin(base,override) {
   }
   return {...row,design};
 }
-export async function catalogueRecords({includeHidden=false}={}){
+export async function catalogueRecords({includeHidden=false,includeAvatars=false}={}){
   const base=await bundledRecords(),records=mainRecords();
   const overrides=new Map(records.filter(row=>row.id.startsWith('builtin-')).map(row=>[row.id,row]));
-  const uploaded=records.filter(row=>!row.id.startsWith('builtin-')).map(row=>({...row,design:{...recordDesign(row),catalogueId:row.id}}));
-  return [...uploaded,...base.map(row=>mergeBuiltin(row,overrides.get(row.id)))].filter(row=>includeHidden||!row.hidden);
+  const uploaded=records.filter(row=>!row.id.startsWith('builtin-')&&(includeAvatars||row.kind!=='avatar')).map(row=>({...row,design:{...recordDesign(row),catalogueId:row.id}}));
+  return [...uploaded,...base.map(row=>mergeBuiltin(row,overrides.get(row.id)))].filter(row=>(includeHidden||!row.hidden)&&(includeAvatars||row.kind!=='avatar'));
 }
 export async function catalogueDesigns(){
   return (await catalogueRecords()).map(row=>row.design);

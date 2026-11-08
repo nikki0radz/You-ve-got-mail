@@ -1,8 +1,12 @@
+import {catalogueRecords,catalogueImage,catalogueThumbnail} from '../shop/catalogue.mjs';
+import {offerCamera} from '../shop/camera-choice.mjs';
+import {birds} from './profile-options.mjs';
+import {mainRecords,avatarSettings} from '../shop/main-art.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 import {profilePhoto} from './home.mjs';
 
-const birds=['Poker Face','Scuba','Sad','Comfy','Sleepy','Scholar','Wild Card','Couch Potato','Gamer','Gym Buff','Tipsy','Class Act','Posh','Roadman','Tracksuit Diva','Flirty','Ballerina','Crybaby','Cheerleader','Footballer','Quarterback','Party Animal','Cutie','Singer','Unimpressed','Furious','Knackered','Doctor','Witch','Detective'];
-function readImage(src){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>no(new Error('That image could not be opened.'));img.src=src;});}
+
+function readImage(src){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>no(new Error('That image could not be opened.'));if(/^https?:/i.test(src))img.crossOrigin='anonymous';img.src=src;});}
 function squarePhoto(image,rect,lossless=false){
   const canvas=document.createElement('canvas');const side=Math.min(768,Math.round(Math.min(rect[2],rect[3])));canvas.width=canvas.height=side;
   const ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.drawImage(image,...rect,0,0,side,side);
@@ -30,20 +34,23 @@ export function installSocial(state,save,refresh){
     refresh();profile();return true;
   }
   function profile(){
-    show('My profile',`<figure class="photo-booth"><img src="${profilePhoto(state.profile)}" alt="Your pigeon portrait"><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change pigeon','change','pill')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
+    show('My profile',`<figure class="photo-booth"><img src="${profilePhoto(state.profile)}" alt="Your pigeon portrait"><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change picture','change','pill')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
     on('change',()=>{choice=Number.isInteger(state.profile.pigeon)?state.profile.pigeon:-1;wall();});
     on('edit',()=>{
       show('What should we call you?',`<label>Your name<input maxlength="40" class="social-input social-name" value="${esc(state.profile.name)}"></label>${btn('Save name','save')}`,profile);
       on('save',()=>{const name=dialog.querySelector('input').value.trim();if(!name)return alert('Enter a name first.');saveProfile({name});});
     });
   }
-  function wall(){
-    const tiles=birds.map((n,i)=>`<button class="bird-choice" data-index="${i}" aria-pressed="${choice===i}"><span aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*25}%"></span>${esc(n)}</button>`).join('');
-    show('Choose your pigeon',`<div class="bird-wall">${tiles}</div>${btn('Use this pigeon','use')}${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
-    const use=dialog.querySelector('[data-social=use]');use.disabled=choice<0;
-    for(const tile of dialog.querySelectorAll('.bird-choice'))tile.onclick=()=>{choice=Number(tile.dataset.index);for(const b of dialog.querySelectorAll('.bird-choice'))b.setAttribute('aria-pressed',String(b===tile));use.disabled=false;};
+  async function wall(){
+    const tiles=birds.map((n,i)=>avatarSettings().hidden.includes(i)?'':`<button class="bird-choice" data-index="${i}" aria-pressed="${choice===i}"><span aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*25}%"></span>${esc(n)}</button>`).join('');
+    const uploads=(await catalogueRecords({includeAvatars:true})).filter(row=>row.kind==='avatar');
+    const extra=uploads.map(row=>`<button class="bird-choice" data-avatar="${esc(row.id)}" aria-pressed="false">${catalogueThumbnail(row.design)}${esc(row.name||'Profile picture')}</button>`).join('');
+    show('Choose your profile picture',`<div class="bird-wall">${tiles}${extra}</div>${btn('Use this pigeon','use')}${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
+    for(const tile of dialog.querySelectorAll('[data-avatar]'))tile.onclick=async()=>{try{const row=uploads.find(r=>r.id===tile.dataset.avatar),img=await catalogueImage(row.design);const side=Math.min(img.width,img.height);saveProfile({photo:squarePhoto(img,[(img.width-side)/2,(img.height-side)/2,side,side],true),pigeon:-1});}catch(e){alert(e.message);}};
+    const use=dialog.querySelector('[data-social=use]');use.disabled=choice<0||avatarSettings().hidden.includes(choice);
+    for(const tile of dialog.querySelectorAll('.bird-choice[data-index]'))tile.onclick=()=>{choice=Number(tile.dataset.index);for(const b of dialog.querySelectorAll('.bird-choice'))b.setAttribute('aria-pressed',String(b===tile));use.disabled=false;};
     on('use',async()=>{const i=choice;try{const im=await readImage('assets/home/portraits.webp');if(use.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160],true)});}catch(e){alert(e.message);}});
-    const input=dialog.querySelector('input');on('upload',()=>input.click());
+    const input=dialog.querySelector('input');on('upload',()=>input.click());offerCamera(input);
     input.onchange=async()=>{const file=input.files[0];if(!file)return;const url=URL.createObjectURL(file);try{const im=await readImage(url);const edge=Math.min(im.width,im.height);if(input.isConnected&&dialog.open)saveProfile({pigeon:null,photo:squarePhoto(im,[(im.width-edge)/2,(im.height-edge)/2,edge,edge])});}catch(e){alert(e.message);}finally{URL.revokeObjectURL(url);}};
   }
   function lookup(){
