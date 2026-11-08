@@ -1,5 +1,5 @@
 import {shopCategoryName} from './shared-designs.mjs';
-import {wheelChoices,catalogueThumbnail} from './catalogue.mjs';
+import {wheelChoices,mountCatalogueThumbnail} from './catalogue.mjs';
 
 const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for their screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
 
@@ -23,7 +23,7 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   const byCategory=new Map(choices.map(item=>[item.category,item]));
   const cards=slots.map((key,slot)=>{
     const button=document.createElement('button'),face=document.createElement('span');
-    button.type='button';face.innerHTML=catalogueThumbnail(byCategory.get(key));button.append(face);rail.append(button);
+    button.type='button';mountCatalogueThumbnail(face,byCategory.get(key));button.append(face);rail.append(button);
     button.onclick=()=>{if(performance.now()<suppressUntil)return;if(Math.abs(position()-slot)<.05)onBrowse(key);else move(slot);};
     return button;
   });

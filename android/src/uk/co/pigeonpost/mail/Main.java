@@ -5,6 +5,10 @@ import android.net.Uri;
 import android.graphics.Color;
 import android.os.*;
 import android.provider.Settings;
+import android.provider.MediaStore;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.os.ext.SdkExtensions;
 import android.view.*;
 import android.webkit.*;
 import android.widget.*;
@@ -66,9 +70,10 @@ public class Main extends Activity {
         web.setWebChromeClient(new WebChromeClient(){
             public boolean onShowFileChooser(WebView v,ValueCallback<Uri[]> cb,FileChooserParams params){
                 if(photo!=null)photo.onReceiveValue(null);photo=cb;
-                Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
-                if(params.getMode()==FileChooserParams.MODE_OPEN_MULTIPLE)i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
-                try{startActivityForResult(i,41);}catch(Exception e){photo.onReceiveValue(null);photo=null;}return true;
+                if(!openPhotoPicker(params)){
+                    photo=null;cb.onReceiveValue(null);toast("No photo picker is available.");
+                }
+                return true;
             }
             public boolean onJsConfirm(WebView v,String url,String msg,JsResult r){new AlertDialog.Builder(Main.this).setMessage(msg).setPositiveButton("Discard",(d,k)->r.confirm()).setNegativeButton("Keep editing",(d,k)->r.cancel()).setOnCancelListener(d->r.cancel()).show();return true;}
         });
@@ -79,6 +84,51 @@ public class Main extends Activity {
               .setMessage("Enable phone notifications and display over other apps for the floating PNG. For exact delivery times, enable precise schedules too. You can change these later in Settings.")
               .setPositiveButton("Set up delivery",(d,k)->settings()).setNegativeButton("Later",null).show();
         }
+    }
+    private static final String OEM_PICK_IMAGES="androidx.activity.result.contract.action.PICK_IMAGES";
+    private boolean launchPhotoPicker(Intent intent){
+        try{startActivityForResult(intent,41);return true;}
+        catch(ActivityNotFoundException | SecurityException unavailable){return false;}
+    }
+    private boolean openPhotoPicker(WebChromeClient.FileChooserParams params){
+        boolean multiple=params.getMode()==WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE;
+        boolean pngOnly=false;
+        for(String entry:params.getAcceptTypes()){
+            for(String token:entry.split(",")){
+                String type=token.trim().toLowerCase(Locale.ROOT);
+                if(type.isEmpty())continue;
+                if(!"image/png".equals(type)&&!".png".equals(type)){
+                    return openImagePicker("image/*",multiple);
+                }
+                pngOnly=true;
+            }
+        }
+        return openImagePicker(pngOnly?"image/png":"image/*",multiple);
+    }
+    private boolean openImagePicker(String mime,boolean multiple){
+        if(Build.VERSION.SDK_INT>=33 || (Build.VERSION.SDK_INT>=30 &&
+            SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R)>=2)){
+            Intent system=new Intent(MediaStore.ACTION_PICK_IMAGES).setType(mime);
+            if(multiple)system.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX,MediaStore.getPickImagesMaxLimit());
+            if(launchPhotoPicker(system))return true;
+        }
+        Intent oem=new Intent(OEM_PICK_IMAGES).setType(mime);
+        ResolveInfo handler=getPackageManager().resolveActivity(oem,PackageManager.MATCH_SYSTEM_ONLY|PackageManager.MATCH_DEFAULT_ONLY);
+        if(handler!=null){
+            oem.setClassName(handler.activityInfo.packageName,handler.activityInfo.name);
+            if(multiple)oem.putExtra("androidx.activity.result.contract.extra.PICK_IMAGES_MAX",Integer.MAX_VALUE);
+            if(launchPhotoPicker(oem))return true;
+        }
+        Intent backport=new Intent("com.google.android.gms.provider.action.PICK_IMAGES")
+            .setPackage("com.google.android.gms").setType(mime);
+        if(multiple)backport.putExtra("com.google.android.gms.provider.extra.PICK_IMAGES_MAX",Integer.MAX_VALUE);
+        if(launchPhotoPicker(backport))return true;
+        for(String action:new String[]{Intent.ACTION_GET_CONTENT,Intent.ACTION_OPEN_DOCUMENT}){
+            Intent chooser=new Intent(action).setType(mime).addCategory(Intent.CATEGORY_OPENABLE);
+            if(multiple)chooser.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
+            if(launchPhotoPicker(chooser))return true;
+        }
+        return false;
     }
     private void handleBack(){
         if(!webReady){finish();return;}

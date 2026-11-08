@@ -1,11 +1,12 @@
 import {fonts,isNotePaper} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {mountCategoryWheel} from './category-wheel.mjs';
-import {catalogueDesigns,catalogueThumbnail,prepareCatalogueDesign} from './catalogue.mjs';
+import {catalogueDesigns,mountCatalogueThumbnail,prepareCatalogueDesign} from './catalogue.mjs';
 import {startGuestStudio} from './guest-studio.mjs?v=complete-stickers';
 import {mountFrameReel} from './frame-reel.mjs';
 import {gestures,clamp,scene} from './placement.mjs';
 import {composePNG} from './compositor.mjs';
+import {stockCatPhoto} from './stock-photo.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 import {shopCategoryName as displayName} from './shared-designs.mjs';
 
@@ -113,7 +114,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     };
     if(grid){
       const tiles=[...dialog.querySelectorAll('[data-design]')];
-      const paint=tile=>{tile.querySelector('.grid-art').innerHTML=catalogueThumbnail(items[Number(tile.dataset.design)]);};
+      const paint=tile=>{mountCatalogueThumbnail(tile.querySelector('.grid-art'),items[Number(tile.dataset.design)]);};
       const observer=new IntersectionObserver(entries=>{
         for(const {target,isIntersecting} of entries)if(isIntersecting){paint(target);observer.unobserve(target);}
       },{root:dialog,rootMargin:'300px'});
@@ -126,7 +127,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     }else{
       dialog.querySelector('[data-grid]').onclick=()=>{gridScroll=0;library(true);};
       const first=Math.max(0,items.findIndex(item=>designKey(item)===chosenDesign.get(group)));
-      disposeReel=mountFrameReel(dialog,items,first,catalogueThumbnail,remember,pick);
+      disposeReel=mountFrameReel(dialog,items,first,mountCatalogueThumbnail,remember,pick);
     }
   }
   function confirmExit(action){
@@ -137,8 +138,18 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   function stages(){return [...(current.maskSheet?['Upload photo','Fit photo']:[]),...(current.textBox?['Write']:[]),'Place on screen','Finishing touches','Ready'];}
   function selectControl(key,opts){return '<label>'+key+'<select data-setting="'+key.toLowerCase()+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(draft[key.toLowerCase()]===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
   async function paint(){
-    const token=++latest,slot=dialog.querySelector('.parcel-canvas');
-    try{const density=stages()[step]==='Ready'?2:1;const art=await composePNG(current,draft,density);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft,density):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
+    const token=++latest,slot=dialog.querySelector('.parcel-canvas'),page=stages()[step];
+    try{
+      const density=page==='Ready'?2:1;
+      const showCat=current.sharedId&&current.maskSheet&&!draft.photo&&page==='Upload photo';
+      const preview=showCat?{...draft,photo:await stockCatPhoto()}:draft;
+      if(token!==latest||!slot?.isConnected)return;
+      const art=await composePNG(current,preview,density);
+      const placed=['Place on screen','Finishing touches','Ready'].includes(page);
+      if(token!==latest||!slot.isConnected)return;
+      finished=placed?scene(art,draft,density):art;slot.replaceChildren(finished);
+      if(page==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);
+    }
     catch(e){if(token===latest)report(e)}
   }
   function edit(){
