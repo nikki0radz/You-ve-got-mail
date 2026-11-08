@@ -15,6 +15,7 @@ def search(test,timeout=48):
   for n in ui:
    if test(n):return n
   time.sleep(.25)
+ print('WebView diagnostics',adb('logcat','-d','-s','chromium','ContentResolver','MediaProvider')[-3800:],flush=True)
  print('visible controls',[(n.get('resource-id'),labels(n)) for n in nodes() if n.get('resource-id') or any(labels(n))],flush=True)
  raise RuntimeError('Expected control missing')
 def tap(n):
@@ -33,15 +34,16 @@ def png(color):
 files={'qa-blue.png':png([25,80,180,255]),'qa-green.png':png([35,160,45,255]),'qa-red.jpg':base64.b64decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAgACADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDCooor5w/TQooooAKKKKACiiigD//Z')}
 adb('install','-g','phone-qa.apk')
 adb('shell','input','keyevent','KEYCODE_WAKEUP');adb('shell','wm','dismiss-keyguard')
-adb('shell','mkdir','-p','/sdcard/Pictures/GalleryQA')
+collection='content://media/external_primary/images/media'
 for name,data in files.items():
- file=p/name;file.write_bytes(data);dest='/sdcard/Pictures/GalleryQA/'+name;adb('push',file,dest);adb('shell','am','broadcast','-a','android.intent.action.MEDIA_SCANNER_SCAN_FILE','-d','file://'+dest)
-end=time.monotonic()+30
-while time.monotonic()<end:
- media=adb('shell','content','query','--uri','content://media/external/images/media','--projection','_display_name')
- if all(k in media for k in files):break
- time.sleep(1)
-else:raise RuntimeError('MediaStore did not index the 3 fixture images')
+ mime='image/png' if name.endswith('.png') else 'image/jpeg'
+ adb('shell','content','insert','--uri',collection,'--bind','_display_name:s:'+name,'--bind','mime_type:s:'+mime,'--bind','relative_path:s:Pictures/GalleryQA/','--bind','is_pending:i:1')
+ query=adb('shell','content','query','--uri',collection+'?includePending=1','--projection','_id:_display_name')
+ row=next(line for line in query.splitlines() if '_display_name='+name in line)
+ uri=collection+'/'+re.search(r'_id=(\d+)',row).group(1)
+ subprocess.run(['adb','shell','content','write','--uri',uri],input=data,check=True,timeout=30)
+ adb('shell','content','update','--uri',uri,'--bind','is_pending:i:0')
+ print('Committed media fixture:',adb('shell','content','query','--uri',uri,'--projection','_display_name:mime_type:_size:is_pending'),flush=True)
 adb('shell','am','start','-W','-n','uk.co.pigeonpost.mail/.Main')
 button('Later');button('Settings');button('Artwork manager');button('Upload PNGs')
 def grid():
@@ -49,8 +51,11 @@ def grid():
  # Platform photo grid exposes one image-view thumbnail per file.
  return [n for n in ui if n.get('resource-id','').rsplit('/',1)[-1] in ['icon_thumbnail','picker_photo','photo_thumbnail']]
 def waitgrid(count):
- end=time.monotonic()+30
+ end=time.monotonic()+75
+ retry_at=time.monotonic()+18
  while time.monotonic()<end:
+  if time.monotonic()>retry_at and count==2:
+   adb('shell','input','keyevent','KEYCODE_BACK');button('Upload PNGs');retry_at=time.monotonic()+20
   cells=grid()
   if len(cells)==count:return cells
   time.sleep(.4)
