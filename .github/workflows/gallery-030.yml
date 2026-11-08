@@ -1,7 +1,7 @@
 name: Android gallery batch test
 on:
   push:
-    branches: [qa/gallery-staged-bytes-031]
+    branches: [qa/gallery-result-bytes-031]
     paths: ['android/tests/gallery-030.js', 'android/tests/gallery-030.py', '.github/workflows/gallery-030.yml']
 permissions:
   contents: read
