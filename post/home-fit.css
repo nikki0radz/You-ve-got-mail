@@ -12,7 +12,8 @@
 #home-wheel>.wheel>p{margin:3px 10px}
 #home-wheel .wheel-paper{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;width:100%;border-radius:0;padding:8px 12px}
 #home-wheel .category-reel{flex:0 1 auto}
-#home-wheel .category-reel button{flex-basis:40%}
+#home-wheel .category-reel button{flex-basis:40%;aspect-ratio:.75}
+#home-wheel .category-reel button>span{width:132%}
 #home-wheel .category-reel::before,#home-wheel .category-reel::after{flex-basis:30%}
 #app:has(.header-board) .app-nav{margin-top:2px;padding-top:5px}
 @media(max-width:450px){#home-wheel{margin-inline:-19px}}
