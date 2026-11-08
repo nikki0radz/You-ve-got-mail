@@ -19,7 +19,13 @@ jobs:
       - name: Build a disposable APK using the release WebView
         run: |
           set -eu
-          python -c 'from pathlib import Path;p=Path("index.html");s=p.read_text();p.write_text(s.replace("<head>","<head><script>"+Path("android/tests/gallery-030.js").read_text()+"</script>",1))'
+          python - <<'PY'
+          from pathlib import Path
+          fixture=Path('android/tests/gallery-030.js').read_text().replace("note.textContent=s;","note.textContent=s;note.scrollIntoView();")
+          Path('index.html').write_text('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="shop/art-upload.css"><script>'+fixture+'</script><button onclick="openManager()">Artwork manager</button><script type="module">import {openArtworkUploads} from "./shop/art-upload.mjs";window.openManager=openArtworkUploads;</script>')
+          p=Path('android/tests/gallery-030.py')
+          p.write_text(p.read_text().replace("button('Later');button('Settings');","button('Later');"))
+          PY
           keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/qa.p12" -alias pigeonpost -storepass android -keypass android -keyalg RSA -dname "CN=Offline QA" -validity 1
           echo android > "$RUNNER_TEMP/qa.pass"
           MAIL_KEYSTORE="$RUNNER_TEMP/qa.p12" MAIL_PASSWORD_FILE="$RUNNER_TEMP/qa.pass" bash android/build.sh "$GITHUB_WORKSPACE/phone-qa.apk"
@@ -36,6 +42,10 @@ jobs:
           sudo rm -rf /usr/local/lib/android/sdk/ndk /usr/share/dotnet
           df -h /; ls -l /dev/kvm || true
           sdkmanager "system-images;android-35;google_apis;x86_64" "emulator"
+          curl -fsSL https://dl.google.com/android/repository/emulator-linux_x64-12414864.zip -o "$RUNNER_TEMP/emu35.zip"
+          unzip -q "$RUNNER_TEMP/emu35.zip" -d "$RUNNER_TEMP/pinned"
+          mv "$ANDROID_HOME/emulator" "$RUNNER_TEMP/original-emulator"
+          mv "$RUNNER_TEMP/pinned/emulator" "$ANDROID_HOME/emulator"
           export ANDROID_AVD_HOME="$RUNNER_TEMP/avds"
           mkdir -p "$ANDROID_AVD_HOME"
           echo no | avdmanager create avd -f -n PigeonQA -p "$ANDROID_AVD_HOME/PigeonQA.avd" -k "system-images;android-35;google_apis;x86_64" -d pixel_6
@@ -43,7 +53,7 @@ jobs:
           printf 'avd.ini.encoding=UTF-8\npath=%s/PigeonQA.avd\ntarget=android-35\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/PigeonQA.ini"
           "$ANDROID_HOME/emulator/emulator" -list-avds
           adb start-server
-          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature -Vulkan -cores 2 -memory 2048 -partition-size 2048 -no-metrics > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
+          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature -Vulkan -cores 2 -memory 2048 -partition-size 2048 > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
           emu_pid=$!
           trap 'tail -45 "$RUNNER_TEMP/pigeon-emulator.log"' ERR
           for i in {1..60}; do
