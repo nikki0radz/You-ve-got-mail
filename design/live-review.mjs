@@ -1,6 +1,8 @@
 import {feedbackGroups,approvedLooks} from './rounds.mjs';
 import {selector,label,describe,layout,screen} from './live-review-model.mjs';
 import {freezeFrame} from './review-freeze.mjs';
+import {repairLatestReview} from './review-repairs.mjs';
+import {appVersion} from './model.mjs';
 
 const prefix='pigeon.live-review.v1.';
 const properties={background:'background-color',text:'color',border:'border-color'};
@@ -24,6 +26,7 @@ function repairFlowerSwatches(){
   }catch{}
 }
 repairFlowerSwatches();
+repairLatestReview(localStorage);
 const spacer=document.createElement('div');
 spacer.className='review-space';
 document.body.prepend(spacer);
@@ -266,7 +269,7 @@ $('.export').onclick=()=>{
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.31',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion,exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };

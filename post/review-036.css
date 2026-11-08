@@ -1,0 +1,22 @@
+/* Circle sizing is independent of the artwork's intrinsic proportions. */
+.wheel .category-reel button>span{overflow:hidden;border-radius:50%}
+#app .postal-header>strong{font-size:clamp(25px,7.8vw,31px);line-height:1.1}
+#app .mailbox-heading{margin:-6px -5px 12px}
+html[data-theme=light] body:has(#app .mailbox-layout),html[data-theme=light] #app:has(.mailbox-layout){background:#f8f1dd;--mm-bg:#f8f1dd}
+html[data-theme=light] #app:has(.post-office-home){--shop-card:#ffe9c7}
+html[data-theme=light] #social-flow{background:#c9ddd1}
+html[data-theme=light] #flow[data-review-screen^=about],html[data-theme=light] #flow[data-review-screen^=about] [data-flow=cancel]{background:#fff9ed}
+html[data-theme=light] #app .people-heading{background:#fff9ed}
+html[data-theme=light] #app .setting-dropdown>div{background:#fff9ed}
+.post-scheduler [data-next]{background:#365a40;color:#fff9ed;padding:9px 22px;font:800 20px PostalBaloo,system-ui;border-radius:28px}
+:is(#mail-window,#flow) .recipient-choice .recipient-menu{min-width:0;width:100%;position:relative}
+:is(#mail-window,#flow) .recipient-choice{-webkit-tap-highlight-color:transparent}
+:is(#mail-window,#flow) .recipient-menu summary{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;cursor:pointer;list-style:none;font:750 20px PostalBaloo,system-ui;border-bottom:2px solid #597c66;-webkit-tap-highlight-color:transparent}
+:is(#mail-window,#flow) .recipient-menu summary::-webkit-details-marker{display:none}
+:is(#mail-window,#flow) .recipient-menu summary::after{content:'⌄';margin-inline-start:auto}
+:is(#mail-window,#flow) .recipient-menu:not([open])>.recipient-people{display:none!important}
+:is(#mail-window,#flow) .recipient-menu[open]>.recipient-people{display:flex;flex-direction:column;flex-wrap:nowrap;gap:5px;padding:5px 0}
+:is(#mail-window,#flow) .recipient-menu .recipient-people button{flex:none;width:100%;justify-content:flex-start;text-align:start;-webkit-tap-highlight-color:transparent}
+html[data-theme=light] :is(#mail-window,#flow) .recipient-choice{color:#365a40;background:#fff9ed}
+html[data-theme=light] :is(#mail-window,#flow) .recipient-choice .recipient-people button[aria-pressed=true]{background:#365a40;color:#fff9ed;border-color:#fff9ed}
+:is(#mail-window,#flow) .recipient-menu :is(summary,button):focus-visible{outline:2px solid #597c66;outline-offset:2px}

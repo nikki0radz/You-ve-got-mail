@@ -1,3 +1,4 @@
+import {repairLatestReview} from './design/review-repairs.mjs';
 import {openArtworkUploads} from './shop/art-upload.mjs';
 import {setupHomeColours} from './post/home-colours.mjs';
 import {openPhoneStudio,closePhoneStudio} from './design/phone-home.mjs';
@@ -10,6 +11,7 @@ import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
 import {installSocial} from './post/social.mjs';
 import {openShop,backInShop} from './shop/shop.mjs';
 import{createId,STORAGE_KEY,FRAMES,COLOURS,loadState,validateMessage,makeMessage,escapeHtml as esc}from'./domain.mjs';
+repairLatestReview(localStorage);
 const app=document.getElementById('app'),dialog=document.getElementById('flow'),notice=document.getElementById('notice');
 let raw=null;try{raw=localStorage.getItem(STORAGE_KEY)}catch{}
 let state=loadState(raw),tab='home',flow=null,lastFocus=null,noticeTimer;
@@ -37,7 +39,7 @@ async function mountHomeWheel(){
  try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load.';return;}
  if(!root.isConnected||generation!==wheelGeneration)return;
  mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;},onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render,null,state.profile);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});}
-function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',tab!=='settings')}<div class="draft-label">${window.Pigeon?"Android test edition":"Web preview · local test deliveries"}</div><div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span></button>`).join('')}</nav>`;if(tab==='settings')wireSettings(app);
+function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',false)}<div class="draft-label">${window.Pigeon?"Android test edition":"Web preview · local test deliveries"}</div><div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span></button>`).join('')}</nav>`;if(tab==='settings')wireSettings(app);
  if(tab==='home')mountHomeWheel();
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(window.Pigeon?.name)Pigeon.name(state.profile.name);

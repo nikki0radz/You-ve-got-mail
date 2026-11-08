@@ -1,6 +1,6 @@
 // Only structural identifiers enter a review. Mail contents, form values, URLs and
 // native mailbox identifiers remain in the live screen.
-const identityAttrs = ['data-action','data-pref','data-tool','data-flow','data-section','data-key','data-target','data-mode','data-folder','data-social','data-setting','data-range','data-style-key','data-design'];
+const identityAttrs = ['data-action','data-pref','data-tool','data-flow','data-section','data-key','data-target','data-mode','data-folder','data-social','data-setting','data-range','data-style-key','data-design','data-category'];
 const simple = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(value);
 const visibleClass = el => [...el.classList].find(c => simple(c) && !['active','selected','picked','editing','visible'].includes(c));
 export function selector(el) {

@@ -92,20 +92,23 @@ export function composeFrom(category,refresh,example,myProfile={}){
   const review=async(png,name,group,reopen,uploadedKind)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=snapshot.friends||[];const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a pigeon',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-5" data-review-look="sendrow-5"><label>Send to<select data-target><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><div class="recipient-people" data-review-look="recipientfont-1" data-base-look="recipientfont-1" role="group" aria-label="Recipient"></div></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
+    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-5" data-review-look="sendrow-5"><label>Send to<select data-target hidden aria-label="Recipient"><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><details class="recipient-menu"><summary aria-label="Choose recipient"></summary><div class="recipient-people" data-review-look="recipientfont-1" data-base-look="recipientfont-1" role="group" aria-label="Recipient"></div></details></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
     fitPreview(el().querySelector('.mail-proof'));
     const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
-    const list=el().querySelector('.recipient-people');
+    const list=el().querySelector('.recipient-people'),menu=el().querySelector('.recipient-menu'),heading=menu.querySelector('summary');
+    el().querySelector('.recipient-choice>label').onclick=e=>{if(e.target.localName==='label'){e.preventDefault();menu.open=!menu.open;heading.focus();}};
     const updateTarget=()=>{
       draft.target=target.value;
       [...list.children].forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===target.selectedIndex)));
+      const selected=list.children[target.selectedIndex];if(selected)heading.replaceChildren(...[...selected.childNodes].map(node=>node.cloneNode(true)));
+      heading.setAttribute('aria-label','Send to '+target.selectedOptions[0].textContent);
     };
     for(const option of target.options){
       const person=document.createElement('button');person.type='button';person.disabled=option.disabled;
       const avatar=document.createElement('img');avatar.className='recipient-avatar';avatar.alt='';
       avatar.src=profilePhoto(option.value==='self'?myProfile:people.find(p=>p.code===option.value)||{});
       person.setAttribute('aria-label',option.textContent);person.append(avatar,document.createTextNode(option.textContent.split(' · ')[0]));
-      person.onclick=()=>{target.value=option.value;updateTarget();};list.append(person);
+      person.onclick=()=>{target.value=option.value;updateTarget();menu.open=false;heading.focus();};list.append(person);
     }
     target.onchange=updateTarget;updateTarget();
     dispatchControls(el().querySelector('.delivery-controls'),draft);

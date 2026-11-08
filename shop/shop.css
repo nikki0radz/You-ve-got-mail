@@ -80,9 +80,10 @@
 .category-reel::-webkit-scrollbar{display:none}
 .category-reel::before,.category-reel::after{content:"";flex:0 0 30.5%}
 .wheel .category-reel button{display:grid;place-items:center;flex:0 0 39%;aspect-ratio:.77;scroll-snap-align:center;min-width:0;min-height:0;margin:0;padding:0;border:0;background:transparent;box-shadow:none;cursor:pointer}
-.wheel .category-reel button>span{display:grid;place-items:center;width:132%;aspect-ratio:1;box-sizing:border-box;border-radius:50%;background:#e1e5cc;border:1px solid #a7ae90;opacity:var(--orb-alpha,.45);transform:scale(var(--orb-scale,.62));pointer-events:none}
+.wheel .category-reel button>span{display:block;position:relative;contain:size;width:132%;height:auto;min-height:0;aspect-ratio:1;box-sizing:border-box;border-radius:50%;background:#e1e5cc;border:1px solid #a7ae90;opacity:var(--orb-alpha,.45);transform:scale(var(--orb-scale,.62));pointer-events:none}
 .wheel .category-reel button[aria-current=true]>span{background:#f4dda9;outline:2px dashed #b3a06f;outline-offset:-6px}
-.category-reel :is(img,svg){display:block;width:86%;height:86%;object-fit:contain}
+/* A 70% square fits wholly inside the circle, including artwork corners. */
+.category-reel button>span>:is(img,svg){display:block;position:absolute;inset:15%;width:70%;height:70%;min-width:0;min-height:0;object-fit:contain}
 .wheel .category-reel button:focus-visible{outline:0}.wheel .category-reel button:focus-visible>span{outline:3px solid #355840;outline-offset:-4px}
 .guest button.wheel-back.pocket-back,#parcel-shop button.wheel-back.pocket-back{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:7px 17px;min-height:44px;margin:0 0 8px;border:1px solid #94a28a;border-radius:28px;background:#fcf7e9;color:#324e39;box-shadow:0 2px 3px #47574420;font:700 15px system-ui}
 

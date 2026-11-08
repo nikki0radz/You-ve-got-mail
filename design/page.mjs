@@ -25,6 +25,8 @@ if(guest){
     settingsAction:hint,settings:hint,invite:hint,history:hint,queue:()=> 'ok',precise:()=>true,cancelScheduled:hint,
     post:(id,op)=>queueMicrotask(()=>window.postOfficeResult(id,JSON.stringify(op==='friends'?{data:people}:{error:'Device action · preview only'})))};
   document.documentElement.dataset.workroom=key;
+  const {createState,STORAGE_KEY}=await import('../domain.mjs');
+  values.set(STORAGE_KEY,JSON.stringify({...createState(),theme:'light'}));
   await import('../app.js');
   if(document.querySelector('#theme')?.checked)click('#theme');
   if(['inbox','sent','thread','friends','reply','quick','replyPicker'].includes(key))click('[data-action=tab][data-id=inbox]');
