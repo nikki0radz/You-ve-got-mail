@@ -31,3 +31,11 @@ test('existing phones receive consistent mailbox surfaces and selected tab witho
  targets['.people-heading'].colours.background='#fff9ed';local.setItem(key,JSON.stringify({surface:'app',view:'inbox / sent',theme:'light',targets}));repairLatestReview(local);
  assert.equal(JSON.parse(local.getItem(key)).targets['.people-heading'].colours.background,'#fff9ed');
 });
+
+test('all separator options survive saved-layout validation',async()=>{
+ const {cleanLayout}=await import('../design/model.mjs');
+ for(let option=1;option<=6;option++){
+  const reviewLook='recipientdivider-'+option;
+  assert.equal(cleanLayout({styles:{'view-divider':{reviewLook}}}).styles['view-divider'].reviewLook,reviewLook);
+ }
+});
