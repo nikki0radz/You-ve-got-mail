@@ -15,6 +15,7 @@
       <intent-filter><action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES"/></intent-filter>
       <meta-data android:name="photopicker_activity:0:required" android:value=""/>
     </service>
+    <provider android:name=".PickedPhotos" android:authorities="uk.co.pigeonpost.mail.picked" android:exported="false"/>
     <activity android:name=".Main" android:exported="true" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
       <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
     </activity>
