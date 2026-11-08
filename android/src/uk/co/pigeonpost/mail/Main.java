@@ -19,6 +19,7 @@ import java.util.*;
 public class Main extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> photo;
+    private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
     private FrameLayout frame;
@@ -37,7 +38,7 @@ public class Main extends Activity {
     }
     private int dp(int n){return Math.round(getResources().getDisplayMetrics().density*n);}
     void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
-    @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);
+    @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);imageImports.execute(()->PickedPhotos.expire(this));
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::handleBack);
         frame=new FrameLayout(this);web=new WebView(this);frame.addView(web);setContentView(frame);bars(Mail.prefs(this).getBoolean("night",true));
         frame.setOnApplyWindowInsetsListener((v,i)->{
@@ -135,7 +136,7 @@ public class Main extends Activity {
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
         if(!webReady||pendingReply.isEmpty())return;
@@ -170,7 +171,25 @@ public class Main extends Activity {
                 if(isPickedImage(single))selected.add(single);
             }
             ValueCallback<Uri[]> callback=photo;photo=null;
-            callback.onReceiveValue(selected.isEmpty()?null:selected.toArray(new Uri[0]));
+            if(selected.isEmpty())callback.onReceiveValue(null);
+            else imageImports.execute(()->{
+                ArrayList<Uri> copies=new ArrayList<>();
+                String reason="";
+                for(Uri source:selected){
+                    if(Thread.currentThread().isInterrupted())return;
+                    try{copies.add(PickedPhotos.copy(Main.this,source));}
+                    catch(IOException | RuntimeException e){reason=e.getMessage();}
+                }
+                final String failure=reason;
+                runOnUiThread(()->{
+                    if(isDestroyed()||isFinishing())return;
+                    callback.onReceiveValue(copies.isEmpty()?null:copies.toArray(new Uri[0]));
+                    if(copies.size()!=selected.size()){
+                        String detail="Pictures must be 32 MB or smaller.".equals(failure)?" "+failure:" Choose the pictures again to retry.";
+                        toast("Could not import "+(selected.size()-copies.size())+" of "+selected.size()+" pictures."+detail);
+                    }
+                });
+            });
         }
         if(req==43 && reviewData!=null){
             String review=reviewData;reviewData=null;
