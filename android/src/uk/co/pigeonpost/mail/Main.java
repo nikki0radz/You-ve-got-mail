@@ -21,6 +21,7 @@ public class Main extends Activity {
     private ValueCallback<Uri[]> photo;
     private Uri cameraPhoto;
     private PermissionRequest videoPermission;
+    private DeliverySetup deliverySetup;
     private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
@@ -100,12 +101,7 @@ public class Main extends Activity {
         web.addJavascriptInterface(new Bridge(),"Pigeon");incoming(getIntent());
         // Cached screens open promptly; a completed update refreshes only an idle screen.
         designHandler.postDelayed(initialDesign,1200);checkDesignUpdates();
-        if(!Mail.prefs(this).getBoolean("intro",false)){
-            Mail.prefs(this).edit().putBoolean("intro",true).apply();
-            new AlertDialog.Builder(this).setTitle("Let a pigeon land on your screen")
-              .setMessage("Enable phone notifications and display over other apps for the floating PNG. For exact delivery times, enable precise schedules too. You can change these later in Settings.")
-              .setPositiveButton("Set up delivery",(d,k)->settings()).setNegativeButton("Later",null).show();
-        }
+        deliverySetup=new DeliverySetup(this,b);
     }
     private static final String OEM_PICK_IMAGES="androidx.activity.result.contract.action.PICK_IMAGES";
     private boolean launchPhotoPicker(Intent intent){
@@ -163,11 +159,13 @@ public class Main extends Activity {
         return false;
     }
     private void handleBack(){
+        if(deliverySetup!=null&&deliverySetup.back())return;
         if(!webReady){finish();return;}
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){if(videoPermission!=null){videoPermission.deny();videoPermission=null;}designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){if(deliverySetup!=null)deliverySetup.destroy();if(videoPermission!=null){videoPermission.deny();videoPermission=null;}designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
+    @Override protected void onSaveInstanceState(Bundle out){if(deliverySetup!=null)deliverySetup.save(out);super.onSaveInstanceState(out);}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
         if(!webReady||pendingReply.isEmpty())return;
@@ -182,7 +180,7 @@ public class Main extends Activity {
         else startActivity(new Intent(this,OpenParcel.class).putExtra("id",id));
         i.removeExtra("id");
     }
-    protected void onResume(){super.onResume();foreground=true;if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
+    protected void onResume(){super.onResume();foreground=true;if(deliverySetup!=null)deliverySetup.resume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
     protected void onPause(){foreground=false;super.onPause();}
     private void loadDesign(DesignBundle release){
         if(isDestroyed()||isFinishing())return;
@@ -270,22 +268,36 @@ public class Main extends Activity {
     }
     void settings(){pendingReply="@settings";dispatchIntent();}
     void openSetting(String key){
+        try{
         switch(key){
+        case "deliverySetup":deliverySetup.start();break;
         case "overlay":startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));break;
         case "notifications":
-            if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=0)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},9);
+            if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=0&&
+                (!Mail.prefs(this).getBoolean("notificationAsked",false)||shouldShowRequestPermissionRationale("android.permission.POST_NOTIFICATIONS"))){
+                Mail.prefs(this).edit().putBoolean("notificationAsked",true).apply();
+                requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},9);
+            }else if(getSystemService(NotificationManager.class).areNotificationsEnabled()&&!Mail.enabled(this,Mail.ALERT))
+                startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT));
+            else if(getSystemService(NotificationManager.class).areNotificationsEnabled()&&!Mail.enabled(this,Mail.QUIET))
+                startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.QUIET));
             else startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()));
             break;
         case "warningChannel":startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,Mail.ALERT));break;
         case "precise":if(Build.VERSION.SDK_INT>=31)startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName())));else toast("Precise schedules are available.");break;
+        case "battery":startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));break;
         case "design":startActivity(new Intent(this,DesignMode.class).putExtra("textZoom",web.getSettings().getTextZoom()));break;
         case "designForget":DesignMode.forget(this);break;
         case "updates":checkUpdates();break;
+        }
+        }catch(ActivityNotFoundException|SecurityException unavailable){
+            toast("This phone couldn’t open that page. Check You’ve Got Mail in Android Settings → Apps.");
         }
     }
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){
         super.onRequestPermissionsResult(code,permissions,results);
         if(code==46&&videoPermission!=null){PermissionRequest pending=videoPermission;videoPermission=null;if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)pending.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});else pending.deny();}
+        if(deliverySetup!=null)deliverySetup.refresh();
         if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);
     }
     void checkUpdates(){
@@ -363,7 +375,8 @@ public class Main extends Activity {
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
-                data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
+                data.put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
+                data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();
         }

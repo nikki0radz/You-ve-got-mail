@@ -10,7 +10,7 @@ const base='https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/';
 const token=location.hash.slice(1);
 const steps=document.getElementById('steps'),status=document.getElementById('status');
 const kinds={Photos:'a framed photo',Stickers:'a sticker',Reminders:'a reminder','Love notes':'a love note',Flowers:'flowers',Postcards:'a postcard',Notes:'a note'};
-let draft;
+let draft,recipientName=preview?'Nicole':'your friend';
 async function api(path,key,body){
   const resp=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+key,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const data=await resp.json();if(!resp.ok){const error=new Error(data.error||'Could not reach the post office.');error.status=resp.status;throw error;}return data;
@@ -18,6 +18,7 @@ async function api(path,key,body){
 function invitation(){
   steps.dataset.reviewScreen="invitation";
   steps.innerHTML='<section class="invitation"><img class="courier" src="assets/home/mascot.webp?v=satchel" alt="Pigeon with a messenger bag on a green letterbox"><p class="eyebrow">A PIGEON FROM NICOLE</p><h1>Got a minute for<br>Nicole?</h1><p id="brief">She sent you a one-time link. Pick a little something and this pigeon will drop it onto her phone.</p><button class="accept" id="accept">Alright, pigeon. I’m in.</button><button class="quiet" id="decline">Tell her I’m out.</button></section>';
+  if(!preview){steps.querySelector('.eyebrow').textContent='A PIGEON FROM '+recipientName.toUpperCase();const heading=steps.querySelector('h1');heading.replaceChildren('Got a minute for',document.createElement('br'),recipientName+'?');steps.querySelector('#brief').textContent='Your friend sent you a one-time link. Pick a little something and this pigeon will drop it onto their phone.';steps.querySelector('#decline').textContent='Tell them I’m out.';}
   status.textContent='';
   steps.querySelector('#accept').onclick=loadChoices;
   steps.querySelector('#decline').onclick=()=>{
@@ -68,7 +69,8 @@ function rememberKey(){
 function loading(){
   steps.dataset.reviewScreen="preparing delivery";
   steps.innerHTML='<section class="flight dispatch-envelope"><small>PIGEON POST · DISPATCH DESK</small><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt="Pigeon with its satchel"></div><h2>Preparing your delivery</h2><p></p><div class="airmail-route" aria-hidden="true"><span>POST OFFICE</span><i></i><span>NICOLE</span></div></section>';
-  steps.querySelector('.flight p').textContent=draft.later?'Tucking your parcel away for its scheduled delivery.':'One little parcel, addressed to Nicole.';
+  steps.querySelector('.airmail-route span:last-child').textContent=recipientName.toUpperCase();
+  steps.querySelector('.flight p').textContent=draft.later?'Tucking your parcel away for its scheduled delivery.':'One little parcel, addressed to '+recipientName+'.';
   status.textContent=preview?'Preview only · No mail will be sent.':'';
 
 }
@@ -79,6 +81,7 @@ function openReceipt(key){
 function review(){
   steps.dataset.reviewScreen="dispatch";
   steps.innerHTML='<h2 class="dispatch-title">You’re posting to Nicole</h2><div class="final-proof"><img alt="Your finished parcel"></div><label class="sender-label">What’s your name?<input id="sender" maxlength="64" autocomplete="given-name" placeholder="Your name"></label><fieldset class="dispatch-timing" data-base-look="whenticks-1" data-review-look="whenticks-1"><legend data-review-look="timeheading-1" data-base-look="timeheading-1">When should it arrive?</legend><div class="dispatch-dock"><button type="button" id="now">Now</button><button type="button" id="later">Later</button></div></fieldset><label id="when-label" hidden>Date and time<input id="when" type="datetime-local"><small></small></label><div class="dispatch-dock dispatch-actions"><button id="send"></button></div><button class="edit-parcel" id="back"><span aria-hidden="true">✎</span> Edit parcel</button>';
+  steps.querySelector('.dispatch-title').textContent='You’re posting to '+recipientName;
   const sender=steps.querySelector('#sender'),whenField=steps.querySelector('#when'),send=steps.querySelector('#send');
   sender.value=draft.sender||'';whenField.value=draft.time||'';const now=steps.querySelector('#now'),later=steps.querySelector('#later'),dateLabel=steps.querySelector('#when-label');
   dateLabel.querySelector('small').textContent='Your local time · '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · within 30 days';
@@ -86,7 +89,7 @@ function review(){
     steps.dataset.reviewScreen=scheduled?"dispatch / scheduled":"dispatch / now";
     draft.later=scheduled;dateLabel.hidden=!scheduled;whenField.required=scheduled;
     now.setAttribute('aria-pressed',String(!scheduled));later.setAttribute('aria-pressed',String(scheduled));
-    send.textContent=scheduled?(preview?'Preview schedule':'Schedule delivery'):(preview?'Preview delivery':'Send to Nicole');
+    send.textContent=scheduled?(preview?'Preview schedule':'Schedule delivery'):(preview?'Preview delivery':'Send to '+recipientName);
     status.textContent=preview?'Preview only. No mail will be sent.':'';
   }
   now.onclick=()=>mode(false);later.onclick=()=>mode(true);mode(draft.later??Boolean(draft.time));
@@ -125,13 +128,13 @@ function showReceipt(key){
     inbox:'<path d="M3 14l3-9h12l3 9v5H3z M3 14h5l2 2h4l2-2h5"/>',
     rejected:'<circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>'
   };
-  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If Nicole replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask Nicole for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.31.apk">download the Android test app</a>. Thanks for testing Pigeon Post.</p></details></div></article>';
+  steps.innerHTML='<article class="delivery-receipt"><small class="receipt-label">DELIVERY STATUS</small><div class="receipt-sign" aria-hidden="true"></div><h2 data-heading></h2><p data-detail></p><p class="reply" aria-live="polite"></p><button id="check">Refresh status</button><div class="receipt-faq"><details><summary>Where did my parcel go?</summary><p data-where></p></details><details><summary>How do I see a reply?</summary><p>If your friend replies, it appears here. Reopen this link any time.</p></details><details><summary>Can I send another?</summary><p>Ask your friend for a fresh link or <a href="https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-0.1.41.apk">download Pigeon Post for Android</a>.</p></details></div></article>';
   const heading=steps.querySelector('[data-heading]'),detail=steps.querySelector('[data-detail]'),sign=steps.querySelector('.receipt-sign'),where=steps.querySelector('[data-where]'),reply=steps.querySelector('.reply'),check=steps.querySelector('#check');
   function display(result){
     confirmed=result.status==='acknowledged';
     const scheduled=Number(result.when)>Date.now(),time=scheduled?new Date(result.when).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}):'';
     const states={
-      waiting:['Waiting for Nicole’s phone',scheduled?'Requested delivery: '+time+'.':'Your parcel is at the post office.','The phone hasn’t collected it yet. It may be off, offline or between mailbox checks.'],
+      waiting:['Waiting for your friend’s phone',scheduled?'Requested delivery: '+time+'.':'Your parcel is at the post office.','The phone hasn’t collected it yet. It may be off, offline or between mailbox checks.'],
       scheduled:['Scheduled for later',time,'Nicole’s phone has saved the parcel for the time you chose.'],
       accepted:['Received by the app','Nicole’s app has saved your parcel.','The app has confirmed receipt. It hasn’t reported where the parcel appeared.'],
       locked_notification:['Phone was locked','A notification was posted for Nicole.','Android received the notification while the phone was locked. Nicole’s settings control what appears on the lock screen.'],
@@ -204,7 +207,7 @@ async function start(){
   if(/^reply-[a-f0-9]{64}$/.test(token)){showReceipt(token.slice(6));return;}
   if(!/^[a-f0-9]{64}$/.test(token)){status.textContent='Open the full invitation link your friend shared with you.';return;}
   try{
-    await api('link',token);invitation();
+    const link=await api('link',token);recipientName=link.recipientName||'your friend';invitation();
   }catch(e){
     if(e.status===410){
       let remembered;try{remembered=localStorage.getItem(storageKey);}catch{}
