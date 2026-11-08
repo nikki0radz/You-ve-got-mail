@@ -70,7 +70,12 @@ function overview(){
     '<input type="file" data-png accept="image/png,.png" multiple hidden>'+action('choose','＋ Upload PNGs','primary')+
     '<div class="art-queue" hidden><h3>Upload queue</h3><p data-progress role="status"></p><ol></ol>'+action('upload','Upload all','primary')+'</div>'+
     '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('lock','Lock manager','art-link'));
-  by('[data-png]').onchange=e=>{const files=Array.from(e.target.files);e.target.value='';addFiles(files);};
+  by('[data-png]').onchange=async e=>{
+    const input=e.currentTarget;
+    try{await addFiles(Array.from(input.files));}
+    catch(error){message(error.message);}
+    finally{input.value='';}
+  };
   const filterEl=by('[data-filter]');if(!categories().has(filter))filter='';
   filterEl.innerHTML=opt('','All categories',filter)+[...categories().keys()].map(c=>opt(c,c,filter)).join('');
   filterEl.onchange=()=>{filter=filterEl.value;page=0;drawLibrary();};
@@ -124,8 +129,11 @@ async function addFiles(files){
     for(let i=0;i<files.length;i++){
       const file=files[i];progress='Preparing '+(i+1)+' of '+files.length+'…';drawRows();
       try{
-        const row={id:newCode(),scope,order:base+i,fileName:file.name,name:'',category,kind,textArea:initialArea(),...await dimensions(file)};
-        await saveEntry('queue',{...row,blob:file});rows.push(row);count++;
+        const size=await dimensions(file);
+        // Keep the original bytes in the queue after Android releases the gallery selection.
+        const blob=new Blob([await file.arrayBuffer()],{type:'image/png'});
+        const row={id:newCode(),scope,order:base+i,fileName:file.name,name:'',category,kind,textArea:initialArea(),...size};
+        await saveEntry('queue',{...row,blob});rows.push(row);count++;
       }catch(e){errors.push(file.name+' ('+e.message+')');}
     }
   }finally{reading=false;progress='';drawRows();}

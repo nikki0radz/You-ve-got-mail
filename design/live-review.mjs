@@ -266,7 +266,7 @@ $('.export').onclick=()=>{
   }catch{}
   all.set(keyFor(session.meta),session.entry);
   const views=[...all.values()];
-  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.30',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
+  const data=JSON.stringify({format:'pigeon-post.element-review',version:1,appVersion:'0.1.31',exportedAt:new Date().toISOString(),preferences:prefs,views},null,2);
   if(window.Pigeon?.saveReview){Pigeon.saveReview(data);return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='pigeon-post-design-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
 };

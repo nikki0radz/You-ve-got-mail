@@ -19,6 +19,7 @@ import java.util.*;
 public class Main extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> photo;
+    private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
     private FrameLayout frame;
@@ -37,7 +38,7 @@ public class Main extends Activity {
     }
     private int dp(int n){return Math.round(getResources().getDisplayMetrics().density*n);}
     void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
-    @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);
+    @Override public void onCreate(Bundle b){super.onCreate(b);Mail.channels(this);SyncJob.register(this);imageImports.execute(()->PickedPhotos.expire(this));
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::handleBack);
         frame=new FrameLayout(this);web=new WebView(this);frame.addView(web);setContentView(frame);bars(Mail.prefs(this).getBoolean("night",true));
         frame.setOnApplyWindowInsetsListener((v,i)->{
@@ -45,7 +46,7 @@ public class Main extends Activity {
             else v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());
             return Build.VERSION.SDK_INT>=30?WindowInsets.CONSUMED:i.consumeSystemWindowInsets();
         });
-        WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(false);
+        WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);
         web.setWebViewClient(new WebViewClient(){
             public void onPageFinished(WebView v,String url){webReady=true;dispatchIntent();}
             public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){Uri u=req.getUrl();return req.isForMainFrame()||!"https".equals(u.getScheme())||!HOST.equals(u.getHost());}
@@ -135,7 +136,7 @@ public class Main extends Activity {
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
         if(!webReady||pendingReply.isEmpty())return;
@@ -150,6 +151,13 @@ public class Main extends Activity {
         i.removeExtra("id");
     }
     protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
+    private boolean isPickedImage(Uri uri){
+        if(uri==null || !"content".equals(uri.getScheme()) || uri.getAuthority()==null)return false;
+        try{
+            String type=getContentResolver().getType(uri);
+            return type!=null && type.startsWith("image/");
+        }catch(SecurityException | IllegalArgumentException inaccessible){return false;}
+    }
     protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);
         if(req==41 && photo!=null){
             LinkedHashSet<Uri> selected=new LinkedHashSet<>();
@@ -157,13 +165,31 @@ public class Main extends Activity {
                 ClipData clips=data.getClipData();
                 if(clips!=null)for(int n=0;n<clips.getItemCount();n++){
                     Uri u=clips.getItemAt(n).getUri();
-                    if(u!=null && "content".equals(u.getScheme()))selected.add(u);
+                    if(isPickedImage(u))selected.add(u);
                 }
                 Uri single=data.getData();
-                if(single!=null && "content".equals(single.getScheme()))selected.add(single);
+                if(isPickedImage(single))selected.add(single);
             }
             ValueCallback<Uri[]> callback=photo;photo=null;
-            callback.onReceiveValue(selected.isEmpty()?null:selected.toArray(new Uri[0]));
+            if(selected.isEmpty())callback.onReceiveValue(null);
+            else imageImports.execute(()->{
+                ArrayList<Uri> copies=new ArrayList<>();
+                String reason="";
+                for(Uri source:selected){
+                    if(Thread.currentThread().isInterrupted())return;
+                    try{copies.add(PickedPhotos.copy(Main.this,source));}
+                    catch(IOException | RuntimeException e){reason=e.getMessage();}
+                }
+                final String failure=reason;
+                runOnUiThread(()->{
+                    if(isDestroyed()||isFinishing())return;
+                    callback.onReceiveValue(copies.isEmpty()?null:copies.toArray(new Uri[0]));
+                    if(copies.size()!=selected.size()){
+                        String detail="Pictures must be 32 MB or smaller.".equals(failure)?" "+failure:" Choose the pictures again to retry.";
+                        toast("Could not import "+(selected.size()-copies.size())+" of "+selected.size()+" pictures."+detail);
+                    }
+                });
+            });
         }
         if(req==43 && reviewData!=null){
             String review=reviewData;reviewData=null;
