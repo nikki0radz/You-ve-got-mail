@@ -70,3 +70,11 @@ for(const [screen,round] of Object.entries(rounds)){
   else if(approvedLooks[round.key]){const [first,...rest]=groups;rounds[screen]={...first,groups:rest};}
   else round.groups=(round.groups||[]).filter(g=>!approvedLooks[g.key]);
 }
+
+const recipientDivider={
+  id:'parcel-feedback-recipientdivider-01',key:'recipientdivider',title:'Send to separator',
+  selector:'.recipient-menu',anchor:'.recipient-choice',
+  options:['Fine rule','Dashed stitch','Double rule','Three dots','Envelope break','Diamond pin'].map((name,i)=>({name,changes:[{selector:'.recipient-menu',style:{reviewLook:'recipientdivider-'+(i+1)}}]}))
+};
+feedbackGroups.push(recipientDivider);
+for(const round of new Set([rounds.recipient,rounds.schedule]))round.groups.push(recipientDivider);

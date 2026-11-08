@@ -20,3 +20,13 @@ html[data-theme=light] #app .setting-dropdown>div{background:#fff9ed}
 html[data-theme=light] :is(#mail-window,#flow) .recipient-choice{color:#365a40;background:#fff9ed}
 html[data-theme=light] :is(#mail-window,#flow) .recipient-choice .recipient-people button[aria-pressed=true]{background:#365a40;color:#fff9ed;border-color:#fff9ed}
 :is(#mail-window,#flow) .recipient-menu :is(summary,button):focus-visible{outline:2px solid #597c66;outline-offset:2px}
+
+/* One independently selectable separator between the label and recipient. */
+:is(#mail-window,#flow) .recipient-menu[data-review-look^=recipientdivider-]{box-sizing:border-box;padding-inline-start:18px}
+:is(#mail-window,#flow) .recipient-menu[data-review-look^=recipientdivider-]::before{content:'';position:absolute;inset:4px auto auto 0;width:1px;height:40px;background:currentColor;opacity:.65;pointer-events:none}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-2]::before{width:0;background:none;border-inline-start:2px dashed currentColor}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-3]::before{width:3px;background:none;border-inline:1px solid currentColor}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-4]::before{content:'•\a•\a•';white-space:pre;top:7px;left:-3px;width:8px;height:34px;background:none;font:800 10px/11px system-ui;text-align:center}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-5]::before{content:'✉';left:-6px;width:15px;display:grid;place-items:center;background:linear-gradient(currentColor,currentColor) center top/1px 10px no-repeat,linear-gradient(currentColor,currentColor) center bottom/1px 10px no-repeat;font:16px/1 system-ui;opacity:1}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-6]::before{width:1px;background:linear-gradient(currentColor,currentColor) center top/1px 14px no-repeat,linear-gradient(currentColor,currentColor) center bottom/1px 14px no-repeat}
+:is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-6]::after{content:'';position:absolute;left:-3px;top:20px;width:7px;height:7px;border:1px solid currentColor;box-sizing:border-box;transform:rotate(45deg);pointer-events:none}
