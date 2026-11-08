@@ -22,6 +22,11 @@ public class Main extends Activity {
     private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
+    private DesignUpdates designUpdates;
+    private volatile DesignBundle designBundle;
+    private final Handler designHandler=new Handler(Looper.getMainLooper());
+    private boolean firstPageLoaded,designChecking,foreground;
+    private final Runnable initialDesign=()->loadDesign(designBundle);
     private FrameLayout frame;
     void bars(boolean dark){
         int colour=Color.parseColor(dark?"#192824":"#faf4e5");frame.setBackgroundColor(colour);
@@ -47,8 +52,10 @@ public class Main extends Activity {
             return Build.VERSION.SDK_INT>=30?WindowInsets.CONSUMED:i.consumeSystemWindowInsets();
         });
         WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);
+        try{designUpdates=new DesignUpdates(this);designBundle=designUpdates.saved();}catch(IOException ignored){}
         web.setWebViewClient(new WebViewClient(){
-            public void onPageFinished(WebView v,String url){webReady=true;dispatchIntent();}
+            public void onPageFinished(WebView v,String url){webReady=true;dispatchIntent();verifyDesign();}
+            public void onReceivedError(WebView v,WebResourceRequest request,WebResourceError error){if(request.isForMainFrame())rejectDesign();}
             public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest req){Uri u=req.getUrl();return req.isForMainFrame()||!"https".equals(u.getScheme())||!HOST.equals(u.getHost());}
             public WebResourceResponse shouldInterceptRequest(WebView w,WebResourceRequest req){
                 Uri uri=req.getUrl();
@@ -62,7 +69,8 @@ public class Main extends Activity {
                         try{return new WebResourceResponse("image/png",null,new FileInputStream(Mail.image(Main.this,path.substring(10,path.length()-4))));}catch(IOException ignored){}
                     }
                     try{String mime=path.endsWith(".mjs")||path.endsWith(".js")?"text/javascript":path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".json")?"application/json":path.endsWith(".png")?"image/png":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".woff2")?"font/woff2":path.endsWith(".woff")?"font/woff":path.endsWith(".webp")?"image/webp":"application/octet-stream";
-                        return new WebResourceResponse(mime,null,getAssets().open("site"+path));
+                        InputStream content=designUpdates!=null&&designBundle!=null?designUpdates.open(designBundle,path.substring(1)):getAssets().open("site"+path);
+                        return new WebResourceResponse(mime,null,200,"OK",Collections.singletonMap("Cache-Control","no-store"),content);
                     }catch(IOException ignored){}
                 }
                 return new WebResourceResponse("text/plain","UTF-8",404,"Missing",Collections.emptyMap(),new ByteArrayInputStream(new byte[0]));
@@ -78,7 +86,9 @@ public class Main extends Activity {
             }
             public boolean onJsConfirm(WebView v,String url,String msg,JsResult r){new AlertDialog.Builder(Main.this).setMessage(msg).setPositiveButton("Discard",(d,k)->r.confirm()).setNegativeButton("Keep editing",(d,k)->r.cancel()).setOnCancelListener(d->r.cancel()).show();return true;}
         });
-        web.addJavascriptInterface(new Bridge(),"Pigeon");web.loadUrl("https://"+HOST+"/index.html");incoming(getIntent());
+        web.addJavascriptInterface(new Bridge(),"Pigeon");incoming(getIntent());
+        // Cached screens open promptly; a completed update refreshes only an idle screen.
+        designHandler.postDelayed(initialDesign,1200);checkDesignUpdates();
         if(!Mail.prefs(this).getBoolean("intro",false)){
             Mail.prefs(this).edit().putBoolean("intro",true).apply();
             new AlertDialog.Builder(this).setTitle("Let a pigeon land on your screen")
@@ -136,7 +146,7 @@ public class Main extends Activity {
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
         if(!webReady||pendingReply.isEmpty())return;
@@ -150,7 +160,39 @@ public class Main extends Activity {
         else startActivity(new Intent(this,OpenParcel.class).putExtra("id",id));
         i.removeExtra("id");
     }
-    protected void onResume(){super.onResume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->web.evaluateJavascript("window.refreshMailbox?.()",null));});}
+    protected void onResume(){super.onResume();foreground=true;if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
+    protected void onPause(){foreground=false;super.onPause();}
+    private void loadDesign(DesignBundle release){
+        if(isDestroyed()||isFinishing())return;
+        designHandler.removeCallbacks(initialDesign);designBundle=release;firstPageLoaded=true;webReady=false;
+        web.stopLoading();web.loadUrl("https://"+HOST+"/index.html");
+    }
+    private void checkDesignUpdates(){
+        if(designUpdates==null||designChecking||isDestroyed())return;designChecking=true;
+        DesignUpdates.io.execute(()->{
+            DesignBundle next;try{next=designUpdates.refresh();}catch(IOException ignored){next=designUpdates.saved();}
+            final DesignBundle release=next;
+            runOnUiThread(()->{
+                designChecking=false;if(isDestroyed()||isFinishing())return;
+                if(!firstPageLoaded){loadDesign(release);return;}
+                if(!foreground||!webReady||photo!=null||!pendingReply.isEmpty()||designBundle==null||release.revision.equals(designBundle.revision))return;
+                web.evaluateJavascript("Boolean(window.pigeonPrepareDesignReload?.())",safe->{if("true".equals(safe))loadDesign(release);});
+            });
+        });
+    }
+    private void verifyDesign(){
+        if(designUpdates==null||designBundle==null||designBundle.revision.equals(designUpdates.bundled.revision))return;
+        final String revision=designBundle.revision;
+        designHandler.postDelayed(()->{
+            if(isDestroyed()||designBundle==null||!revision.equals(designBundle.revision))return;
+            web.evaluateJavascript("Boolean(window.pigeonAppReady && document.getElementById('app')?.childElementCount)",ready->{if(!"true".equals(ready))rejectDesign();});
+        },6000);
+    }
+    private void rejectDesign(){
+        if(designUpdates==null||designBundle==null||designBundle.revision.equals(designUpdates.bundled.revision))return;
+        final String revision=designBundle.revision;
+        DesignUpdates.io.execute(()->{DesignBundle safe=designUpdates.reject(revision);runOnUiThread(()->{if(designBundle!=null&&revision.equals(designBundle.revision))loadDesign(safe);});});
+    }
     private boolean isPickedImage(Uri uri){
         if(uri==null || !"content".equals(uri.getScheme()) || uri.getAuthority()==null)return false;
         try{

@@ -41,6 +41,10 @@ The Android app creates a private mailbox key on the device. The HTTPS delivery 
 
 ## Development
 
+Android 0.1.34 checks for published screen updates when opened or resumed. Compatible HTML, styles, scripts and built-in artwork download automatically, with a checksum for every file. The app keeps a complete offline copy and applies a new design only when no editor, picker or design review is open. Interrupted downloads keep the current release, and an updated screen that fails to start falls back to the previous working design. Installing 0.1.34 enables this; later compatible screen changes need no new APK. Native features and permission changes still require an installer.
+
+`npm run build` generates `dist/design-update.json` from the exact web output. Publish the complete output at the existing Delivery workroom, including that manifest. Its bridge version must match the app's supported native interface. Never edit a published manifest without publishing its matching files.
+
 Run `npm test`, `npm run check`, and `npm run build`. Serve the repository root or built dist folder with a static HTTP server. The PNG sprite sheets, alpha masks and template writing areas are in `assets/post`. The site uses GitHub Pages.
 
 For Android, use JDK 17, SDK platform 35, Build Tools 35.0.0, zip, and Node.js. Set `ANDROID_HOME`, `MAIL_KEYSTORE` and `MAIL_PASSWORD_FILE`, then run `android/build.sh /path/to/Youve-Got-Mail.apk`. The builder bundles the same local editor, compiles the native delivery components, signs the APK with the private pigeonpost key and verifies its signature. Keep signing files outside the repository.

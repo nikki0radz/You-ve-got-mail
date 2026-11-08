@@ -13,6 +13,7 @@ import{createId,STORAGE_KEY,FRAMES,COLOURS,loadState,validateMessage,makeMessage
 const app=document.getElementById('app'),dialog=document.getElementById('flow'),notice=document.getElementById('notice');
 let raw=null;try{raw=localStorage.getItem(STORAGE_KEY)}catch{}
 let state=loadState(raw),tab='home',flow=null,lastFocus=null,noticeTimer;
+try{const previous=sessionStorage.getItem('pigeon.design.return-tab');if(['home','inbox','settings'].includes(previous))tab=previous;sessionStorage.removeItem('pigeon.design.return-tab');}catch{}
 const icons={home:'M3 10l9-7 9 7v10H3z M9 20v-7h6v7',inbox:'M4 4h16l2 11v5H2v-5z M2 15h6l2 3h4l2-3h6',settings:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z',plus:'M12 5v14 M5 12h14',back:'M15 5l-7 7 7 7',mail:'M3 5h18v14H3z M3 6l9 7 9-7',close:'M6 6l12 12 M18 6L6 18',check:'M5 12l4 4L19 6',ring:'M5 17h14l-2-4V9a5 5 0 0 0-10 0v4z M10 21h4',link:'M9 15l6-6 M8 17l-1 1a4 4 0 0 1-5-5l5-5a4 4 0 0 1 5 0 M16 7l1-1a4 4 0 0 1 5 5l-5 5a4 4 0 0 1-5 0'};
 function icon(name){return`<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name]||icons.mail}"/></svg>`}
 function toast(text){clearTimeout(noticeTimer);notice.textContent=text;notice.classList.add('visible');noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3500)}
@@ -196,3 +197,12 @@ window.pigeonBack=()=>{
 };
 
 if(document.documentElement.dataset.workroom==='arrival')window.previewArrival=()=>start({type:'arrival',message:{type:'picture',image:testPigeon,sender:'Sample sender',text:'Preview delivery'}});
+
+window.pigeonPrepareDesignReload=()=>{
+ if(document.hidden||flow||document.querySelector('dialog[open],#phone-studio,details[open],input:focus,textarea:focus,select:focus,[contenteditable="true"]:focus'))return false;
+ if(document.querySelector('[data-review-ui="dock"]')?.shadowRoot?.querySelector('.switch[aria-checked="true"]'))return false;
+ try{sessionStorage.setItem('pigeon.design.return-tab',tab);}catch{}
+ document.body.inert=true;
+ return true;
+};
+window.pigeonAppReady=true;

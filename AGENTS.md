@@ -21,3 +21,5 @@
 - When Nicole requests alternatives, put the requested number in a versioned round in design/rounds.mjs. If no count is specified, default to six (within five to ten). Place numbered controls outside the primary phone beside the element they change. Track that element as the preview scrolls or zooms. Use a fresh round ID for new alternatives so past exports can identify the chosen option.
 
 - For multiple review targets, use plain numbers beside each element. Keep the target name accessible and preserve group IDs and independent choices in exports.
+
+- Android 0.1.34 checks the published workroom's design-update.json on launch/resume. Always build and publish that manifest together with its exact web assets. Keep bridge version 1 for compatible screen changes; require a new bridge version when web code needs new native methods. Never refresh an open editor or replace a complete cached release with partial downloads. Native feature changes still require an APK.
