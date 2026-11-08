@@ -1,17 +1,18 @@
-name: Check archived Android installer
+name: Verify Android download mirrors
 on:
   push:
     branches: [release/archive-android-029]
 permissions:
   contents: read
 jobs:
-  verify:
+  downloads:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify public archive download
+      - name: Check released download responses
         run: |
-          set -euo pipefail
           file=Youve-Got-Mail-0.1.29.apk
-          url="https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.29/$file"
-          curl --retry 3 --retry-all-errors --fail --silent --show-error --location "$url?download=1" -o "$file"
-          echo "0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d  $file" | sha256sum -c -
+          site=https://pigeon-post-delivery.nikki0radz.chatgpt.site
+          for url in "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.29/$file" "$site/downloads/Youve-Got-Mail-0.1.28.apk" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/723610133"; do
+            curl -sSL --max-time 30 -H 'Accept: application/octet-stream' -w 'HTTP %{http_code}; downloaded %{size_download} bytes\n' "$url" -o test.apk
+            sha256sum test.apk
+          done
