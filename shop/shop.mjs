@@ -209,7 +209,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       }
       dirty=true;paint();
     });
-    const file=dialog.querySelector('[data-photo],[data-second]');offerCamera(file);
+    const file=dialog.querySelector('[data-photo],[data-second]');offerCamera(file,{item:file?.hasAttribute('data-photo')?current:null});
     if(file)file.onchange=async()=>{
       if(!file.files[0])return;
       const url=URL.createObjectURL(file.files[0]),img=new Image();img.src=url;previewURL=url;

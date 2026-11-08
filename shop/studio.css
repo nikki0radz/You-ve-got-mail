@@ -94,3 +94,22 @@ dialog.ink-picker{box-sizing:border-box;width:min(90vw,290px);padding:18px;backg
 #parcel-shop.guest-studio .studio-tools button{background:transparent;border:0;box-shadow:none;border-radius:0}
 #parcel-shop.guest-studio .studio-tools [data-tool=second][aria-expanded=true],#parcel-shop.guest-studio .studio-tools [data-tool=note][aria-expanded=true]{background:transparent;box-shadow:none}
 #parcel-shop.guest-studio .studio-primary,#parcel-shop .frame-use{background:#365a40;color:#fff9e8;border-color:#365a40}
+
+/* Photo source actions and the live, full-screen frame camera. */
+.photo-source-actions{display:flex;gap:10px;align-items:stretch;width:100%;margin:10px 0}
+:is(.guest-studio,#social-flow,#parcel-shop) .photo-source-actions>button,.photo-source-actions>label{flex:1;min-width:0;width:auto;margin:0;min-height:46px;border:1px solid #597c66;border-radius:24px;padding:10px 8px;font-weight:800;text-align:center}
+.photo-source-actions .camera-choice{background:var(--mm-panel,#fff9ed);color:var(--mm-text,#20342a)}
+dialog.frame-camera{position:fixed;inset:0;width:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:#111c19;color:#fff9ed;overflow:hidden}
+.frame-camera>video{position:absolute;width:1px;height:1px;left:-9999px}
+.frame-camera .live-frame-view{position:absolute;inset:0;display:grid;place-items:center;touch-action:manipulation}
+.frame-camera .live-frame-view>canvas{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.frame-camera header{position:absolute;inset:0 0 auto;display:flex;align-items:center;gap:12px;padding:12px max(12px,env(safe-area-inset-left));background:linear-gradient(#111c19cc,transparent);z-index:1}
+.frame-camera button{border:1px solid #fff9ed;background:#172d28db;color:#fff9ed;border-radius:50%;min-width:48px;min-height:48px;font-size:26px;cursor:pointer}
+.frame-camera footer{position:absolute;inset:auto 0 0;padding:12px 14px max(16px,env(safe-area-inset-bottom));background:linear-gradient(transparent,#111c19dd);text-align:center;z-index:1}
+.frame-camera footer>div{display:flex;align-items:center;justify-content:center;gap:28px}
+.frame-camera footer>div>span{width:48px}
+.frame-camera [data-shutter]{width:76px;height:76px;border:4px solid #fff9ed;font-size:32px;background:#365a40}
+.frame-camera footer p{font-size:14px;color:#fff9ed;margin:8px 0;text-shadow:0 1px 4px #000}
+.frame-camera [data-error]:empty{display:none}
+
+.crop-actions:has(>.photo-source-actions){display:flex;flex-direction:column;align-items:stretch}

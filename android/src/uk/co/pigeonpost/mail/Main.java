@@ -20,6 +20,7 @@ public class Main extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> photo;
     private Uri cameraPhoto;
+    private PermissionRequest videoPermission;
     private final java.util.concurrent.ExecutorService imageImports=java.util.concurrent.Executors.newSingleThreadExecutor();
     private String saveData,reviewData,pendingReply="";
     private boolean webReady;
@@ -78,6 +79,15 @@ public class Main extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient(){
+            @Override public void onPermissionRequest(PermissionRequest request){runOnUiThread(()->{
+                Uri origin=request.getOrigin();String[] resources=request.getResources();
+                if(isDestroyed()||!"https".equals(origin.getScheme())||!HOST.equals(origin.getHost())||origin.getPort()!=-1||resources.length!=1||!PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resources[0])){request.deny();return;}
+                if(checkSelfPermission(android.Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED){request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});return;}
+                if(videoPermission!=null)videoPermission.deny();videoPermission=request;
+                requestPermissions(new String[]{android.Manifest.permission.CAMERA},46);
+            });}
+            @Override public void onPermissionRequestCanceled(PermissionRequest request){if(videoPermission==request)videoPermission=null;}
+
             public boolean onShowFileChooser(WebView v,ValueCallback<Uri[]> cb,FileChooserParams params){
                 if(photo!=null)photo.onReceiveValue(null);photo=cb;
                 if(!openPhotoPicker(params)){
@@ -157,7 +167,7 @@ public class Main extends Activity {
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){if(videoPermission!=null){videoPermission.deny();videoPermission=null;}designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
         if(!webReady||pendingReply.isEmpty())return;
@@ -274,6 +284,7 @@ public class Main extends Activity {
     }
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){
         super.onRequestPermissionsResult(code,permissions,results);
+        if(code==46&&videoPermission!=null){PermissionRequest pending=videoPermission;videoPermission=null;if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)pending.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});else pending.deny();}
         if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);
     }
     void checkUpdates(){
@@ -350,7 +361,7 @@ public class Main extends Activity {
             try{
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
-                try{data.put("cameraCapture",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
+                try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();

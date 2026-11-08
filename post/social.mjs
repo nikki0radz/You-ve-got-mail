@@ -50,7 +50,7 @@ export function installSocial(state,save,refresh){
     const use=dialog.querySelector('[data-social=use]');use.disabled=choice<0||avatarSettings().hidden.includes(choice);
     for(const tile of dialog.querySelectorAll('.bird-choice[data-index]'))tile.onclick=()=>{choice=Number(tile.dataset.index);for(const b of dialog.querySelectorAll('.bird-choice'))b.setAttribute('aria-pressed',String(b===tile));use.disabled=false;};
     on('use',async()=>{const i=choice;try{const im=await readImage('assets/home/portraits.webp');if(use.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160],true)});}catch(e){alert(e.message);}});
-    const input=dialog.querySelector('input');on('upload',()=>input.click());offerCamera(input);
+    const input=dialog.querySelector('input');on('upload',()=>input.click());offerCamera(input,{uploadButton:dialog.querySelector('[data-social=upload]')});
     input.onchange=async()=>{const file=input.files[0];if(!file)return;const url=URL.createObjectURL(file);try{const im=await readImage(url);const edge=Math.min(im.width,im.height);if(input.isConnected&&dialog.open)saveProfile({pigeon:null,photo:squarePhoto(im,[(im.width-edge)/2,(im.height-edge)/2,edge,edge])});}catch(e){alert(e.message);}finally{URL.revokeObjectURL(url);}};
   }
   function lookup(){

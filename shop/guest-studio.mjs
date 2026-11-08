@@ -129,7 +129,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     if(optionalPhoto){
       const skip=document.createElement('button');skip.type='button';skip.className='studio-link';skip.textContent='Continue without a photo';skip.onclick=show;file.after(skip);
     }
-    file.onchange=()=>upload(file);offerCamera(file);tool('back').onclick=leave;dialog.oncancel=e=>{e.preventDefault();leave();};dialog.scrollTop=0;
+    file.onchange=()=>upload(file);offerCamera(file,{item,uploadButton:dialog.querySelector('[data-upload]')});tool('back').onclick=leave;dialog.oncancel=e=>{e.preventDefault();leave();};dialog.scrollTop=0;
   }
   function openCrop(crop){
     dialog.dataset.reviewScreen='fit / '+item.name;
