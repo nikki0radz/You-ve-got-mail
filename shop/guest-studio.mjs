@@ -180,6 +180,11 @@ export function startGuestStudio(dialog,item,back,onReady){
     dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span class="back-arrow" aria-hidden="true"></span> Designs</button><small>PLACEMENT PREVIEW</small></div><h2></h2><p class="studio-tip">Drag to move. Pull the corner to resize.'+(item.labelPatch?' Tap the reminder to change its wording.':item.textBox?' Tap the paper to write.':'')+'</p><div class="sample-phone" aria-label="Example frosted phone screen">'+phoneBackground()+layer('art','Artwork')+(state.second?layer('second',state.second.name+' sticker'):'')+(state.note?layer('note','Note banner'):'')+'</div><div class="studio-photo">'+(item.maskSheet&&!state.crop.photo?button('Upload photo','photo'):'')+'</div><div class="studio-tools">'+button(state.note?'Note options':'+ Add note','note')+button(state.second?'Edit sticker':'+ Add sticker','second')+'</div><div class="banner-options" hidden><small>CHOOSE YOUR BANNER</small><div>'+bannerNames.map((s,i)=>'<button class="style-'+i+'" data-style="'+i+'">'+s+'</button>').join('')+'</div>'+(state.note?button('Edit text','edit-note')+button('Remove note','remove-note'):'')+'</div><section class="sticker-options" aria-label="Choose a sticker" hidden><small>CHOOSE A STICKER</small><div class="sticker-grid"></div>'+(state.second?button('Remove sticker','remove-second'):'')+'</section><input hidden type="file" accept="image/*" data-file="main"><p role="alert" class="studio-error"></p><button class="studio-primary" data-tool="ready">Ready for post　›</button>';
     dialog.querySelector('h2').textContent=item.name;
     const stage=dialog.querySelector('.sample-phone'),artEl=stage.querySelector('[data-layer=art]');
+    dialog.onpointerdown=e=>{
+      if(!stage.isConnected||e.target.closest('.move-layer,textarea,.delete-note'))return;
+      if(document.activeElement?.matches('textarea'))document.activeElement.blur();
+      select('');
+    };
     if(!pairedPreview){
       for(const el of dialog.querySelectorAll('.studio-tools,.banner-options,.sticker-options'))el.remove();
       const field=document.createElement('label');field.className='parcel-note';const heading=document.createElement('span');heading.className='note-question';heading.textContent='Add a note?';heading.dataset.baseLook=heading.dataset.reviewLook='notetitle-3';
@@ -202,7 +207,6 @@ export function startGuestStudio(dialog,item,back,onReady){
       };
     }
     if(!pairedPreview){
-      stage.onpointerdown=e=>{if(!e.target.closest('.move-layer')){document.activeElement?.blur();select('');}};
       if(item.textBox){
         const label=document.createElement('label');label.className='art-writing';label.textContent='Your words';
         const input=document.createElement('textarea');input.rows=3;input.maxLength=180;input.value=state.words;
