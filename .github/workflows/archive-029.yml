@@ -1,4 +1,4 @@
-name: Verify Android download mirrors
+name: Verify Android gallery update downloads
 on:
   push:
     branches: [release/archive-android-029]
@@ -8,11 +8,13 @@ jobs:
   downloads:
     runs-on: ubuntu-latest
     steps:
-      - name: Check released download responses
+      - name: Download published installers and verify signed bytes
         run: |
-          file=Youve-Got-Mail-0.1.29.apk
-          site=https://pigeon-post-delivery.nikki0radz.chatgpt.site
-          for url in "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.29/$file" "$site/downloads/Youve-Got-Mail-0.1.28.apk" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/723610133"; do
-            curl -sSL --max-time 30 -H 'Accept: application/octet-stream' -w 'HTTP %{http_code}; downloaded %{size_download} bytes\n' "$url" -o test.apk
-            sha256sum test.apk
+          set -euo pipefail
+          for version in 0.1.29 0.1.30; do
+            curl --fail --silent --show-error --location --retry 4 --retry-all-errors "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-$version.apk" -o "$version.apk"
           done
+          echo '0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d  0.1.29.apk' | sha256sum -c -
+          echo 'dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e  0.1.30.apk' | sha256sum -c -
+          curl -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/latest.json" | jq -e '.version=="0.1.30" and .code==31'
+          curl -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/catalogue/items" | jq -e '.categories | type=="array"'
