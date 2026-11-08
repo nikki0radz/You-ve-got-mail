@@ -72,7 +72,7 @@ function overview(){
   header('Artwork manager','<p class="art-subtitle">Main library · '+catalogue.length+' pictures</p>'+
     '<input type="file" data-png accept="image/png,.png" multiple hidden>'+action('choose','＋ Upload PNGs','primary')+
     '<div class="art-queue" hidden><h3>Upload queue</h3><p data-progress role="status"></p><ol></ol>'+action('upload','Upload all','primary')+'</div>'+
-    '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><label>Sort by<select data-sort><option value="newest">Last uploaded · newest first</option><option value="oldest">First uploaded · oldest first</option><option value="name">Name · A–Z</option></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('avatars','Profile picture options','art-link')+action('design','Design mode','art-link')+action('lock','Lock manager','art-link'));
+    '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><label>Sort by<select data-sort><option value="newest">Last uploaded · newest first</option><option value="oldest">First uploaded · oldest first</option><option value="name">Name · A–Z</option></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('avatars','Profile picture options','art-link')+action('home-colours','Home colours','art-link')+action('design','Design mode','art-link')+action('lock','Lock manager','art-link'));
   by('[data-png]').onchange=async e=>{
     const input=e.currentTarget;
     try{await addFiles(Array.from(input.files));}
@@ -265,6 +265,7 @@ export async function openArtworkUploads(){
         }
         switch(btn.dataset.art){
           case 'close':dialog.close();break;
+          case 'home-colours':await verifyManager();dialog.close();await window.openPigeonHomeColours?.();break;
           case 'design':await verifyManager();dialog.close();if(!await window.openPigeonDesignTools?.())throw Error('Unlock the artwork manager to use Design mode.');break;
           case 'lock':if(!busy&&!reading){lockManager();selected.clear();ownerLogin();}break;
           case 'avatars':await avatarPage();break;

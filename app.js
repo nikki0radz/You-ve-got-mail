@@ -3,7 +3,7 @@ import {openArtworkUploads} from './shop/art-upload.mjs';
 import {setupHomeColours} from './post/home-colours.mjs';
 import {openPhoneStudio,closePhoneStudio} from './design/phone-home.mjs';
 import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
-import {refreshMainArt} from './shop/main-art.mjs';
+import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
 import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom} from './post/mailbox.mjs';
@@ -45,6 +45,7 @@ function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',false)
  if(window.Pigeon?.name)Pigeon.name(state.profile.name);
 }
 homeColours=setupHomeColours({app,getTheme:()=>state.theme,setTheme:value=>{state.theme=value;persist();render()},isHome:()=>tab==='home'});
+window.openPigeonHomeColours=async()=>{await verifyManager();tab='home';render();homeColours.open('page');};
 function formatTime(n){return new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short'}).format(new Date(n))}
 function start(next){lastFocus=document.activeElement;flow=next;renderFlow();if(!dialog.open)dialog.showModal()}
 function close(){dialog.close();flow=null;if(lastFocus?.isConnected)lastFocus.focus()}

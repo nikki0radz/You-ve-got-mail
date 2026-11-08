@@ -31,12 +31,5 @@ export function setupHomeColours({app,getTheme,setTheme,isHome}){
     panel.querySelector('[data-share]').onclick=()=>{const payload=JSON.stringify({format:'pigeon-post.home-colours',version:1,colours},null,2);if(window.Pigeon?.shareDesign)window.Pigeon.shareDesign(payload);else {const blob=new Blob([payload],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pigeon-post-home-colours.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}};
   }
   function open(which){target=which;redraw();if(!panel.open)panel.showModal()}
-  app.addEventListener('click',e=>{
-    if(!isHome())return;const el=e.target;
-    if(el.closest('[data-home-colours]')){open('page');return}
-    if(el.closest('button,a,input,label,select,textarea,.category-reel,.post-office-controls,.postal-theme,.profile-link'))return;
-    if(el.closest('#home-wheel .wheel-paper'))open('carousel');
-    else if(el===app||el.matches('.page-content,.header-board,.courier-stand,.wheel,.postal-header,.draft-label'))open('page');
-  });
-  return {apply,close:()=>{if(!panel.open)return false;panel.close();return true}};
+  return {apply,open,close:()=>{if(!panel.open)return false;panel.close();return true}};
 }
