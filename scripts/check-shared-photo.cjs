@@ -15,6 +15,7 @@ async function installFixtures(page) {
     const cutout=canvas.toDataURL();
     const defaults={width:240,height:160};
     const records=[
+      {...defaults,id:'draft',name:'Preview fixture',category:'Uncategorised',kind:'sticker',src:opaque},
       {...defaults,id:'hole',name:'Cutout',category:'Photo frames',kind:'frame',src:cutout},
       {...defaults,id:'rectangle',name:'Inset',category:'Photo frames',kind:'frame',src:opaque,photoArea:{x:.56,y:.12,w:.33,h:.52}},
       {...defaults,id:'manualcard',name:'Manual postcard',category:'Postcards',kind:'postcard',src:opaque,photoArea:{x:.12,y:.16,w:.32,h:.45},textArea:{x:.5,y:.2,w:.42,h:.6,rotation:0}},
@@ -148,6 +149,36 @@ async function installFixtures(page) {
       assert.deepEqual(proof.pixels,sample.pixels,sample.name+' final PNG');
       if(sample.withoutPhoto)assert(proof.ink>12,'Postcard words must appear in the final PNG');
     }
+    // The details screen can preview an entirely unsaved classification. Its write
+    // endpoint is intentionally unavailable in this fixture.
+    await page.evaluate(()=>localStorage.setItem('pigeon.main-art.owner','offline-test-only'));
+    await page.locator('[data-action=tab][data-id=settings]').click();
+    await page.locator('[data-action=art-uploads]').click();
+    const manager=page.locator('#art-upload');
+    await manager.getByRole('button',{name:'Edit Preview fixture',exact:true}).click();
+    const kind=manager.locator('[data-kind]');
+    assert.equal(await kind.inputValue(),'sticker');
+    const thumb=manager.locator('.art-stage img');
+    assert((await thumb.getAttribute('src')).includes('/api/catalogue/files/'));
+    async function waitForArea(box,points){
+      await page.waitForFunction(async sample=>{
+        const image=document.querySelector('#art-upload .art-stage img');
+        if(!image?.src.startsWith('data:image/')||!image.complete||!image.naturalWidth)return false;
+        const result=await window.checkStock(image,sample);
+        const orange=[220,110,66,255];
+        return result.error<18&&result.pixels.every(pixel=>pixel.every((v,i)=>Math.abs(v-orange[i])<=4));
+      },{box,points});
+    }
+    await kind.selectOption('frame');await waitForArea([.15,.15,.7,.7],[[.94,.95]]);
+    await manager.locator('[data-placement]').selectOption('custom');
+    for(const [field,value] of [['w','25'],['h','30'],['x','68'],['y','62']])
+      await manager.locator('[data-coord='+field+']').fill(value);
+    await waitForArea([.68,.62,.25,.30],[[.48,.45],[.12,.12]]);
+    await manager.locator('[data-art=cancel-edit]').click();
+    await manager.getByRole('button',{name:'Edit Preview fixture',exact:true}).click();
+    assert.equal(await kind.inputValue(),'sticker');
+    assert((await thumb.getAttribute('src')).includes('/api/catalogue/files/'));
+    await manager.locator('[data-art=close]').click();
     const intact=await page.evaluate(async records=>{
       const {catalogueRecords,catalogueImage}=await import('./shop/catalogue.mjs');
       const rows=await catalogueRecords();

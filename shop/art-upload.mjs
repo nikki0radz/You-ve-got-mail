@@ -2,6 +2,7 @@ import {deleteEntry,libraryCode,listQueue,newCode,readEntry,refreshSharedArt,sav
 import {mainCategories,manage,ownerUnlocked,unlockManager,lockManager,queueScope,refreshMainArt,refreshAfterWrite,uploadMain} from './main-art.mjs';
 import {catalogueRecords,catalogueImage,mountCatalogueThumbnail} from './catalogue.mjs';
 import {defaultPhotoArea} from './shared-designs.mjs';
+import {displayPhotoThumbnail} from './stock-photo.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 
 const kinds={sticker:'Sticker',frame:'Photo frame',postcard:'Postcard',flowers:'Flowers',hug:'Hug',reminder:'Reminder',love:'Love note'};
@@ -154,8 +155,9 @@ async function details(row){
     '<label>Search tags<input data-tags maxlength="700" value="'+esc((row.tags||[]).join(', '))+'" placeholder="food, romance, funny"></label><section class="art-area"><label>Area to edit<select data-area><option value="text">Postcard text area</option><option value="photo">Photo area</option></select></label><label data-photo-mode>Photo placement<select data-placement><option value="auto">Automatic</option><option value="custom">Draw a photo area</option></select></label><p data-area-tip></p><div class="art-coordinates">'+
     [['x','Left'],['y','Top'],['w','Width'],['h','Height'],['rotation','Angle °']].map(([k,n])=>'<label>'+n+'<input type="number" step="any" data-coord="'+k+'"></label>').join('')+'</div></section>'+
     '<div class="art-actions">'+action('cancel-edit','Back')+action('save-edit','Save details','primary')+'</div>'+action('delete-one','Delete picture','art-link'));
-  const img=by('.art-stage img'),box=by('.art-box');
-  img.crossOrigin='anonymous';img.src=original.src||original.toDataURL('image/png');wireChooser();
+  let img=by('.art-stage img'),origin=null,previewKey='';
+  const box=by('.art-box'),originalURL=original.src||original.toDataURL('image/png');
+  img.crossOrigin='anonymous';img.src=originalURL;wireChooser();
   by('[data-art=delete-one]').onclick=()=>deleteRows([row.id]).catch(e=>message(e.message));
   const textArea={...(row.textArea||initialArea())};
   let photoArea=row.photoArea?{...row.photoArea}:null;
@@ -163,6 +165,21 @@ async function details(row){
   const photo=()=>by('[data-area]').value==='photo';
   const area=()=>photo()?photoArea:textArea;
   by('[data-placement]').value=photoArea?'custom':'auto';
+  function previewArea(enabled,custom){
+    if(!row.design.sharedId||origin)return;
+    const selectedArea=custom?photoArea:null;
+    const textBox=[textArea.x,textArea.y,textArea.x+textArea.w,textArea.y+textArea.h];
+    const key=enabled?JSON.stringify([kind(),selectedArea,textBox]):'original';
+    if(key===previewKey)return;
+    previewKey=key;
+    // A pending preview belongs to its image. Replacing that node also cancels stale draws.
+    const next=img.cloneNode(false);
+    img.replaceWith(next);img=next;
+    if(!enabled||(selectedArea&&!(selectedArea.w>0&&selectedArea.h>0))){
+      img.src=originalURL;return;
+    }
+    displayPhotoThumbnail(img,{...row.design,kind:kind(),photoArea:selectedArea,textBox});
+  }
   function show(){
     const enabled=['frame','postcard'].includes(kind());
     const selector=by('[data-area]');
@@ -171,6 +188,7 @@ async function details(row){
     by('.art-area').hidden=!enabled;by('[data-photo-mode]').hidden=!photo();
     const custom=by('[data-placement]').value==='custom';
     if(photo()&&custom&&!photoArea)photoArea=defaultPhotoArea(kind(),[textArea.x,textArea.y,textArea.x+textArea.w,textArea.y+textArea.h]);
+    previewArea(enabled,custom);
     const drawing=enabled&&(!photo()||custom);
     by('[data-area-tip]').textContent=photo()&&!custom?'Uses the transparent opening, or an inset for solid artwork.':'Drag across the picture to set the area, or enter percentages below.';
     by('.art-coordinates').hidden=!drawing;box.hidden=!drawing;
@@ -191,11 +209,11 @@ async function details(row){
   by('[data-area]').onchange=by('[data-placement]').onchange=setNumbers;
   by('[data-kind]').onchange();
   for(const el of dialog.querySelectorAll('[data-coord]'))el.oninput=()=>{area()[el.dataset.coord]=el.valueAsNumber/(el.dataset.coord==='rotation'?1:100);show();};
-  const stage=by('.art-stage');let origin=null;
+  const stage=by('.art-stage');
   function point(e){const b=img.getBoundingClientRect(),clamp=x=>Math.min(1,Math.max(0,x));return [clamp((e.clientX-b.left)/b.width),clamp((e.clientY-b.top)/b.height)];}
   stage.onpointerdown=e=>{if(box.hidden)return;stage.setPointerCapture(e.pointerId);origin=point(e);};
   stage.onpointermove=e=>{if(!origin)return;const [x,y]=point(e);Object.assign(area(),{x:Math.min(x,origin[0]),y:Math.min(y,origin[1]),w:Math.abs(x-origin[0]),h:Math.abs(y-origin[1])});setNumbers();};
-  stage.onpointerup=stage.onpointercancel=()=>{origin=null;};
+  stage.onpointerup=stage.onpointercancel=()=>{origin=null;show();};
   by('[data-art="save-edit"]').onclick=async()=>{
     if(busy||reading)return;busy=true;by('[data-art="save-edit"]').disabled=true;
     try{const {category,kind}=pickValues();

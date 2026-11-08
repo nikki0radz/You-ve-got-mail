@@ -138,8 +138,18 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   function stages(){return [...(current.maskSheet?['Upload photo','Fit photo']:[]),...(current.textBox?['Write']:[]),'Place on screen','Finishing touches','Ready'];}
   function selectControl(key,opts){return '<label>'+key+'<select data-setting="'+key.toLowerCase()+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(draft[key.toLowerCase()]===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
   async function paint(){
-    const token=++latest,slot=dialog.querySelector('.parcel-canvas');
-    try{const density=stages()[step]==='Ready'?2:1;const preview=current.sharedId&&current.maskSheet&&!draft.photo&&stages()[step]==='Upload photo'?{...draft,photo:await stockCatPhoto()}:draft;const art=await composePNG(current,preview,density);const c=['Place on screen','Finishing touches','Ready'].includes(stages()[step])?scene(art,draft,density):art;if(token!==latest||!slot?.isConnected)return;finished=c;slot.replaceChildren(c);if(stages()[step]==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);}
+    const token=++latest,slot=dialog.querySelector('.parcel-canvas'),page=stages()[step];
+    try{
+      const density=page==='Ready'?2:1;
+      const showCat=current.sharedId&&current.maskSheet&&!draft.photo&&page==='Upload photo';
+      const preview=showCat?{...draft,photo:await stockCatPhoto()}:draft;
+      if(token!==latest||!slot?.isConnected)return;
+      const art=await composePNG(current,preview,density);
+      const placed=['Place on screen','Finishing touches','Ready'].includes(page);
+      if(token!==latest||!slot.isConnected)return;
+      finished=placed?scene(art,draft,density):art;slot.replaceChildren(finished);
+      if(page==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);
+    }
     catch(e){if(token===latest)report(e)}
   }
   function edit(){
