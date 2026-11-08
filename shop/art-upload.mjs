@@ -1,7 +1,8 @@
 import {deleteEntry,libraryCode,listQueue,newCode,readEntry,refreshSharedArt,saveEntry,sharedItems} from './shared-art.mjs';
 import {mainCategories,manage,ownerUnlocked,unlockManager,lockManager,queueScope,refreshMainArt,refreshAfterWrite,uploadMain} from './main-art.mjs';
-import {catalogueRecords,catalogueImage,catalogueThumbnail} from './catalogue.mjs';
+import {catalogueRecords,catalogueImage,mountCatalogueThumbnail} from './catalogue.mjs';
 import {defaultPhotoArea} from './shared-designs.mjs';
+import {displayPhotoThumbnail} from './stock-photo.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 
 const kinds={sticker:'Sticker',frame:'Photo frame',postcard:'Postcard',flowers:'Flowers',hug:'Hug',reminder:'Reminder',love:'Love note'};
@@ -69,7 +70,12 @@ function overview(){
     '<input type="file" data-png accept="image/png,.png" multiple hidden>'+action('choose','＋ Upload PNGs','primary')+
     '<div class="art-queue" hidden><h3>Upload queue</h3><p data-progress role="status"></p><ol></ol>'+action('upload','Upload all','primary')+'</div>'+
     '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('lock','Lock manager','art-link'));
-  by('[data-png]').onchange=e=>{const files=Array.from(e.target.files);e.target.value='';addFiles(files);};
+  by('[data-png]').onchange=async e=>{
+    const input=e.currentTarget;
+    try{await addFiles(Array.from(input.files));}
+    catch(error){message(error.message);}
+    finally{input.value='';}
+  };
   const filterEl=by('[data-filter]');if(!categories().has(filter))filter='';
   filterEl.innerHTML=opt('','All categories',filter)+[...categories().keys()].map(c=>opt(c,c,filter)).join('');
   filterEl.onchange=()=>{filter=filterEl.value;page=0;drawLibrary();};
@@ -86,11 +92,13 @@ function drawLibrary(){
   bulk.innerHTML=selecting?'<section class="art-sort"><strong>'+selected.size+' selected</strong>'+action('page-select','Select this page')+'<label>Move to<select data-dest>'+opt('','Keep current category',dest)+[...categories().keys()].map(c=>opt(c,c,dest)).join('')+'</select></label><label>Artwork type<select data-bulk-kind>'+opt('','Keep current type',bulkKind)+Object.entries(kinds).map(([k,v])=>opt(k,v,bulkKind)).join('')+'</select></label><label>Replace tags (optional)<input data-bulk-tags maxlength="700" placeholder="food, brunch" value="'+esc(bulkTags)+'"></label><div class="art-actions">'+action('move','Apply to selected','primary')+action('delete','Delete selected')+'</div></section>':'';
   for(const control of bulk.querySelectorAll('[data-art=move],[data-art=delete]'))control.disabled=!selected.size||busy;
   page=Math.max(0,Math.min(page,pages-1));
-  const tiles=items.slice(page*12,page*12+12).map(item=>{
+  const visible=items.slice(page*12,page*12+12);
+  const tiles=visible.map(item=>{
     const label=item.name||item.category;
-    return '<button type="button" class="art-tile" data-item="'+esc(item.id)+'" '+(selecting?'aria-pressed="'+selected.has(item.id)+'"':'')+' aria-label="'+(selecting?'Select ':'Edit ')+esc(label)+'"><span class="art-thumb">'+catalogueThumbnail(item.design)+'</span><b>'+esc(label)+'</b><small>'+esc(item.category)+'</small></button>';
+    return '<button type="button" class="art-tile" data-item="'+esc(item.id)+'" '+(selecting?'aria-pressed="'+selected.has(item.id)+'"':'')+' aria-label="'+(selecting?'Select ':'Edit ')+esc(label)+'"><span class="art-thumb"></span><b>'+esc(label)+'</b><small>'+esc(item.category)+'</small></button>';
   });
   by('[data-gallery]').innerHTML=tiles.length?'<div class="art-tiles">'+tiles.join('')+'</div>':'<p>No pictures match this view.</p>';
+  by('[data-gallery]').querySelectorAll('.art-thumb').forEach((host,i)=>mountCatalogueThumbnail(host,visible[i].design));
   if(pages>1){
     by('[data-gallery]').insertAdjacentHTML('beforeend','<nav class="art-pages" aria-label="Library pages">'+action('previous','Previous')+'<span>'+(page+1)+' / '+pages+'</span>'+action('next','Next')+'</nav>');
     by('[data-art="previous"]').disabled=page===0;by('[data-art="next"]').disabled=page===pages-1;
@@ -121,8 +129,11 @@ async function addFiles(files){
     for(let i=0;i<files.length;i++){
       const file=files[i];progress='Preparing '+(i+1)+' of '+files.length+'…';drawRows();
       try{
-        const row={id:newCode(),scope,order:base+i,fileName:file.name,name:'',category,kind,textArea:initialArea(),...await dimensions(file)};
-        await saveEntry('queue',{...row,blob:file});rows.push(row);count++;
+        const size=await dimensions(file);
+        // Keep the original bytes in the queue after Android releases the gallery selection.
+        const blob=new Blob([await file.arrayBuffer()],{type:'image/png'});
+        const row={id:newCode(),scope,order:base+i,fileName:file.name,name:'',category,kind,textArea:initialArea(),...size};
+        await saveEntry('queue',{...row,blob});rows.push(row);count++;
       }catch(e){errors.push(file.name+' ('+e.message+')');}
     }
   }finally{reading=false;progress='';drawRows();}
@@ -152,8 +163,9 @@ async function details(row){
     '<label>Search tags<input data-tags maxlength="700" value="'+esc((row.tags||[]).join(', '))+'" placeholder="food, romance, funny"></label><section class="art-area"><label>Area to edit<select data-area><option value="text">Postcard text area</option><option value="photo">Photo area</option></select></label><label data-photo-mode>Photo placement<select data-placement><option value="auto">Automatic</option><option value="custom">Draw a photo area</option></select></label><p data-area-tip></p><div class="art-coordinates">'+
     [['x','Left'],['y','Top'],['w','Width'],['h','Height'],['rotation','Angle °']].map(([k,n])=>'<label>'+n+'<input type="number" step="any" data-coord="'+k+'"></label>').join('')+'</div></section>'+
     '<div class="art-actions">'+action('cancel-edit','Back')+action('save-edit','Save details','primary')+'</div>'+action('delete-one','Delete picture','art-link'));
-  const img=by('.art-stage img'),box=by('.art-box');
-  img.crossOrigin='anonymous';img.src=original.src||original.toDataURL('image/png');wireChooser();
+  let img=by('.art-stage img'),origin=null,previewKey='';
+  const box=by('.art-box'),originalURL=original.src||original.toDataURL('image/png');
+  img.crossOrigin='anonymous';img.src=originalURL;wireChooser();
   by('[data-art=delete-one]').onclick=()=>deleteRows([row.id]).catch(e=>message(e.message));
   const textArea={...(row.textArea||initialArea())};
   let photoArea=row.photoArea?{...row.photoArea}:null;
@@ -161,6 +173,21 @@ async function details(row){
   const photo=()=>by('[data-area]').value==='photo';
   const area=()=>photo()?photoArea:textArea;
   by('[data-placement]').value=photoArea?'custom':'auto';
+  function previewArea(enabled,custom){
+    if(!row.design.sharedId||origin)return;
+    const selectedArea=custom?photoArea:null;
+    const textBox=[textArea.x,textArea.y,textArea.x+textArea.w,textArea.y+textArea.h];
+    const key=enabled?JSON.stringify([kind(),selectedArea,textBox]):'original';
+    if(key===previewKey)return;
+    previewKey=key;
+    // A pending preview belongs to its image. Replacing that node also cancels stale draws.
+    const next=img.cloneNode(false);
+    img.replaceWith(next);img=next;
+    if(!enabled||(selectedArea&&!(selectedArea.w>0&&selectedArea.h>0))){
+      img.src=originalURL;return;
+    }
+    displayPhotoThumbnail(img,{...row.design,kind:kind(),photoArea:selectedArea,textBox});
+  }
   function show(){
     const enabled=['frame','postcard'].includes(kind());
     const selector=by('[data-area]');
@@ -169,6 +196,7 @@ async function details(row){
     by('.art-area').hidden=!enabled;by('[data-photo-mode]').hidden=!photo();
     const custom=by('[data-placement]').value==='custom';
     if(photo()&&custom&&!photoArea)photoArea=defaultPhotoArea(kind(),[textArea.x,textArea.y,textArea.x+textArea.w,textArea.y+textArea.h]);
+    previewArea(enabled,custom);
     const drawing=enabled&&(!photo()||custom);
     by('[data-area-tip]').textContent=photo()&&!custom?'Uses the transparent opening, or an inset for solid artwork.':'Drag across the picture to set the area, or enter percentages below.';
     by('.art-coordinates').hidden=!drawing;box.hidden=!drawing;
@@ -189,11 +217,11 @@ async function details(row){
   by('[data-area]').onchange=by('[data-placement]').onchange=setNumbers;
   by('[data-kind]').onchange();
   for(const el of dialog.querySelectorAll('[data-coord]'))el.oninput=()=>{area()[el.dataset.coord]=el.valueAsNumber/(el.dataset.coord==='rotation'?1:100);show();};
-  const stage=by('.art-stage');let origin=null;
+  const stage=by('.art-stage');
   function point(e){const b=img.getBoundingClientRect(),clamp=x=>Math.min(1,Math.max(0,x));return [clamp((e.clientX-b.left)/b.width),clamp((e.clientY-b.top)/b.height)];}
   stage.onpointerdown=e=>{if(box.hidden)return;stage.setPointerCapture(e.pointerId);origin=point(e);};
   stage.onpointermove=e=>{if(!origin)return;const [x,y]=point(e);Object.assign(area(),{x:Math.min(x,origin[0]),y:Math.min(y,origin[1]),w:Math.abs(x-origin[0]),h:Math.abs(y-origin[1])});setNumbers();};
-  stage.onpointerup=stage.onpointercancel=()=>{origin=null;};
+  stage.onpointerup=stage.onpointercancel=()=>{origin=null;show();};
   by('[data-art="save-edit"]').onclick=async()=>{
     if(busy||reading)return;busy=true;by('[data-art="save-edit"]').disabled=true;
     try{const {category,kind}=pickValues();
