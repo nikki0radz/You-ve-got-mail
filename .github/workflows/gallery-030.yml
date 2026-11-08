@@ -1,7 +1,7 @@
 name: Android gallery batch test
 on:
   push:
-    branches: [qa/read-picked-gallery-031]
+    branches: [qa/gallery-result-bytes-031]
     paths: ['android/tests/gallery-030.js', 'android/tests/gallery-030.py', '.github/workflows/gallery-030.yml']
 permissions:
   contents: read
@@ -15,7 +15,7 @@ jobs:
       - name: Register emulator check
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=gallery-device-031 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        run: gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=gallery-result-bytes-031 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - uses: actions/checkout@v4
         with:
           ref: 2d513bc2af6ba3953b978225db700c292271fd1c
@@ -23,6 +23,23 @@ jobs:
       - name: Build a disposable APK using the release WebView
         run: |
           set -eu
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('android/src/uk/co/pigeonpost/mail/Main.java')
+          s=p.read_text().replace('    private boolean launchPhotoPicker(Intent intent){', '''    private final LinkedHashSet<Uri> qaUris=new LinkedHashSet<>();
+              private boolean launchPhotoPicker(Intent intent){
+                  // Test runner grants these two actual MediaStore URIs via Intents.
+                  if(qaUris.size()==2 && intent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_MAX)){
+                      Iterator<Uri> it=qaUris.iterator();
+                      ClipData clip=ClipData.newUri(getContentResolver(),"QA fixture",it.next());
+                      clip.addItem(new ClipData.Item(it.next()));
+                      Intent result=new Intent().setClipData(clip).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                      web.post(()->onActivityResult(41,RESULT_OK,result));
+                      return true;
+                  }''').replace('    private void incoming(Intent i){', '''    private void incoming(Intent i){
+                  if(i.getData()!=null && "content".equals(i.getData().getScheme()))qaUris.add(i.getData());''')
+          p.write_text(s)
+          PY
           cp shop/art-upload.mjs "$RUNNER_TEMP/tested-manager.mjs"
           cp -r release-web/shop/. shop/
           cp "$RUNNER_TEMP/tested-manager.mjs" shop/art-upload.mjs
@@ -33,6 +50,15 @@ jobs:
           Path('index.html').write_text('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="shop/art-upload.css"><script>'+fixture+'</script><button onclick="openManager()">Artwork manager</button><script type="module">import {openArtworkUploads} from "./shop/art-upload.mjs";window.openManager=openArtworkUploads;</script>')
           p=Path('android/tests/gallery-030.py')
           p.write_text(p.read_text().replace("button('Later');button('Settings');","button('Later');"))
+          s=p.read_text().replace("for name,data in files.items():","granted=[]\nfor name,data in files.items():").replace(" print('Committed media fixture:',"," if name.endswith('.png'):granted.append(uri)\n print('Committed media fixture:',")
+          start=s.index("adb('shell','am','start','-W'")
+          end=s.index("digest=' '.join(",start)
+          s=s[:start]+"""for grant in granted:
+           adb('shell','am','start','-W','-n','uk.co.pigeonpost.mail/.Main','--grant-read-uri-permission','-d',grant)
+          button('Later');button('Artwork manager');button('Upload PNGs')
+          """+s[end:]
+          s=s[:s.index("button('Check single photo')")]+"print('PASS both URI grants and exact source bytes survived the real native result callback and IndexedDB queue.',flush=True)\n"
+          p.write_text(s)
           PY
           keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/qa.p12" -alias pigeonpost -storepass android -keypass android -keyalg RSA -dname "CN=Offline QA" -validity 1
           echo android > "$RUNNER_TEMP/qa.pass"
@@ -87,4 +113,4 @@ jobs:
         run: |
           state=failure
           if [ "$RESULT" = success ]; then state=success; fi
-          gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$state" -f context=gallery-device-031 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$state" -f context=gallery-result-bytes-031 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
