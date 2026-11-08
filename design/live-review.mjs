@@ -1,3 +1,4 @@
+import {verifyManager} from '../shop/main-art.mjs';
 import {feedbackGroups,approvedLooks} from './rounds.mjs';
 import {selector,label,describe,layout,screen} from './live-review-model.mjs';
 import {freezeFrame} from './review-freeze.mjs';
@@ -31,7 +32,7 @@ const spacer=document.createElement('div');
 spacer.className='review-space';
 document.body.prepend(spacer);
 const dock=document.createElement('div');
-dock.dataset.reviewUi='dock';
+dock.dataset.reviewUi='dock';dock.hidden=true;
 const ui=dock.attachShadow({mode:'open'});
 ui.innerHTML=`<style>
 :host{all:initial} *{box-sizing:border-box} [hidden]{display:none!important}
@@ -48,7 +49,7 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-vis
 .panel{max-height:65dvh;overflow:auto}.panel header,.colours,.panel footer{display:flex;align-items:center;gap:7px}.panel header,.panel footer{justify-content:space-between}.panel header strong{font-size:16px}.panel label{display:block;margin-top:8px;font-size:12px;font-weight:650}.panel select,.panel textarea,.hex{background:#fffdf6;border:1px solid #829584;border-radius:8px;padding:6px}.target,textarea{width:100%}textarea{display:block;resize:vertical;min-height:54px}
 .colours{margin:5px 0;flex-wrap:wrap}.colours input[type=color]{width:35px;height:32px}.hex{width:84px}.palette{display:flex;gap:5px}.palette button{min-height:24px;width:24px;padding:0;border-radius:50%;border:1px solid #778678}
 .hint{width:auto;max-width:95%;white-space:nowrap;padding:6px 12px;bottom:9px;border-radius:14px;font:600 12px system-ui;background:#263e32;color:white;pointer-events:none}.status{font-size:12px}.done{background:#315846;color:white}
-</style><div class="bar"><button class="export" hidden>Export design</button><button class="switch" role="switch" aria-checked="false"><span class="track"><i></i></span>Design mode</button></div>
+</style><div class="bar"><button class="export" hidden>Export design</button><button class="switch" role="switch" aria-checked="false"><span class="track"><i></i></span>Design mode</button><button class="leave" aria-label="Close design tools">×</button></div>
 <div class="hint" role="status" hidden>Tap an element to mark it up</div>
 <section class="panel" aria-label="Element feedback" hidden><header><strong>Element feedback</strong><button class="done">Done</button></header>
 <label>Selected element<select class="target"></select></label><div class="channels" role="group" aria-label="Colour property"><button data-channel="background" aria-pressed="true">Background</button><button data-channel="text" aria-pressed="false">Text colour</button><button data-channel="border" aria-pressed="false">Border</button></div><div class="colours"><input type="color" aria-label="Choose colour"><input class="hex" aria-label="Hex colour" maxlength="7"><button class="reset">Original</button></div><div class="palette"></div>
@@ -58,6 +59,7 @@ let channel='background';
 const freeze=document.createElement('dialog');
 freeze.dataset.reviewUi='freeze';freeze.setAttribute('aria-label','Design review');
 document.body.append(freeze);
+let ownerTools=false;
 let session=null,selected=null,lastLiveKey='',liveStyle=document.createElement('style');
 liveStyle.setAttribute('data-live-colours','');
 document.head.append(liveStyle);
@@ -184,7 +186,7 @@ function finish(){
   if(!session)return false;
   save(true);closePanel();session=null;freeze.close();freeze.replaceChildren();
   $('.switch').setAttribute('aria-checked','false');$('.export').hidden=true;$('.hint').hidden=true;
-  sync(true);$('.switch').focus({preventScroll:true});return true;
+  dock.hidden=!ownerTools;if(!ownerTools)delete document.body.dataset.designActive;sync(true);return true;
 }
 function record(){
   const path=selector(selected),items=session.entry.targets;
@@ -230,7 +232,7 @@ function begin(){
   const mark=doc.createElement('style');mark.textContent='[data-review-picked]{outline:3px dashed #b13b79!important;outline-offset:-3px!important}';doc.head.append(mark);
   const entry=unsaved.get(keyFor(meta))||json(keyFor(meta),{...meta,targets:{}});
   session={doc,root:twin,meta,entry,style};paint();save(true);numberControls(doc,twin);
-  freeze.append(dock);
+  dock.hidden=false;document.body.dataset.designActive='true';freeze.append(dock);
   $('.switch').setAttribute('aria-checked','true');$('.export').hidden=false;$('.hint').hidden=false;
   doc.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();const b=e.target.closest('.element-numbers button');if(b)b.parentElement.choose(b);else pick(e.target);},true);
   // Disabled HTML controls do not dispatch click in every WebView.
@@ -243,9 +245,13 @@ function begin(){
 }
 function back(){if(!session)return false;if(selected)closePanel();else finish();return true;}
 window.pigeonReviewBack=back;
-window.startPigeonReview=begin;
+window.startPigeonReview=async()=>{try{await verifyManager();begin();return true;}catch{return false;}};
+window.openPigeonDesignTools=async()=>{try{await verifyManager();ownerTools=true;dock.hidden=false;document.body.dataset.designActive='true';sync();return true;}catch{return false;}};
+function closeTools(){ownerTools=false;if(session)finish();dock.hidden=true;delete document.body.dataset.designActive;}
+window.addEventListener('artwork-manager-locked',closeTools);
+$('.leave').onclick=closeTools;
 freeze.addEventListener('cancel',e=>{e.preventDefault();back();});
-$('.switch').onclick=()=>session?finish():begin();
+$('.switch').onclick=()=>session?finish():window.startPigeonReview();
 $('.done').onclick=()=>{closePanel();$('.switch').focus();};
 $('textarea').oninput=e=>edit(item=>{item.comment=e.target.value;});
 for(const b of ui.querySelectorAll('[data-channel]'))b.onclick=()=>{

@@ -47,7 +47,7 @@ final class Mail {
         n.createNotificationChannel(new NotificationChannel("friends","Friend status changes",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(ALERT,"Incoming mail warnings",NotificationManager.IMPORTANCE_HIGH));
         n.createNotificationChannel(new NotificationChannel(QUIET,"Mailbox deliveries",NotificationManager.IMPORTANCE_DEFAULT));
-        n.createNotificationChannel(new NotificationChannel(LISTEN,"Listening for a test letter",NotificationManager.IMPORTANCE_LOW));
+        n.createNotificationChannel(new NotificationChannel(LISTEN,"Incoming parcel checks",NotificationManager.IMPORTANCE_LOW));
     }
     static boolean enabled(Context c,String channel){
         NotificationManager n=c.getSystemService(NotificationManager.class);

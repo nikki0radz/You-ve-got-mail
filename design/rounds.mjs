@@ -56,7 +56,7 @@ rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-revi
 
 rounds.home.groups.push(...feedbackGroups.filter(group=>['separator','wheelrim'].includes(group.key)));
 // The selected looks stay in the exported workroom vocabulary for older reviews.
-export const approvedLooks = {mailbox:3, settingsbuttons:3, peoplebar:4, railwidth:1, notetitle:3, receiptfont:2, permissionactions:5, whenticks:1, timeheading:1, separator:3, wheelrim:1};
+export const approvedLooks = {mailbox:3, settingsbuttons:3, peoplebar:4, railwidth:1, notetitle:3, receiptfont:2, permissionactions:5, whenticks:1, timeheading:1, separator:3, wheelrim:1, sendrow:3, recipientfont:2, recipientdivider:1};
 
 const recipientRound4={id:'parcel-feedback-sendrow-04',key:'sendrow',title:'Send to · new layouts',selector:'.recipient-choice',anchor:'.recipient-choice',options:['Portrait underline','Delivery ticket','Address ribbon','Postcard address','Sorting pocket'].map((name,i)=>({name,changes:[{selector:'.recipient-choice',style:{reviewLook:'sendrow-'+(i+1)}}]}))};
 const recipientIndex=feedbackGroups.findIndex(group=>group.key==='sendrow');
@@ -77,4 +77,4 @@ const recipientDivider={
   options:['Fine rule','Dashed stitch','Double rule','Three dots','Envelope break','Diamond pin'].map((name,i)=>({name,changes:[{selector:'.recipient-menu',style:{reviewLook:'recipientdivider-'+(i+1)}}]}))
 };
 feedbackGroups.push(recipientDivider);
-for(const round of new Set([rounds.recipient,rounds.schedule]))round.groups.push(recipientDivider);
+for(const round of new Set([rounds.recipient,rounds.schedule].filter(Boolean)))if(!approvedLooks.recipientdivider)round.groups.push(recipientDivider);

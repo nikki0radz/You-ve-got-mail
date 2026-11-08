@@ -1,5 +1,5 @@
 import {deleteEntry,libraryCode,listQueue,newCode,readEntry,refreshSharedArt,saveEntry,sharedItems} from './shared-art.mjs';
-import {mainCategories,manage,ownerUnlocked,unlockManager,lockManager,queueScope,refreshMainArt,refreshAfterWrite,uploadMain} from './main-art.mjs';
+import {mainCategories,manage,ownerUnlocked,verifyManager,unlockManager,lockManager,queueScope,refreshMainArt,refreshAfterWrite,uploadMain} from './main-art.mjs';
 import {catalogueRecords,catalogueImage,mountCatalogueThumbnail} from './catalogue.mjs';
 import {defaultPhotoArea} from './shared-designs.mjs';
 import {displayPhotoThumbnail} from './stock-photo.mjs';
@@ -69,7 +69,7 @@ function overview(){
   header('Artwork manager','<p class="art-subtitle">Main library · '+catalogue.length+' pictures</p>'+
     '<input type="file" data-png accept="image/png,.png" multiple hidden>'+action('choose','＋ Upload PNGs','primary')+
     '<div class="art-queue" hidden><h3>Upload queue</h3><p data-progress role="status"></p><ol></ol>'+action('upload','Upload all','primary')+'</div>'+
-    '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('lock','Lock manager','art-link'));
+    '<section class="art-library" aria-label="Main library"><label>Search artwork<input type="search" data-search placeholder="Name, category or tag"></label><label>Show category<select data-filter></select></label><div class="art-actions">'+action('select',selecting?'Done selecting':'Select pictures')+action('categories','Manage categories')+'</div><div data-bulk></div><div data-gallery></div></section>'+ (libraryCode()?action('import','Import previous uploads'):'')+action('design','Design mode','art-link')+action('lock','Lock manager','art-link'));
   by('[data-png]').onchange=async e=>{
     const input=e.currentTarget;
     try{await addFiles(Array.from(input.files));}
@@ -258,6 +258,7 @@ export async function openArtworkUploads(){
         }
         switch(btn.dataset.art){
           case 'close':dialog.close();break;
+          case 'design':await verifyManager();dialog.close();if(!await window.openPigeonDesignTools?.())throw Error('Unlock the artwork manager to use Design mode.');break;
           case 'lock':if(!busy&&!reading){lockManager();selected.clear();ownerLogin();}break;
           case 'select':selecting=!selecting;selected.clear();overview();break;
           case 'page-select':for(const tile of dialog.querySelectorAll('[data-item]'))selected.add(tile.dataset.item);drawLibrary();break;

@@ -8,7 +8,8 @@ let records=[],categories=[],signature='',refreshing=null;
 export const mainRecords=()=>records;
 export const mainCategories=()=>categories;
 export const ownerUnlocked=()=>Boolean(localStorage.getItem(ownerKey));
-export function lockManager(){localStorage.removeItem(ownerKey);}
+export function lockManager(){localStorage.removeItem(ownerKey);window.dispatchEvent(new Event('artwork-manager-locked'));}
+export async function verifyManager(){await request('unlock',{method:'POST',headers:authorization()});return true;}
 async function request(path,options={}){
   const res=await fetch(endpoint+path,{...options,cache:'no-store',credentials:'omit'});
   if(!res.ok){

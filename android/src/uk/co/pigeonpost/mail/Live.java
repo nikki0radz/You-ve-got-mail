@@ -12,7 +12,7 @@ public class Live extends Service {
         if(i!=null&&"stop".equals(i.getAction())){stopSelf();return START_NOT_STICKY;}
         Mail.channels(this);Intent stop=new Intent(this,Live.class).setAction("stop");
         Notification n=new Notification.Builder(this,Mail.LISTEN).setSmallIcon(android.R.drawable.ic_dialog_email).setContentTitle("Listening for pigeon post")
-          .setContentText("Live test for 30 minutes").setOngoing(true).addAction(new Notification.Action.Builder(null,"Stop",PendingIntent.getService(this,0,stop,PendingIntent.FLAG_IMMUTABLE)).build()).build();
+          .setContentText("Checking for incoming parcels").setOngoing(true).addAction(new Notification.Action.Builder(null,"Stop",PendingIntent.getService(this,0,stop,PendingIntent.FLAG_IMMUTABLE)).build()).build();
         startForeground(201,n);deadline=SystemClock.elapsedRealtime()+30*60*1000L;if(!alive){alive=true;ui.post(check);}return START_NOT_STICKY;
     }
     public void onTimeout(int startId,int type){stopSelf();}

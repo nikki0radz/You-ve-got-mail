@@ -35,3 +35,9 @@ html[data-theme=light] :is(#mail-window,#flow) .recipient-choice .recipient-peop
 :is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-5]::before{content:'✉';left:-6px;width:15px;display:grid;place-items:center;background:linear-gradient(currentColor,currentColor) center top/1px 10px no-repeat,linear-gradient(currentColor,currentColor) center bottom/1px 10px no-repeat;font:16px/1 system-ui;opacity:1}
 :is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-6]::before{width:1px;background:linear-gradient(currentColor,currentColor) center top/1px 14px no-repeat,linear-gradient(currentColor,currentColor) center bottom/1px 14px no-repeat}
 :is(#mail-window,#flow) .recipient-menu[data-review-look=recipientdivider-6]::after{content:'';position:absolute;left:-3px;top:20px;width:7px;height:7px;border:1px solid currentColor;box-sizing:border-box;transform:rotate(45deg);pointer-events:none}
+
+.pigeon-handbook{font-size:15px;line-height:1.55;text-align:left}
+.pigeon-handbook details{border-bottom:1px solid var(--mm-edge);padding:10px 0}
+.pigeon-handbook summary{font-weight:800;cursor:pointer}
+.pigeon-handbook p{margin:8px 0 12px}
+.pigeon-handbook .installed-version{font-size:13px;color:var(--mm-sub);margin-top:20px}
