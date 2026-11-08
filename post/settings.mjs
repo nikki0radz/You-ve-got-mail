@@ -27,7 +27,7 @@ export function settingsPage(){
     '<label class="setting-field backdrop-strength"><span>Black backdrop opacity</span><output data-opacity for="backdrop-alpha"></output><input type="range" id="backdrop-alpha" data-pref="backdropOpacity" min="0" max="100" step="1"></label>'+
     (native?'<button class="setting-pill" data-action="test">Test over another app</button><p class="setting-hint">Tap Test, then go to your home screen. Use Full pop-up and switch Open to mail on first.</p><div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to test a parcel over another app.</p>'))+
   section('account','Profile & invitations','Your pigeon and one-time links.',link('profile','Your profile','Change your name or pigeon.')+link('test-link','One-time link','Invite someone to send you a parcel.'))+
-  section('about','Testing & updates','App version and delivery checks.',(native?action('updates','Check for updates')+action('listen','Listen for 30 minutes'):link('schedule-setting','Test scheduling','Set a time for a local test.'))+link('about','About Pigeon Post','About this test edition.'))+'</section>';
+  section('about','Testing & updates','App version and delivery checks.',(native?action('updates','Check for updates'):link('schedule-setting','Test scheduling','Set a time for a local test.'))+link('about','About Pigeon Post','About this test edition.'))+'</section>';
 }
 export function wireSettings(root){
   const panel=root.querySelector('.post-settings');if(!panel)return;

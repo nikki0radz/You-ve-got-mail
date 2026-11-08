@@ -214,7 +214,6 @@ public class Main extends Activity {
         case "design":startActivity(new Intent(this,DesignMode.class).putExtra("textZoom",web.getSettings().getTextZoom()));break;
         case "designForget":DesignMode.forget(this);break;
         case "updates":checkUpdates();break;
-        case "listen":listen();toast("Listening for mail for 30 minutes.");break;
         }
     }
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){
@@ -240,7 +239,7 @@ public class Main extends Activity {
         });
     }
     void listen(){startForegroundService(new Intent(this,Live.class));}
-    void invite(){new AlertDialog.Builder(this).setTitle("Let a friend send one parcel").setMessage("Your friend can choose a sticker or frame in their browser. Sharing starts 30 minutes of live listening on this phone. After that Android checks periodically.").setPositiveButton("Create link",(d,k)->Mail.io.execute(()->{
+    void invite(){new AlertDialog.Builder(this).setTitle("Let a friend send one parcel").setMessage("Your friend can choose a sticker or frame in their browser. The app checks for incoming mail in the background.").setPositiveButton("Create link",(d,k)->Mail.io.execute(()->{
         try{String token=Mail.request(this,"links",new JSONObject()).getString("token");if(!token.matches("[a-f0-9]{64}"))throw new IOException();
             runOnUiThread(()->{if(isFinishing()||isDestroyed())return;listen();Intent i=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,Mail.GUEST+token);startActivity(Intent.createChooser(i,"Share one-use mail link"));});
         }catch(Exception e){runOnUiThread(()->toast("Could not create your link. Check your connection and try again."));}
