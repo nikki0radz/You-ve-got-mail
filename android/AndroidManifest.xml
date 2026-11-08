@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="uk.co.pigeonpost.mail" android:versionCode="39" android:versionName="0.1.38">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="uk.co.pigeonpost.mail" android:versionCode="40" android:versionName="0.1.39">
   <uses-permission android:name="android.permission.CAMERA"/>
   <uses-feature android:name="android.hardware.camera.any" android:required="false"/>
   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/>
@@ -12,7 +12,7 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
   <queries><intent><action android:name="androidx.activity.result.contract.action.PICK_IMAGES"/><data android:mimeType="image/*"/></intent></queries>
-  <application android:enableOnBackInvokedCallback="true" android:label="You've Got Mail" android:icon="@drawable/pigeon" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+  <application android:enableOnBackInvokedCallback="true" android:label="You've Got Mail" android:icon="@mipmap/ic_launcher" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar">
     <service android:name="com.google.android.gms.metadata.ModuleDependencies" android:enabled="false" android:exported="false">
       <intent-filter><action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES"/></intent-filter>
       <meta-data android:name="photopicker_activity:0:required" android:value=""/>

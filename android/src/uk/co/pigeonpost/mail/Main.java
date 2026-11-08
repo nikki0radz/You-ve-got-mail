@@ -177,7 +177,8 @@ public class Main extends Activity {
         if("friends".equals(i.getAction())){pendingReply="@friends";dispatchIntent();return;}
         String id=i.getStringExtra("id");if(id==null)return;
         JSONObject m=Mail.meta(this,id);if(!m.has("id"))return;
-        if("reply".equals(i.getAction())){pendingReply=id;dispatchIntent();}
+        if("inbox".equals(i.getAction())){pendingReply="@inbox:"+id;dispatchIntent();}
+        else if("reply".equals(i.getAction())){pendingReply=id;dispatchIntent();}
         else startActivity(new Intent(this,OpenParcel.class).putExtra("id",id));
         i.removeExtra("id");
     }
@@ -345,7 +346,7 @@ public class Main extends Activity {
             for(String key:Mail.prefs(Main.this).getAll().keySet())if(key.startsWith("s:"))try{rows.put(new JSONObject(Mail.prefs(Main.this).getString(key,"{}")));}catch(JSONException ignored){}
             return rows.toString();
         }
-        @JavascriptInterface public void markRead(String id){Mail.prefs(Main.this).edit().putBoolean("read:"+id,true).apply();}
+        @JavascriptInterface public void markRead(String id){Mail.markRead(Main.this,id);}
         @JavascriptInterface public boolean wasRead(String id){return Mail.prefs(Main.this).getBoolean("read:"+id,false);}
         @JavascriptInterface public String friendsCached(){return Mail.prefs(Main.this).getString("friendsSnapshot","{}");}
         @JavascriptInterface public void name(String name){String clean=name.trim();if(!clean.isEmpty()&&clean.length()<=40&&!clean.equals(Mail.prefs(Main.this).getString("displayName",""))){Mail.prefs(Main.this).edit().putString("displayName",clean).apply();PostOffice.syncSoon(Main.this);}}
@@ -359,7 +360,7 @@ public class Main extends Activity {
         @JavascriptInterface public String deliveryPrefs(){
             SharedPreferences p=Mail.prefs(Main.this);JSONObject data=new JSONObject();
             try{
-                for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
+                for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",Mail.enabled(Main.this,Mail.ALERT)).put("precise",Mail.exact(Main.this));
@@ -376,7 +377,7 @@ public class Main extends Activity {
                 if(!Arrays.asList("3","10","15").contains(value))return;
                 change.putInt(key,Integer.parseInt(value)).apply();return;
             }
-            if(!Arrays.asList("fullPopup","onUnlock","warning","friendAlerts","closedInbox").contains(key))return;
+            if(!Arrays.asList("fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox").contains(key))return;
             boolean on="true".equals(value);change.putBoolean(key,on).apply();
             if(!on&&("fullPopup".equals(key)||"onUnlock".equals(key)))runOnUiThread(()->UnlockQueue.reset(Main.this));
             if("closedInbox".equals(key))PostOffice.syncSoon(Main.this);

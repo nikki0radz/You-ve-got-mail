@@ -20,10 +20,11 @@ if(guest){
   const mail=[{id:'sample',sender:'Owen',kind:'A postcard',status:'received',created:Date.UTC(2026,0,1,12),when:Date.UTC(2026,0,1,12)},{id:'out',sent:true,sender:'Owen',kind:'A sticker',created:Date.UTC(2026,0,2,12),when:Date.UTC(2026,0,2,12)}];
   const prefs={fullPopup:true,onUnlock:true,warning:true,warningSeconds:3,closedInbox:true,backdropOpacity:70};
   const hint=()=>{const n=document.querySelector('#notice');n.textContent='Device action · preview only';n.classList.add('visible');setTimeout(()=>n.classList.remove('visible'),1600)};
-  window.Pigeon={mailbox:()=>JSON.stringify(mail),friendsCached:()=>JSON.stringify(people),wasRead:()=>false,markRead:()=>{},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,
+  const readIds=new Set();
+  window.Pigeon={mailbox:()=>JSON.stringify(mail),friendsCached:()=>JSON.stringify(people),wasRead:id=>readIds.has(id),markRead:id=>readIds.add(id),isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,
     deliveryPrefs:()=>JSON.stringify(prefs),deliverySetting:(k,v)=>prefs[k]=v==='true'||v==='false'?v==='true':isNaN(v)?v:Number(v),
     settingsAction:hint,settings:hint,invite:hint,history:hint,queue:()=> 'ok',precise:()=>true,cancelScheduled:hint,
-    post:(id,op)=>queueMicrotask(()=>window.postOfficeResult(id,JSON.stringify(op==='friends'?{data:people}:{error:'Device action · preview only'})))};
+    post:(id,op,raw)=>queueMicrotask(()=>{let result={error:'Device action · preview only'};if(op==='friends')result={data:people};if(op==='reply'){const body=JSON.parse(raw),row=mail.find(m=>m.id===body.id);if(row){row.reply=body.text||'';result={data:{ok:true}};}}window.postOfficeResult(id,JSON.stringify(result));})};
   document.documentElement.dataset.workroom=key;
   const {createState,STORAGE_KEY}=await import('../domain.mjs');
   values.set(STORAGE_KEY,JSON.stringify({...createState(),theme:'light'}));

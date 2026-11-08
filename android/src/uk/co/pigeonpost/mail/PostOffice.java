@@ -67,6 +67,7 @@ final class PostOffice {
             String picture=payload.optString("image");
             if(!picture.isEmpty())writeImage(c,"reply-"+id,picture);
             item=Mail.meta(c,id);item.put("reply",payload.optString("text")).put("pictureReply",!picture.isEmpty());Mail.save(c,item);
+            if(!item.optBoolean("remote"))Replies.receive(c,new JSONObject().put("id",id).put("sender","Myself").put("senderCode","self").put("reply",payload.optString("text")).put("replyImage",picture),false);
             return new JSONObject().put("ok",true);
         }
         throw new IOException("Unknown action");

@@ -1,3 +1,4 @@
+import {unreadCount} from './post/unread.mjs';
 import {repairLatestReview} from './design/review-repairs.mjs';
 import {openArtworkUploads} from './shop/art-upload.mjs';
 import {setupHomeColours} from './post/home-colours.mjs';
@@ -6,7 +7,7 @@ import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
 import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
-import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom} from './post/mailbox.mjs';
+import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem} from './post/mailbox.mjs';
 import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
 import {installSocial} from './post/social.mjs';
 import {openShop,backInShop} from './shop/shop.mjs';
@@ -39,7 +40,13 @@ async function mountHomeWheel(){
  try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load.';return;}
  if(!root.isConnected||generation!==wheelGeneration)return;
  mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;},onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render,null,state.profile);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});}
-function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',false)}${window.Pigeon?"":'<div class="draft-label">Browser preview · local deliveries only</div>'}<div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span></button>`).join('')}</nav>`;if(tab==='settings')wireSettings(app);
+function updateUnreadBadge(){
+ const btn=app.querySelector('.app-nav [data-id="inbox"]');if(!btn)return;
+ let count=0;try{count=window.Pigeon?.mailbox?unreadCount(JSON.parse(Pigeon.mailbox()),id=>Pigeon.wasRead(id)):state.inbox.filter(m=>!m.read).length;}catch{}
+ const badge=btn.querySelector('.inbox-count');badge.hidden=!count;badge.textContent=count>99?'99+':String(count);btn.setAttribute('aria-label',count?'Inbox, '+count+' unread':'Inbox');
+}
+function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',false)}${window.Pigeon?"":'<div class="draft-label">Browser preview · local deliveries only</div>'}<div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span>${id==='inbox'?'<b class="inbox-count" hidden aria-hidden="true"></b>':''}</button>`).join('')}</nav>`;if(tab==='settings')wireSettings(app);
+ updateUnreadBadge();
  if(tab==='home')mountHomeWheel();
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(window.Pigeon?.name)Pigeon.name(state.profile.name);
@@ -166,14 +173,15 @@ for(const [id,name,open] of demoPeople){
   if(!state.friends.some(f=>f.id===id))state.friends.push({id,name,open,popups:true,ring:false,demo:true});
 }
 const social=installSocial(state,persist,render);
-window.refreshMailbox=()=>{if(tab==='inbox')render()};
-window.openParcelAction=id=>{if(id==='@settings'){tab='settings';render();return;}tab='inbox';render();if(id==='@friends')friendsWindow(render);else replyTo(id,render);};
+window.refreshMailbox=()=>{updateUnreadBadge();if(tab==='inbox'&&!document.querySelector('dialog[open]'))render()};
+window.openParcelAction=id=>{if(id==='@settings'){tab='settings';render();return;}tab='inbox';render();if(id==='@friends')friendsWindow(render);else if(id.startsWith('@inbox:'))openMailboxItem(id.slice(7),render);else replyTo(id,render);};
 if(window.Pigeon){state.receiving=Pigeon.isOpen();
-  let signature='';setInterval(()=>{if(document.hidden||tab!=='inbox'||document.querySelector('dialog[open]'))return;const next=Pigeon.mailbox()+Pigeon.friendsCached();if(next!==signature){signature=next;render();}},3000);
+  let signature='';setInterval(()=>{if(document.hidden)return;updateUnreadBadge();if(tab!=='inbox'||document.querySelector('dialog[open]'))return;const next=Pigeon.mailbox()+Pigeon.friendsCached();if(next!==signature){signature=next;render();}},3000);
 }
 if(!window.Pigeon&&new URLSearchParams(location.search).get('review')==='settings')tab='settings';
 window.refreshDeliverySettings=()=>{if(tab==='settings')wireSettings(app);refreshArtwork();};
 window.addEventListener('shared-art-updated',()=>{
+ updateUnreadBadge();
  if(tab==='home')mountHomeWheel();
 });
 function refreshArtwork(){if(!document.hidden)refreshMainArt().catch(()=>{});}

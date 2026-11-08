@@ -1,0 +1,7 @@
+/* Explicit ink on magnolia reply receipts, in both app themes. */
+#mail-window[data-review-screen="reply-confirmation"] [data-mb="done"],
+#mail-window[data-review-screen="received-reply"] [data-mb="done"]{background:#faf5e5;color:#294b37;-webkit-text-fill-color:#294b37;border:1px solid #768971;}
+#mail-window .received-reply{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.1rem;line-height:1.5;}
+.app-nav [data-id="inbox"]{position:relative;}
+.app-nav .inbox-count{position:absolute;top:6px;left:calc(50% + 12px);min-width:22px;height:22px;padding:0 5px;border-radius:50%;background:#a52e40;color:#fff;font:700 13px/22px sans-serif;text-align:center;box-shadow:0 0 0 2px #faf5e5;}
+.app-nav .inbox-count[hidden]{display:none;}

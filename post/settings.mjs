@@ -1,11 +1,11 @@
 import {themeToggle} from './home.mjs';
-const defaults={fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,friendAlerts:false,backdropOpacity:70};
+const defaults={fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,friendAlerts:false,replyAlerts:true,backdropOpacity:70};
 let preview={...defaults};
 try{
   const saved=JSON.parse(localStorage.getItem('pigeon.backdrop')||'{}');
   if(Number.isInteger(saved.backdropOpacity)&&saved.backdropOpacity>=0&&saved.backdropOpacity<=100)preview.backdropOpacity=saved.backdropOpacity;
 }catch{}
-function read(){return window.Pigeon?.deliveryPrefs?JSON.parse(Pigeon.deliveryPrefs()):preview;}
+function read(){return window.Pigeon?.deliveryPrefs?{...defaults,...JSON.parse(Pigeon.deliveryPrefs())}:preview;}
 export function backdropOpacity(){return read().backdropOpacity??defaults.backdropOpacity;}
 const link=(action,title,copy)=>'<button type="button" data-action="'+action+'" class="setting-link"><span><strong>'+title+'</strong><small>'+copy+'</small></span><i aria-hidden="true">›</i></button>';
 const action=(key,title)=>'<button type="button" data-platform="'+key+'" class="setting-pill">'+title+'</button>';
@@ -22,12 +22,12 @@ export function settingsPage(){
     select('fullPopup','When open',[['true','Full pop-up'],['false','Notification only']])+toggle('onUnlock','Open one second after unlock')+
     select('closedInbox','When closed',[['true','Inbox only'],['false','Completely closed']]))+
   section('alerts','Alerts','Warnings, timing and friend updates.',
-    toggle('warning','Warn before a pop-up')+select('warningSeconds','Warning time',[[3,'3 seconds'],[10,'10 seconds'],[15,'15 seconds']])+toggle('friendAlerts','Friend status changes'))+
+    toggle('warning','Warn before a pop-up')+select('warningSeconds','Warning time',[[3,'3 seconds'],[10,'10 seconds'],[15,'15 seconds']])+toggle('friendAlerts','Friend status changes')+toggle('replyAlerts','Reply notifications'))+
   section('phone','Phone & appearance','Set the backdrop and check phone permissions.',
     '<label class="setting-field backdrop-strength"><span>Black backdrop opacity</span><output data-opacity for="backdrop-alpha"></output><input type="range" id="backdrop-alpha" data-pref="backdropOpacity" min="0" max="100" step="1"></label>'+
-    (native?'<button class="setting-pill" data-action="test">Try a pop-up</button><p class="setting-hint">Tap Try a pop-up, then go to your home screen. Use Full pop-up and switch Open to mail on first.</p><div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to test a parcel over another app.</p>'))+
+    (native?'<div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to receive parcels over other apps.</p>'))+
   section('account','Profile & invitations','Your pigeon and one-time links.',link('profile','Your profile','Change your name or pigeon.')+link('test-link','One-time link','Invite someone to send you a parcel.'))+
-  section('about','About & updates','A quick guide and your installed version.',(native?action('updates','Check for updates'):link('schedule-setting','Test scheduling','Set a time for a local test.'))+link('about','About Pigeon Post','What it does and how to use it.'))+'</section>';
+  section('about','About & updates','A quick guide and your installed version.',(native?action('updates','Check for updates'):'')+link('about','About Pigeon Post','What it does and how to use it.'))+'</section>';
 }
 export function wireSettings(root){
   const panel=root.querySelector('.post-settings');if(!panel)return;

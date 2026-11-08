@@ -44,6 +44,7 @@ final class Mail {
     }
     static void channels(Context c){
         NotificationManager n=c.getSystemService(NotificationManager.class);
+        n.createNotificationChannel(new NotificationChannel("replies","Replies",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel("friends","Friend status changes",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(ALERT,"Incoming mail warnings",NotificationManager.IMPORTANCE_HIGH));
         n.createNotificationChannel(new NotificationChannel(QUIET,"Mailbox deliveries",NotificationManager.IMPORTANCE_DEFAULT));
@@ -51,7 +52,7 @@ final class Mail {
     }
     static boolean enabled(Context c,String channel){
         NotificationManager n=c.getSystemService(NotificationManager.class);
-        return n.areNotificationsEnabled() && n.getNotificationChannel(channel).getImportance()>NotificationManager.IMPORTANCE_NONE;
+        channels(c);return n.areNotificationsEnabled() && n.getNotificationChannel(channel).getImportance()>NotificationManager.IMPORTANCE_NONE;
     }
     static PendingIntent action(Context c,String id,String action,boolean activity){
         Intent i=new Intent(c,activity?("open".equals(action)?OpenParcel.class:Main.class):Delivery.class).setAction(action).setData(new Uri.Builder().scheme("pigeon").authority("mail").appendPath(id).build()).putExtra("id",id);
@@ -98,6 +99,7 @@ final class Mail {
     }
     // Persist delivery outcomes separately from the parcel. Retry after a lost response or restart.
     static synchronized void outcome(Context c,JSONObject parcel,String value){
+        if("screen".equals(value))markRead(c,parcel.optString("id"));
         if(!parcel.optBoolean("remote"))return;
         String id=parcel.optString("id"),key="outcome:"+id;
         if("screen".equals(prefs(c).getString(key,"")))return;
@@ -112,6 +114,7 @@ final class Mail {
     }
     static void sync(Context c)throws Exception{
         try{PostOffice.friends(c);}catch(Exception ignored){}
+        try{Replies.sync(c);}catch(Exception e){Log.w("Pigeon","Reply sync will retry",e);}
         new Handler(Looper.getMainLooper()).post(()->UnlockQueue.watch(c.getApplicationContext()));
         for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
             try{flushOutcome(c,key);}catch(Exception ignored){}
@@ -119,6 +122,7 @@ final class Mail {
         for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0)return;
             JSONObject m=arr.getJSONObject(0);accept(c,m,true);request(c,"ack",new JSONObject().put("id",m.getString("id")));}
     }
+    static void markRead(Context c,String id){prefs(c).edit().putBoolean("read:"+id,true).apply();c.getSystemService(NotificationManager.class).cancel(id,5);}
     static void state(Context c,JSONObject m,String status){try{m.put("status",status);save(c,m);}catch(Exception e){Log.e("Pigeon","Unable to update receipt",e);}}
     static String label(JSONObject m){return m.optString("sender","A friend")+" sent you "+m.optString("kind","mail");}
 }
