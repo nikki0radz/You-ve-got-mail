@@ -37,7 +37,7 @@ export function banner(style,text,width=360,height=108,colours={}){
     const points=[[inset,inset],[width-inset,inset],[width-fold,height/2],[width-inset,height-inset],[inset,height-inset],[fold,height/2]];
     points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();
   }else ctx.roundRect(inset,inset,width-2*inset,height-2*inset,edge*(style===3?.5:style===2?.14:.045));
-  ctx.fill();if(colours.fill!=='transparent')ctx.stroke();
+  ctx.fill();if(style!==3&&colours.fill!=='transparent')ctx.stroke();
   if(style===2&&colours.fill!=='transparent'){
     const margin=edge*.08;ctx.strokeStyle='#a45c50';ctx.setLineDash([inset*4,inset*3]);ctx.beginPath();
     ctx.roundRect(margin,margin,width-2*margin,height-2*margin,edge*.085);ctx.stroke();

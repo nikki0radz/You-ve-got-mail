@@ -4,7 +4,7 @@ import {freezeFrame} from './review-freeze.mjs';
 
 const prefix='pigeon.live-review.v1.';
 const properties={background:'background-color',text:'color',border:'border-color'};
-const palette=['#fff9ed','#f2d5bf','#dbc6d4','#c9ddd1','#a1c6bc','#597c66','#283f32','#111c19'];
+const palette=['#365a40','#fff9ed','#f2d5bf','#dbc6d4','#c9ddd1','#a1c6bc','#597c66','#283f32','#111c19'];
 const json = (key,fallback) => {try{return JSON.parse(localStorage.getItem(key)) ?? fallback;}catch{return fallback;}};
 const unsaved = new Map();
 const records = () => Object.keys(localStorage).filter(k=>k.startsWith(prefix)).map(k=>json(k,null)).filter(Boolean);

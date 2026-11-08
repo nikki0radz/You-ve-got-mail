@@ -1,0 +1,82 @@
+/* Nicole's November 8 review and supplied mailbox artwork. */
+#app{padding-bottom:calc(94px + env(safe-area-inset-bottom))}
+#app .app-nav{position:fixed;inset:auto auto 0 50%;transform:translateX(-50%);width:min(100%,410px);box-sizing:border-box;z-index:20;margin:0;padding:9px 16px calc(9px + env(safe-area-inset-bottom));border-top:2px dashed #597c66;background:var(--review-nav,var(--mm-bg))}
+#app .app-nav button{flex:1;min-width:0}
+#app .postal-header>strong{font-size:clamp(21px,5.5vw,27px)}
+#app .mailbox-heading{margin:14px -5px 16px}
+#app .mailbox-heading img{display:block;width:115%;max-width:none;margin-inline:-7.5%;height:auto;object-fit:contain}
+#app .people-heading[data-review-look=peoplebar-4]{padding:7px 7px;margin-bottom:0}
+#app .people-heading[data-review-look=peoplebar-4] b{font:800 21px/1.2 PostalBaloo,system-ui}
+#app .friend-strip:empty{display:none}
+#app .mail-tabs{margin:11px 0;border:3px solid #365a40;padding:2px;border-radius:35px}
+#app .mail-tabs button{min-height:43px;font-size:17px}
+#app .mail-row{min-height:59px;padding:7px 2px;gap:7px}
+#app .mail-row .parcel-thumb{background:transparent;flex-basis:36px;height:45px}
+#app .mail-row .parcel-thumb img{width:36px;height:45px}
+#app .mail-row time{font-size:11px;white-space:nowrap;max-width:none}
+#app .mail-row>span:not(.mail-dot,.parcel-thumb){flex-wrap:wrap;gap:3px 5px}
+#app .mail-row>span>small:empty{display:none}
+#app .mail-row>span>small:not(:empty){flex-basis:100%}
+#app .settings-appearance{display:flex;align-items:center;justify-content:space-between;margin:8px 0 16px}
+#app .setting-field input[type=checkbox]{border-radius:7px}
+#app .permission-list button{font-size:12px}
+/* New recipient round: five compact single-row treatments with portraits. */
+:is(#mail-window,#flow) .recipient-choice[data-review-look^=sendrow-]{grid-template-columns:auto minmax(0,1fr);gap:12px;background:none;color:var(--mm-text);border:0;border-radius:0;padding:10px 4px}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people{max-height:190px;overflow:auto}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-1]{border-block:1px solid #829384}
+:is(#mail-window,#flow) [data-review-look=sendrow-1] .recipient-people button{border:0;border-bottom:1px solid #829384;border-radius:0;background:transparent;color:inherit}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-2]{border:2px dashed #829384;border-radius:12px;background:#f2d5bf;color:#283c30;padding:12px}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-3]{border-radius:30px;background:#c9ddd1;color:#283c30;padding:12px}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-4]{border:4px double #829384;background:#fff9ed;color:#283c30;padding:12px}
+:is(#mail-window,#flow) .recipient-choice[data-review-look=sendrow-5]{border:1px solid #829384;border-radius:8px 8px 22px 22px;background:var(--mm-panel);padding:12px}
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button[aria-pressed=true]{background:#365a40;color:#fff9ed;border-color:#365a40}
+:is(#mail-window,#flow) .recipient-people button:disabled{opacity:.5}
+#parcel-shop .frame-rail{border-color:inherit;color:inherit}
+html[data-theme=dark] #parcel-shop :is(.frame-rail,.frame-thumbs,.library-filter,.type-menu>div){background:#111c19;color:#fff9ed;border-color:#283f32}
+html[data-theme=dark] #parcel-shop .frame-rail button{background:transparent;color:#fff9ed;border-color:#283f32}
+html[data-theme=dark] #parcel-shop .frame-rail button[aria-pressed=true]{background:#283f32;border-color:#a1c6bc}
+#parcel-shop .colour-chip i{width:14px;height:14px}
+#parcel-shop .parcel-note textarea,#parcel-shop .art-writing textarea{align-content:center}
+.post-scheduler{width:min(350px,calc(100% - 32px));box-sizing:border-box;max-height:90dvh;overflow:auto;background:#fff9ed;color:#283c30;border:3px double #597c66;border-radius:22px;padding:15px}
+.post-scheduler::backdrop{background:#111c1980}
+.post-scheduler header,.post-scheduler footer{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.post-scheduler header small{font:700 10px system-ui;letter-spacing:.1em}
+.post-scheduler h2{font:800 26px/1.2 PostalBaloo,system-ui;text-align:center;margin:8px 0 16px}
+.post-scheduler button{font:650 15px system-ui;min-height:40px;color:inherit;background:transparent;border:0;border-radius:12px;cursor:pointer}
+.post-scheduler .date-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.post-scheduler .date-grid small{font:650 12px system-ui;padding-block:5px}
+.post-scheduler .date-grid [aria-current=date]{text-decoration:underline;text-underline-offset:5px}
+.post-scheduler .date-grid [aria-pressed=true]{background:#365a40;color:#fff9ed}
+.post-scheduler button:disabled{opacity:.3;cursor:default}
+.post-scheduler .calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.post-scheduler .scheduler-hint,.post-scheduler .scheduler-day{font:500 13px/1.4 system-ui;text-align:center}
+.post-scheduler .scheduler-error{color:#a33742;font:600 13px system-ui}
+.post-scheduler button:focus-visible,.post-scheduler [tabindex]:focus-visible{outline:3px solid #a1c6bc;outline-offset:2px}
+#mail-window .schedule-summary{display:block;width:100%;border:1px solid #829384;border-radius:18px;padding:10px;color:inherit;background:transparent;font:700 15px system-ui}
+.post-scheduler .time-wheels{display:flex;align-items:center;justify-content:center;gap:15px;margin:12px auto 20px}
+.post-scheduler .time-wheels>div>small{display:block;text-align:center;font:650 12px system-ui;margin-bottom:5px}
+.post-scheduler .time-wheel{position:relative;box-sizing:border-box;width:78px;height:132px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding-block:44px;border-block:1px solid #829384;overscroll-behavior:contain;background:linear-gradient(transparent 44px,#c9ddd1 44px,#c9ddd1 88px,transparent 88px);border-radius:14px}
+.post-scheduler .time-wheel::-webkit-scrollbar{display:none}
+.post-scheduler .time-wheel button{display:block;width:100%;height:44px;min-height:44px;padding:0;scroll-snap-align:center;font:650 23px/44px ParcelFredoka,system-ui;opacity:.55}
+.post-scheduler .time-wheel [aria-selected=true]{opacity:1;font-weight:750}
+.post-scheduler [data-done]{background:#365a40;color:#fff9ed;padding:9px 22px;font:800 20px PostalBaloo,system-ui;border-radius:28px}
+html[data-theme=dark] .post-scheduler{background:#111c19;color:#fff9ed;border-color:#597c66}
+html[data-theme=dark] .post-scheduler .time-wheel{background:linear-gradient(transparent 44px,#283f32 44px,#283f32 88px,transparent 88px)}
+
+#app .setting-dropdown{position:relative;max-width:64%;margin-inline-start:auto;font:650 13px system-ui}
+#app .setting-dropdown summary{cursor:pointer;min-height:40px;display:flex;gap:8px;align-items:center;justify-content:flex-end;border-bottom:2px solid #597c66;list-style:none;text-align:end}
+#app .setting-dropdown summary::after{content:'⌄'}
+#app .setting-dropdown summary[aria-disabled=true]{opacity:.5;cursor:default}
+#app .setting-dropdown>div{position:absolute;right:0;top:100%;z-index:5;min-width:160px;max-width:240px;background:var(--mm-bg);color:var(--mm-text);border:1px solid #829384;border-radius:12px;padding:4px;box-shadow:0 4px 12px #111c1933}
+#app .setting-dropdown button{display:block;width:100%;min-height:40px;padding:7px 10px;border:0;background:transparent;color:inherit;border-radius:8px;font:650 13px system-ui;text-align:left}
+#app .setting-dropdown [aria-selected=true]{background:#365a40;color:#fff9ed}
+@media(min-width:451px){#app .app-nav{width:404px}}
+
+:is(#mail-window,#flow) [data-review-look^=sendrow-] .recipient-people button{min-width:0;overflow-wrap:anywhere}
+.ink-picker.swatch-picker{width:min(280px,calc(100% - 32px))}
+.ink-picker.swatch-picker .ink-swatches{grid-template-columns:repeat(5,32px);justify-content:center;gap:10px}
+.ink-picker.swatch-picker .ink-swatches button{width:32px;height:32px}
+.ink-picker.swatch-picker>button{background:#365a40;color:#fff9ed;border:1px solid #234532;border-radius:24px;padding:8px 22px;font:800 18px PostalBaloo,system-ui}
+
+#app .post-settings .setting-dropdown summary::before{display:none}
+#app .post-settings .setting-dropdown>div{background:var(--mm-bg);color:var(--mm-text)}

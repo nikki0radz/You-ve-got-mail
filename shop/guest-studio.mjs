@@ -100,7 +100,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       else {l.x=g.oldX+dx;l.y=g.oldY+dy;}
       contain(l);if(key==='art')attachNote();layout();
     };
-    el.onpointerup=e=>{if(!gesture||gesture.id!==e.pointerId)return;const g=gesture;gesture=null;if(!g.moved&&!g.resizing&&(key==='note'||(key==='art'&&item.textBox)))startText(key);};
+    el.onpointerup=e=>{if(!gesture||gesture.id!==e.pointerId)return;const g=gesture;gesture=null;if(pairedPreview&&!g.moved&&!g.resizing&&(key==='note'||(key==='art'&&item.textBox)))startText(key);};
     el.onpointercancel=el.onlostpointercapture=()=>{gesture=null;};
     el.onkeydown=e=>{
       if(e.target.closest('textarea,.layer-action'))return;

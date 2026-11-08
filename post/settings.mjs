@@ -1,3 +1,4 @@
+import {themeToggle} from './home.mjs';
 const defaults={fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,friendAlerts:false,backdropOpacity:70};
 let preview={...defaults};
 try{
@@ -15,6 +16,7 @@ export function settingsPage(){
   const native=Boolean(window.Pigeon?.deliveryPrefs);
   return '<section class="post-settings" data-review-look="settingsbuttons-3" data-base-look="settingsbuttons-3"><header><div><small>PIGEON POST</small><h1>Settings</h1><p>Your rules for incoming mail.</p></div><img src="assets/home/mascot.webp" alt=""></header>'+
   (!native?'<p class="settings-preview">Browser preview · changes apply here only.</p>':'')+
+  '<div class="settings-appearance"><b>Appearance</b>'+themeToggle(document.documentElement.dataset.theme)+'</div>'+
   link('art-uploads','Artwork manager','Upload PNGs and organise the main library.')+
   section('delivery','Delivery','Choose what happens when a parcel arrives.',
     select('fullPopup','When open',[['true','Full pop-up'],['false','Notification only']])+toggle('onUnlock','Open one second after unlock')+
@@ -30,10 +32,22 @@ export function settingsPage(){
 export function wireSettings(root){
   const panel=root.querySelector('.post-settings');if(!panel)return;
   const native=Boolean(window.Pigeon?.deliveryPrefs);
+  for(const select of panel.querySelectorAll('select[data-pref]')){
+    select.hidden=true;
+    const menu=document.createElement('details');menu.className='setting-dropdown';
+    const heading=document.createElement('summary');menu.append(heading);
+    const list=document.createElement('div');list.setAttribute('role','listbox');list.setAttribute('aria-label',select.closest('label').querySelector('span').textContent);
+    for(const option of select.options){
+      const b=document.createElement('button');b.type='button';b.textContent=option.textContent;b.setAttribute('role','option');b.dataset.value=option.value;
+      b.onclick=e=>{e.preventDefault();select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));menu.open=false;heading.focus();};list.append(b);
+    }
+    menu.append(list);select.after(menu);
+  }
   const sync=()=>{
     const s=read();for(const field of panel.querySelectorAll('[data-pref]')){
       const k=field.dataset.pref;if(field.type==='checkbox')field.checked=s[k];else field.value=String(s[k]);
       field.disabled=(k==='onUnlock'&&!s.fullPopup)||(k==='warningSeconds'&&!s.warning);
+      if(field.tagName==='SELECT'){const menu=field.nextElementSibling;menu.querySelector('summary').textContent=field.selectedOptions[0].textContent;menu.querySelector('summary').setAttribute('aria-disabled',String(field.disabled));menu.ontoggle=()=>{if(field.disabled)menu.open=false;};for(const b of menu.querySelectorAll('button')){b.disabled=field.disabled;b.setAttribute('aria-selected',String(b.dataset.value===field.value));}}
     }
     panel.querySelector('[data-opacity]').value=s.backdropOpacity+'%';
     if(native){

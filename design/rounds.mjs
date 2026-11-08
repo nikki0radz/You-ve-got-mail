@@ -56,4 +56,17 @@ rounds.dispatch.groups=rounds.dispatch.groups.map(group=>group.id==='parcel-revi
 
 rounds.home.groups.push(...feedbackGroups.filter(group=>['separator','wheelrim'].includes(group.key)));
 // The selected looks stay in the exported workroom vocabulary for older reviews.
-export const approvedLooks = {mailbox:3, settingsbuttons:3, peoplebar:4, railwidth:1, notetitle:3, receiptfont:2, permissionactions:5};
+export const approvedLooks = {mailbox:3, settingsbuttons:3, peoplebar:4, railwidth:1, notetitle:3, receiptfont:2, permissionactions:5, whenticks:1, timeheading:1, separator:3, wheelrim:1};
+
+const recipientRound4={id:'parcel-feedback-sendrow-04',key:'sendrow',title:'Send to · new layouts',selector:'.recipient-choice',anchor:'.recipient-choice',options:['Portrait underline','Delivery ticket','Address ribbon','Postcard address','Sorting pocket'].map((name,i)=>({name,changes:[{selector:'.recipient-choice',style:{reviewLook:'sendrow-'+(i+1)}}]}))};
+const recipientIndex=feedbackGroups.findIndex(group=>group.key==='sendrow');
+feedbackGroups[recipientIndex]=recipientRound4;
+rounds.recipient={...recipientRound4,groups:[time,recipientFont,timeHeading]};rounds.schedule=rounds.recipient;
+
+// Keep resolved selections in the release; show only outstanding alternatives.
+for(const [screen,round] of Object.entries(rounds)){
+  const groups=[round,...(round.groups||[])].filter(g=>!approvedLooks[g.key]);
+  if(!groups.length)delete rounds[screen];
+  else if(approvedLooks[round.key]){const [first,...rest]=groups;rounds[screen]={...first,groups:rest};}
+  else round.groups=(round.groups||[]).filter(g=>!approvedLooks[g.key]);
+}
