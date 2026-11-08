@@ -1,0 +1,21 @@
+<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Framed photo regression</title>
+<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../shop/shop.css"><link rel="stylesheet" href="../shop/studio.css"><link rel="stylesheet" href="../post/review-019.css"><link rel="stylesheet" href="../post/review-026.css"></head>
+<body><button id="start">Start framed photo regression</button><p id="result" role="status">Ready</p><dialog id="parcel-shop" aria-label="Framed photo test"></dialog>
+<script type="module">
+import {startGuestStudio} from '../shop/guest-studio.mjs';
+const status=document.querySelector('#result'),dialog=document.querySelector('dialog');
+window.addEventListener('error',e=>status.textContent='FAIL: '+e.message);
+document.querySelector('#start').onclick=async()=>{
+ const mask=document.createElement('canvas');mask.width=mask.height=600;mask.getContext('2d').fillRect(60,60,480,480);
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect x="25" y="25" width="550" height="550" rx="32" fill="none" stroke="#365a40" stroke-width="60"/></svg>';
+ const item={sharedId:'regression-frame',name:'Test photo frame',kind:'frame',category:'Photos',master:'data:image/svg+xml,'+encodeURIComponent(svg),maskSheet:mask.toDataURL(),rect:[0,0,600,600],opening:[.1,.1,.9,.9]};
+ dialog.showModal();startGuestStudio(dialog,item,()=>dialog.close(),async image=>{
+  if(!image.startsWith('data:image/png;base64,'))throw Error('Expected a real PNG');
+  const proof=new Image();proof.src=image;await proof.decode();
+  status.textContent='PASS: framed photo reached Ready for post and exported '+proof.naturalWidth+' × '+proof.naturalHeight+' PNG.';dialog.close();
+ });
+ const photo=document.createElement('canvas');photo.width=320;photo.height=240;const brush=photo.getContext('2d');brush.fillStyle='#a1c6bc';brush.fillRect(0,0,320,240);brush.fillStyle='#704b74';brush.fillRect(80,60,160,120);
+ const blob=await new Promise(resolve=>photo.toBlob(resolve,'image/png')),transfer=new DataTransfer();transfer.items.add(new File([blob],'test-photo.png',{type:'image/png'}));
+ const input=dialog.querySelector('input[type=file]');input.files=transfer.files;input.dispatchEvent(new Event('change'));
+};
+</script></body></html>

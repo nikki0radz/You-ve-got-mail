@@ -4,13 +4,15 @@ const sheets = new Map();
 const importedImages = new Map();
 
 export function loadSheet(url) {
-  // A few decoded phone-size masters can take hundreds of MB. Keep only the
-  // currently edited original and its cutout in memory; the PNGs remain on disk.
+  // Bound decoded originals, including remote uploads, rather than retaining
+  // every full-size picture visited during a session.
   const cache=url.startsWith('blob:')||url.startsWith('data:')?importedImages:sheets;
+  if(cache.has(url)){const current=cache.get(url);cache.delete(url);cache.set(url,current);return current;}
   if (!cache.has(url)) {
-    if(cache===importedImages && cache.size>=2)cache.delete(cache.keys().next().value);
+    if(cache.size>=(cache===importedImages?2:4))cache.delete(cache.keys().next().value);
     const promise = new Promise((resolve, reject) => {
       const image = new Image();
+      image.decoding='async';
       image.onload = () => resolve(image);
       image.onerror = () => { if(cache.get(url)===promise)cache.delete(url); reject(new Error('Could not load the artwork. Please try again.')); };
       if(/^https?:/i.test(url))image.crossOrigin='anonymous';

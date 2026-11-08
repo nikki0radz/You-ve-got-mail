@@ -280,7 +280,7 @@ export function startGuestStudio(dialog,item,back,onReady){
     select(active);layout();paintArt();paintNote();
     tool('back').onclick=leave;
     const source=dialog.querySelector('[data-file=main]');
-    if(item.maskSheet&&(pairedPreview||item.sharedId)){tool('photo').onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
+    if(item.maskSheet&&(pairedPreview||item.sharedId)){const photo=tool('photo');if(photo)photo.onclick=()=>state.crop.photo?openCrop(state.crop):source.click();source.onchange=()=>upload(source);}
     if(!pairedPreview&&!(item.sharedId&&item.maskSheet))dialog.querySelector('.studio-photo').remove();
     if(pairedPreview){
     const styles=dialog.querySelector('.banner-options'),stickers=dialog.querySelector('.sticker-options');
@@ -323,8 +323,8 @@ export function startGuestStudio(dialog,item,back,onReady){
       if(item.maskSheet&&!optionalPhoto&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
       if(item.textBox&&!state.words.trim()&&!(optionalPhoto&&state.crop.photo)){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
-      busy=true;const ready=tool('ready');ready.disabled=true;
-      try{const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);
+      busy=true;const ready=tool('ready'),caption=ready.textContent;ready.disabled=true;ready.textContent='Preparing your parcel…';ready.setAttribute('aria-busy','true');error.textContent='';
+      try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);
         else{
           const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
           if(!blob)throw Error('Could not save this picture.');
@@ -332,7 +332,7 @@ export function startGuestStudio(dialog,item,back,onReady){
           if(action==='share'&&navigator.canShare?.({files:[file]}))await navigator.share({files:[file]});
           else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
         }}
-      catch(e){grabError(e);}finally{busy=false;ready.disabled=false;}
+      catch(e){grabError(e);error.scrollIntoView({block:'nearest'});}finally{busy=false;ready.disabled=false;ready.textContent=caption;ready.removeAttribute('aria-busy');}
     };
     dialog.scrollTop=0;
   }

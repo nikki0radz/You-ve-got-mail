@@ -19,7 +19,15 @@
 <link rel="stylesheet" href="post/review-041.css">
 </head>
 <body>
-  <main id="app" class="mm-phone" aria-label="You've Got Mail"></main>
+  <style>
+    #app-loading{position:fixed;inset:0;z-index:1000;display:grid;place-content:center;justify-items:center;gap:14px;padding:28px;text-align:center;background:var(--mm-bg,#fff9ed);color:var(--mm-text,#203936);font:800 21px/1.4 PostalBaloo,system-ui}
+    #app-loading .boot-spinner{width:42px;height:42px;border:4px solid #a1c6bc;border-top-color:#365a40;border-radius:50%;animation:spin 1s linear infinite}
+    #app-loading button{padding:10px 24px;background:#365a40;color:#fff9e8;border:0;border-radius:24px;font:inherit}
+    @media(prefers-reduced-motion:reduce){#app-loading .boot-spinner{animation:none}}
+  </style>
+  <div id="app-loading" role="status" aria-live="polite"><span class="boot-spinner" aria-hidden="true"></span><span data-boot-message>Opening the post office…</span><button type="button" hidden onclick="location.reload()">Try again</button></div>
+  <main id="app" class="mm-phone" aria-label="You've Got Mail" aria-busy="true" inert></main>
+  <script>setTimeout(function(){var screen=document.getElementById('app-loading');if(!screen)return;var app=document.getElementById('app');if(app.childElementCount){screen.remove();app.inert=false;app.removeAttribute('aria-busy');}else{screen.querySelector('[data-boot-message]').textContent='The post office could not open. Please try again.';screen.querySelector('.boot-spinner').hidden=true;screen.querySelector('button').hidden=false;}},12000);</script>
   <dialog id="flow" aria-labelledby="flow-title"></dialog>
   <dialog id="mail-window" aria-label="Mailbox"></dialog>
   <dialog id="social-flow" aria-label="Pigeon post"></dialog>

@@ -24,6 +24,7 @@ function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));r
 let homeColours;
 function applyTheme(){window.Pigeon?.setTheme?.(state.theme==='dark');document.documentElement.dataset.theme=state.theme;document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#111c19':'#a1c6bc';homeColours?.apply()}
 let localFolder='inbox';
+function finishStartup(){document.getElementById('app-loading')?.remove();app.inert=false;app.removeAttribute('aria-busy');}
 function recipientName(id){return id==='self'?'Myself':state.friends.find(friend=>friend.id===id)?.name||'Owen';}
 function localSent(){
  const rows=[...state.inbox.filter(m=>m.recipient),...state.scheduled].sort((a,b)=>(b.createdAt||Date.parse(b.when))-(a.createdAt||Date.parse(a.when)));
@@ -37,9 +38,11 @@ async function mountHomeWheel(){
  const root=app.querySelector('#home-wheel'),generation=++wheelGeneration;
  if(!root)return;
  let designs;
- try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load.';return;}
+ try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load. Reopen Post office to retry.';finishStartup();return;}
  if(!root.isConnected||generation!==wheelGeneration)return;
- mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;},onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render,null,state.profile);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});}
+ mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;},onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render,null,state.profile);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});
+ if(document.getElementById('app-loading')){const images=[...app.querySelectorAll('.profile-link img,.post-office-art,.mail-status-art,#home-wheel [aria-current=true] img')];await Promise.race([Promise.allSettled([document.fonts.ready,...images.map(image=>image.decode())]),new Promise(resolve=>setTimeout(resolve,4000))]);finishStartup();}
+}
 function updateUnreadBadge(){
  const btn=app.querySelector('.app-nav [data-id="inbox"]');if(!btn)return;
  let count=0;try{count=window.Pigeon?.mailbox?unreadCount(JSON.parse(Pigeon.mailbox()),id=>Pigeon.wasRead(id)):state.inbox.filter(m=>!m.read).length;}catch{}
@@ -47,7 +50,7 @@ function updateUnreadBadge(){
 }
 function render(){applyTheme();app.innerHTML=`${header(state,tab==='home',false)}${window.Pigeon?"":'<div class="draft-label">Browser preview · local deliveries only</div>'}<div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span>${id==='inbox'?'<b class="inbox-count" hidden aria-hidden="true"></b>':''}</button>`).join('')}</nav>`;if(tab==='settings')wireSettings(app);
  updateUnreadBadge();
- if(tab==='home')mountHomeWheel();
+ if(tab==='home')mountHomeWheel();else finishStartup();
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(window.Pigeon?.name)Pigeon.name(state.profile.name);
 }
