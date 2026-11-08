@@ -33,7 +33,7 @@ jobs:
                       Iterator<Uri> it=qaUris.iterator();
                       ClipData clip=ClipData.newUri(getContentResolver(),"QA fixture",it.next());
                       clip.addItem(new ClipData.Item(it.next()));
-                      Intent result=new Intent().setClipData(clip).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                      Intent result=new Intent().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);result.setClipData(clip);
                       web.post(()->onActivityResult(41,RESULT_OK,result));
                       return true;
                   }''').replace('    private void incoming(Intent i){', '''    private void incoming(Intent i){
