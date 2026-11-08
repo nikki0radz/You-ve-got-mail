@@ -1,0 +1,70 @@
+name: Android gallery batch test
+on:
+  push:
+    branches: [qa/phone-gallery-030]
+    paths: ['android/tests/gallery-030.js', 'android/tests/gallery-030.py', '.github/workflows/gallery-030.yml']
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Register emulator check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=gallery-device-030 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Build a disposable APK using the release WebView
+        run: |
+          set -eu
+          python -c 'from pathlib import Path;p=Path("index.html");s=p.read_text();p.write_text(s.replace("<head>","<head><script>"+Path("android/tests/gallery-030.js").read_text()+"</script>",1))'
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/qa.p12" -alias pigeonpost -storepass android -keypass android -keyalg RSA -dname "CN=Offline QA" -validity 1
+          echo android > "$RUNNER_TEMP/qa.pass"
+          MAIL_KEYSTORE="$RUNNER_TEMP/qa.p12" MAIL_PASSWORD_FILE="$RUNNER_TEMP/qa.pass" bash android/build.sh "$GITHUB_WORKSPACE/phone-qa.apk"
+      - name: Select two PNGs and read both originals in the gallery and upload manager
+        shell: bash
+        run: |
+          set -eu
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          manager="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
+          export PATH="$(dirname "$manager"):$ANDROID_HOME/platform-tools:$PATH"
+          # Keep room for the system image and writable emulator userdata on this disposable runner.
+          sudo rm -rf /usr/local/lib/android/sdk/ndk /usr/share/dotnet
+          df -h /; ls -l /dev/kvm || true
+          sdkmanager "system-images;android-35;google_apis;x86_64" "emulator"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd -f -n PigeonQA -p "$ANDROID_AVD_HOME/PigeonQA.avd" -k "system-images;android-35;google_apis;x86_64" -d pixel_6
+          test -s "$ANDROID_AVD_HOME/PigeonQA.avd/config.ini"
+          printf 'avd.ini.encoding=UTF-8\npath=%s/PigeonQA.avd\ntarget=android-35\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/PigeonQA.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
+          adb start-server
+          "$ANDROID_HOME/emulator/emulator" -avd PigeonQA -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -cores 2 -memory 2048 -partition-size 2048 -no-metrics > "$RUNNER_TEMP/pigeon-emulator.log" 2>&1 &
+          emu_pid=$!
+          trap 'tail -45 "$RUNNER_TEMP/pigeon-emulator.log"' ERR
+          for i in {1..60}; do
+            kill -0 "$emu_pid"
+            if adb devices | grep -q 'emulator-'; then break; fi
+            sleep 2
+          done
+          timeout 120 adb wait-for-device
+          for i in {1..150}; do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
+            sleep 2
+          done
+          adb shell svc wifi disable
+          adb shell svc data disable
+          python android/tests/gallery-030.py
+      - name: Record outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ job.status }}
+        run: |
+          state=failure
+          if [ "$RESULT" = success ]; then state=success; fi
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$state" -f context=gallery-device-030 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
