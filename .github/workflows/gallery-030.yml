@@ -16,9 +16,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=gallery-device-031 -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/checkout@v4
+        with:
+          ref: 2d513bc2af6ba3953b978225db700c292271fd1c
+          path: release-web
       - name: Build a disposable APK using the release WebView
         run: |
           set -eu
+          cp shop/art-upload.mjs "$RUNNER_TEMP/tested-manager.mjs"
+          cp -r release-web/shop/. shop/
+          cp "$RUNNER_TEMP/tested-manager.mjs" shop/art-upload.mjs
+          test "$(git hash-object shop/art-upload.mjs)" = 0c42f90223d31eb780ef5f9a8d5d87bdffef4e0f
           python - <<'PY'
           from pathlib import Path
           fixture=Path('android/tests/gallery-030.js').read_text().replace("note.textContent=s;","note.textContent=s;note.scrollIntoView();")
