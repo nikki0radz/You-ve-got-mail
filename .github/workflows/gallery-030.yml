@@ -2,7 +2,7 @@ name: Android gallery batch test
 on:
   push:
     branches: [qa/read-picked-gallery-031]
-    paths: ['android/tests/gallery-030.js', 'android/tests/gallery-030.py', '.github/workflows/gallery-030.yml']
+    paths: ['android/tests/gallery-030.js', 'android/tests/gallery-030.py', 'android/src/uk/co/pigeonpost/mail/Main.java', 'android/src/uk/co/pigeonpost/mail/PickedPhotos.java', '.github/workflows/gallery-030.yml']
 permissions:
   contents: read
   statuses: write
