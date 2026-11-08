@@ -4,7 +4,7 @@ if(!pages[key])throw Error('Unknown preview page');
 // The real app screens run against disposable example data in this document.
 const values=new Map();
 Object.defineProperty(window,'localStorage',{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)}});
-const html=new DOMParser().parseFromString(await (await fetch(guest?'guest.html':'index.html')).text(),'text/html');
+const html=new DOMParser().parseFromString(await (await fetch(guest?'guest.html?v=032':'index.html?v=032')).text(),'text/html');
 const css=[...html.querySelectorAll('link[rel=stylesheet]')].map(link=>new Promise(ok=>{const el=document.createElement('link');el.rel='stylesheet';el.onload=ok;el.onerror=ok;el.href=link.getAttribute('href');document.head.append(el);}));
 html.querySelectorAll('script').forEach(n=>n.remove());document.body.replaceChildren(...html.body.childNodes);
 await Promise.all(css);
@@ -16,7 +16,7 @@ if(guest){
   document.documentElement.dataset.workroom=key;document.documentElement.dataset.theme='light';
   await import('../post/guest.mjs?studio=pages1');
 }else{
-  const people={friends:[{name:'Owen',code:'POSTSAMPLE',mode:'open'}],incoming:[],outgoing:[],me:{code:'SAMPLECODE'}};
+  const people={friends:[{name:'Owen',code:'POSTSAMPLE',mode:'open',photo:'assets/home/owen.webp'},{name:'Sophie',code:'SOPHIEDEMO',mode:'open',photo:'assets/home/sophie.webp'},{name:'Alex',code:'ALEXDEMO01',mode:'closed',photo:'assets/home/alex.webp'}],incoming:[],outgoing:[],me:{code:'SAMPLECODE'}};
   const mail=[{id:'sample',sender:'Owen',kind:'A postcard',status:'received',created:Date.UTC(2026,0,1,12),when:Date.UTC(2026,0,1,12)},{id:'out',sent:true,sender:'Owen',kind:'A sticker',created:Date.UTC(2026,0,2,12),when:Date.UTC(2026,0,2,12)}];
   const prefs={fullPopup:true,onUnlock:true,warning:true,warningSeconds:3,closedInbox:true,backdropOpacity:70};
   const hint=()=>{const n=document.querySelector('#notice');n.textContent='Device action · preview only';n.classList.add('visible');setTimeout(()=>n.classList.remove('visible'),1600)};
@@ -26,6 +26,7 @@ if(guest){
     post:(id,op)=>queueMicrotask(()=>window.postOfficeResult(id,JSON.stringify(op==='friends'?{data:people}:{error:'Device action · preview only'})))};
   document.documentElement.dataset.workroom=key;
   await import('../app.js');
+  if(document.querySelector('#theme')?.checked)click('#theme');
   if(['inbox','sent','thread','friends','reply','quick','replyPicker'].includes(key))click('[data-action=tab][data-id=inbox]');
   if(key==='sent')click('[data-folder=sent]');
   if(key==='friends')click('[data-book]');

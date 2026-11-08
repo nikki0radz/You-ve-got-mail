@@ -1,7 +1,7 @@
 const inks=[
   ['Black','#000000'],['White','#ffffff'],['Cream','#fff9ed'],['Peach','#f2d5bf'],
   ['Lilac','#dbc6d4'],['Plum','#634961'],['Sage','#c9ddd1'],['Lagoon','#a1c6bc'],
-  ['Leaf','#597c66'],['Forest','#283c30'],['Butter','#ffe07d'],['Ochre','#b77c31'],
+  ['Leaf','#597c66'],['Forest','#365a40'],['Butter','#ffe07d'],['Ochre','#b77c31'],
   ['Coral','#ed8a78'],['Rose','#d77d9c'],['Cherry','#a93e50'],['Berry','#803361'],
   ['Lavender','#b7a6da'],['Sky','#9ac8e0'],['Blue','#507ca4'],['Midnight','#273a50']
 ];
