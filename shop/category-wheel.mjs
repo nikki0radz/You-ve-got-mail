@@ -1,13 +1,10 @@
 import {shopCategoryName} from './shared-designs.mjs';
 import {wheelChoices,mountCatalogueThumbnail} from './catalogue.mjs';
 
-const captions={Notes:'Your words on a little slip of paper.',Photos:'Your photo in a frame.',Flowers:'A bouquet for their screen.',Postcards:'A photo and a few words.',Stickers:'Let a pigeon do the talking.',Reminders:'Send a little nudge for later.','Love notes':'Something sweet, already written.'};
-
-
 export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse,designs,onSelect}){
   const choices=wheelChoices(designs),categories=choices.map(item=>item.category);
   const first=Math.max(0,categories.indexOf(initialCategory));
-  root.innerHTML='<button type="button" class="wheel-back pocket-back"><span class="back-arrow" aria-hidden="true"></span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="caption"></p></div></section>';
+  root.innerHTML='<button type="button" class="wheel-back pocket-back"><span class="back-arrow" aria-hidden="true"></span> Back</button><section class="wheel"><p>Swipe to browse, then tap the big circle.</p><div class="wheel-paper"><small></small><h3 aria-live="polite"></h3><div class="wheel-orbs category-reel" aria-label="Choose a category"></div><p class="wheel-empty" hidden></p></div></section>';
   root.querySelector('.wheel-back').onclick=onBack;
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
   if(root.id==='home-wheel'){
@@ -18,7 +15,7 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   }
   if(!categories.length){
     root.querySelector('.wheel > p').hidden=true;rail.hidden=true;
-    root.querySelector('.caption').textContent='No artwork is available yet.';return;
+    const empty=root.querySelector('.wheel-empty');empty.hidden=false;empty.textContent='No artwork is available yet.';return;
   }
   const byCategory=new Map(choices.map(item=>[item.category,item]));
   const cards=slots.map((key,slot)=>{
@@ -44,7 +41,7 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
     selected=nearest;const key=slots[selected],label=shopCategoryName(key);
     cards.forEach((card,i)=>{card.tabIndex=i===selected?0:-1;card.setAttribute('aria-current',String(i===selected));card.setAttribute('aria-label',(i===selected?'Browse ':'Show ')+shopCategoryName(slots[i]).toLowerCase());});
     root.querySelector('.wheel-paper small').textContent=(categories.indexOf(key)+1)+' / '+categories.length;
-    root.querySelector('.wheel-paper h3').textContent=label;root.querySelector('.caption').textContent=captions[key]||'';onSelect?.(key);
+    root.querySelector('.wheel-paper h3').textContent=label;onSelect?.(key);
   }
   rail.onscroll=()=>{paint();clearTimeout(timer);timer=setTimeout(()=>{
     if(drag||!rail.isConnected)return;

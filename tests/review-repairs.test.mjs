@@ -20,3 +20,14 @@ test('magnolia correction covers both light mailbox tabs without touching dark m
  for(const key of [inbox,sent])assert.deepEqual(JSON.parse(local.getItem(key)).targets['#app'].colours,{background:'#f8f1dd',text:'#365a40'});
  assert.equal(JSON.parse(local.getItem(dark)).targets['#app'].colours.background,'#fff9ed');
 });
+test('existing phones receive consistent mailbox surfaces and selected tab without changing green controls',()=>{
+ const key='pigeon.live-review.v1.mailbox',linked='pigeon.linked-navigation.v1.light';
+ const local=storage({[key]:{surface:'app',view:'inbox / sent',theme:'light',targets:{'.mailbox-heading > img':{colours:{background:'#fff9ed'},comment:'Keep artwork'},'.people-heading':{colours:{background:'#faf4e5'}},'.mail-row span':{colours:{background:'#fff9ed',text:'#365a40'}},'.people-heading button':{colours:{background:'#365a40'}}}},[linked]:{'#app .mail-tabs button[aria-pressed=true]':{colours:{background:'#fff9ed'}},'#app .app-nav button[aria-current=page]':{colours:{background:'#365a40'}}}});
+ local.setItem('pigeon.repair.circles-inbox.036','1');repairLatestReview(local);
+ const targets=JSON.parse(local.getItem(key)).targets,nav=JSON.parse(local.getItem(linked));
+ for(const selector of ['.mailbox-heading > img','.people-heading','.mail-row span'])assert.equal(targets[selector].colours.background,'#f8f1dd');
+ assert.equal(targets['.mailbox-heading > img'].comment,'Keep artwork');assert.equal(targets['.mail-row span'].colours.text,'#365a40');assert.equal(targets['.people-heading button'].colours.background,'#365a40');
+ assert.equal(nav['#app .mail-tabs button[aria-pressed=true]'].colours.background,'#f8f1dd');assert.equal(nav['#app .app-nav button[aria-current=page]'].colours.background,'#365a40');
+ targets['.people-heading'].colours.background='#fff9ed';local.setItem(key,JSON.stringify({surface:'app',view:'inbox / sent',theme:'light',targets}));repairLatestReview(local);
+ assert.equal(JSON.parse(local.getItem(key)).targets['.people-heading'].colours.background,'#fff9ed');
+});
