@@ -1,0 +1,24 @@
+name: Archive signed Android 0.1.30
+on:
+  push:
+    branches: [release/archive-android-030]
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify and archive the published installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          file=Youve-Got-Mail-0.1.30.apk
+          expected=dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e
+          curl --fail --silent --show-error --location "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/$file" -o "$file"
+          echo "$expected  $file" | sha256sum -c -
+          if ! gh release view android-0.1.30 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create android-0.1.30 "$file" --repo "$GITHUB_REPOSITORY" --target "2d513bc2af6ba3953b978225db700c292271fd1c" --title "Android 0.1.30" --notes "Archived signed installer." --latest=false
+          fi
+          curl --max-time 40 -H "Accept: application/octet-stream" --retry-all-errors --retry 3 --fail --silent --show-error --location "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.30/$file" -o checked.apk
+          echo "$expected  checked.apk" | sha256sum -c -
