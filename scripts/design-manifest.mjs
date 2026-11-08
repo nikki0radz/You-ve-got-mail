@@ -1,6 +1,6 @@
-import {readdir,readFile,writeFile} from 'node:fs/promises';
+import {readdir,readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {join} from 'node:path';
+import {join,dirname} from 'node:path';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const files={};
 async function walk(directory,prefix=''){
@@ -16,4 +16,10 @@ async function walk(directory,prefix=''){
 await walk('dist');
 const release={schema:1,bridge:1,revision:hash(JSON.stringify(files)),files};
 await writeFile('dist/design-update.json',JSON.stringify(release)+'\n');
+// The host enhances HTML responses. Plain-text copies preserve the exact bytes
+// that the native updater verifies and then serves inside its existing origin.
+for(const path of Object.keys(files).filter(path=>path.endsWith('.html'))){
+ const target=join('dist/design-raw',path+'.txt');await mkdir(dirname(target),{recursive:true});
+ await writeFile(target,await readFile(join('dist',path)));
+}
 console.log('Design release '+release.revision.slice(0,12)+' · '+Object.keys(files).length+' verified assets');

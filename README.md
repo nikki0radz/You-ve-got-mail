@@ -41,7 +41,7 @@ The Android app creates a private mailbox key on the device. The HTTPS delivery 
 
 ## Development
 
-Android 0.1.34 checks for published screen updates when opened or resumed. Compatible HTML, styles, scripts and built-in artwork download automatically, with a checksum for every file. The app keeps a complete offline copy and applies a new design only when no editor, picker or design review is open. Interrupted downloads keep the current release, and an updated screen that fails to start falls back to the previous working design. Installing 0.1.34 enables this; later compatible screen changes need no new APK. Native features and permission changes still require an installer.
+Android 0.1.35 checks for published screen updates when opened or resumed. Compatible HTML, styles, scripts and built-in artwork download automatically, with a checksum for every file. The app keeps a complete offline copy and applies a new design only when no editor, picker or design review is open. Interrupted downloads keep the current release, and an updated screen that fails to start falls back to the previous working design. Installing 0.1.35 enables this; later compatible screen changes need no new APK. Native features and permission changes still require an installer.
 
 `npm run build` generates `dist/design-update.json` from the exact web output. Publish the complete output at the existing Delivery workroom, including that manifest. Its bridge version must match the app's supported native interface. Never edit a published manifest without publishing its matching files.
 

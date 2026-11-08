@@ -1,10 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,readFile} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
+
+test('published HTML has unchanged raw copies for the native integrity check',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'pigeon-design-publish-'));
+ try{
+  await mkdir(join(directory,'dist'));const html='<!doctype html><main>Post office</main>';
+  for(const [name,text] of Object.entries({'index.html':html,'app.js':'window.pigeonAppReady=true;','styles.css':'main{color:green}'}))await writeFile(join(directory,'dist',name),text);
+  execFileSync('node',[resolve('scripts/design-manifest.mjs')],{cwd:directory});
+  const manifest=JSON.parse(await readFile(join(directory,'dist/design-update.json'),'utf8'));
+  assert.deepEqual(Object.keys(manifest.files).sort(),['app.js','index.html','styles.css']);
+  assert.equal(await readFile(join(directory,'dist/design-raw/index.html.txt'),'utf8'),html);
+ }finally{await rm(directory,{recursive:true,force:true});}
+});
 
 test('native design releases stay coherent and work offline; invalid updates cannot replace them',async()=>{
  const directory=await mkdtemp(join(tmpdir(),'pigeon-java-'));

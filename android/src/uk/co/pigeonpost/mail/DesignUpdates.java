@@ -48,7 +48,7 @@ final class DesignUpdates {
         DesignBundle next=parse(text),current=saved();
         if(next.revision.equals(bad()))return current;
         if(next.revision.equals(current.revision))return current;
-        next.prepare(cache,bundled,path->fetch(ROOT+path+"?design="+next.revision));
+        next.prepare(cache,bundled,path->fetch(ROOT+(path.endsWith(".html")?"design-raw/"+path+".txt":path)+"?design="+next.revision));
         // Do not change the active pointer until every new file has passed its checksum.
         if(!current.revision.equals(bundled.revision))try{writeRecord("previous.json",readRecord("active.json"));}catch(FileNotFoundException ignored){}
         else new AtomicFile(new File(root,"previous.json")).delete();
