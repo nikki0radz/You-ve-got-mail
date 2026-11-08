@@ -1,7 +1,7 @@
 /* Circle sizing is independent of the artwork's intrinsic proportions. */
 #home-wheel .category-reel button>span,.wheel .category-reel button>span{overflow:hidden;border-radius:50%}
 #app .postal-header>strong{font-size:clamp(25px,7.8vw,31px);line-height:1.1}
-#app .mailbox-heading{margin:-20px -5px 12px}
+#app .mailbox-heading{margin:2px -5px 12px}
 html[data-theme=light] body:has(#app .mailbox-layout),html[data-theme=light] #app:has(.mailbox-layout){background:#f8f1dd;--mm-bg:#f8f1dd;--mm-panel:#f8f1dd}
 html[data-theme=light] #app:has(.post-office-home){--shop-card:#ffe9c7}
 html[data-theme=light] #social-flow{background:#c9ddd1}
