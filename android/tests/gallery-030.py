@@ -63,9 +63,29 @@ def waitgrid(count):
  raise RuntimeError(f'Expected {count} photo thumbnails')
 waitgrid(2)
 adb('shell','input','keyevent','KEYCODE_BACK');button('Upload PNGs')
-cells=waitgrid(2)
-for n in cells:tap(n)
-tap(search(lambda n:any('add' in t.lower() or 'done' in t.lower() for t in labels(n)) and n.get('enabled')=='true'))
+waitgrid(2)
+adb('shell','input','swipe',360,350,360,80,550);time.sleep(1)
+def photo_names():
+ return [n['content-desc'] for n in nodes() if n.get('content-desc','').startswith('Photo taken on')]
+names=photo_names();assert len(set(names))==2,names
+def confirmation(n):
+ rid=n.get('resource-id','').rsplit('/',1)[-1]
+ return n.get('enabled')=='true' and (rid in ['button_add','button_select','selection_confirm_button','confirm_button'] or
+  any(re.search(r'(?i)^(add|done|select)(?:\s*\(?\d|\s*$)',t) for t in labels(n)))
+def current_confirm():
+ return next((n for n in nodes() if confirmation(n)),None)
+for i,name in enumerate(names):
+ for attempt in range(3):
+  target=search(lambda n:n.get('content-desc')==name);print('Select',i+1,target['bounds'],flush=True);tap(target)
+  time.sleep(1)
+  control=current_confirm()
+  if control:
+   print('Selection action',labels(control),control.get('resource-id'),flush=True)
+   numbers=re.findall(r'\d+', ' '.join(labels(control)))
+   if str(i+1) in numbers or (not numbers and i==0):break
+  if i>0 and control and not numbers:break
+ else:raise RuntimeError('Photo Picker failed to select '+str(i+1))
+tap(search(confirmation))
 digest=' '.join(sorted(hashlib.sha256(v).hexdigest() for k,v in files.items() if k.endswith('.png')))
 bytext('Verified batch '+digest)
 print('PASS photos picker filters out JPEG, cancellation/reopen works, and both source PNG byte hashes reached the real batch uploader without any network writes',flush=True)
