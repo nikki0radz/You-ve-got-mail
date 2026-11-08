@@ -1,0 +1,24 @@
+name: Archive signed Android 0.1.29
+on:
+  push:
+    branches: [release/archive-android-029]
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify and archive the published installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          file=Youve-Got-Mail-0.1.29.apk
+          expected=0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d
+          curl --fail --silent --show-error --location "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/$file" -o "$file"
+          echo "$expected  $file" | sha256sum -c -
+          if ! gh release view android-0.1.29 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create android-0.1.29 "$file" --repo "$GITHUB_REPOSITORY" --target "0dc4b50054ade82d82506d103ebb5a4f883a15ce" --title "Android 0.1.29" --notes "Archived signed installer." --latest=false
+          fi
+          curl --retry 3 --fail --silent --show-error --location "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.29/$file" -o checked.apk
+          echo "$expected  checked.apk" | sha256sum -c -
