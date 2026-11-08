@@ -1,24 +1,28 @@
-name: Archive signed Android 0.1.30
+name: Verify Android gallery update downloads
 on:
   push:
     branches: [release/archive-android-030]
 permissions:
-  contents: write
+  contents: read
 jobs:
-  archive:
+  downloads:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["0.1.31", "0.1.30"]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Verify and archive the published installer
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Download published installers and verify signed bytes
         run: |
           set -euo pipefail
-          file=Youve-Got-Mail-0.1.30.apk
-          expected=dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e
-          curl --fail --silent --show-error --location "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/$file" -o "$file"
-          echo "$expected  $file" | sha256sum -c -
-          if ! gh release view android-0.1.30 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create android-0.1.30 "$file" --repo "$GITHUB_REPOSITORY" --target "2d513bc2af6ba3953b978225db700c292271fd1c" --title "Android 0.1.30" --notes "Archived signed installer." --latest=false
+          version=${{ matrix.version }}
+          curl --max-time 40 --retry 2 --retry-all-errors -fsSL -H 'Accept: application/octet-stream' "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-$version.apk" -o "$version.apk"
+          if [ "$version" = 0.1.31 ]; then
+            expected=d7b2fa088bbb394552f347707453afdffcb19123f76e5408e35f60f7a72d2d5c
+          else
+            expected=dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e
           fi
-          curl --max-time 40 -H "Accept: application/octet-stream" --retry-all-errors --retry 3 --fail --silent --show-error --location "https://github.com/$GITHUB_REPOSITORY/releases/download/android-0.1.30/$file" -o checked.apk
-          echo "$expected  checked.apk" | sha256sum -c -
+          echo "$expected  $version.apk" | sha256sum -c -
+          curl --max-time 15 --retry 2 -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/latest.json" | jq -e '.version=="0.1.31" and .code==32'
+          curl --max-time 15 --retry 2 -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/catalogue/items" | jq -e '.categories | type=="array"'
