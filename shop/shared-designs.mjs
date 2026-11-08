@@ -61,13 +61,18 @@ export function findFrameOpening(rgba,width,height){
   return largest;
 }
 
-export async function prepareSharedFrame(item){
+export async function prepareSharedFrame(item,sourceImage){
   if(!item.sharedId || !['frame','postcard'].includes(item.kind) || item.maskSheet)return item;
   if(item.photoArea)return rectangularOpening(item,item.photoArea);
-  const image=new Image();if(/^https?:/i.test(item.master))image.crossOrigin='anonymous';image.src=item.master;await image.decode();
-  const scale=Math.min(1,640/Math.max(image.naturalWidth,image.naturalHeight));
+  const image=sourceImage||new Image();
+  if(!sourceImage){
+    if(/^https?:/i.test(item.master))image.crossOrigin='anonymous';
+    image.src=item.master;await image.decode();
+  }
+  const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height;
+  const scale=Math.min(1,640/Math.max(width,height));
   const mask=document.createElement('canvas');
-  mask.width=Math.max(1,Math.round(image.naturalWidth*scale));mask.height=Math.max(1,Math.round(image.naturalHeight*scale));
+  mask.width=Math.max(1,Math.round(width*scale));mask.height=Math.max(1,Math.round(height*scale));
   const context=mask.getContext('2d',{willReadFrequently:true});
   context.drawImage(image,0,0,mask.width,mask.height);
   const source=context.getImageData(0,0,mask.width,mask.height);

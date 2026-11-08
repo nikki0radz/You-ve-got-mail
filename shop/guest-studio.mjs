@@ -1,7 +1,8 @@
 import {fonts,fontSpec,isNotePaper,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
 import {W,H,artwork,banner,bannerNames,clamp,contain,makeLayer,noteBox,renderParcel} from './studio-scene.mjs';
-import {catalogueDesigns,catalogueImage,catalogueThumbnail} from './catalogue.mjs';
+import {catalogueDesigns,catalogueImage,mountCatalogueThumbnail} from './catalogue.mjs';
+import {stockCatPhoto} from './stock-photo.mjs';
 import {fitPhoto,readPhoto} from './photo-fit.mjs';
 
 const apps=[['☀','Weather','#e9ad61'],['♫','Music','#ae748b'],['✆','Phone','#65a184'],['✉','Mail','#779cb1'],['◉','Camera','#787785'],['☷','Notes','#d8aa60'],['☁','Cloud','#799dba'],['✿','Photos','#b48c9f']];
@@ -115,6 +116,14 @@ export function startGuestStudio(dialog,item,back,onReady){
     serial++;dialog.classList.add('guest-studio');dialog.dataset.reviewScreen='upload / '+item.name;
     dialog.innerHTML='<div class="studio-heading"><button class="studio-back" data-tool="back"><span class="back-arrow" aria-hidden="true"></span> Back</button></div><h2>Choose your photo</h2><p class="studio-tip"></p><button type="button" class="studio-primary" data-upload>Upload photo</button><input hidden type="file" accept="image/*"><p class="studio-error" role="alert"></p>';
     dialog.querySelector('.studio-tip').textContent='Pick a photo for '+item.name+'. You can drag and pinch it to fit next.';
+    if(item.sharedId){
+      const preview=document.createElement('div');
+      dialog.querySelector('.studio-tip').after(preview);
+      mountCatalogueThumbnail(preview,item);
+      const image=preview.querySelector('img');
+      image.style.cssText='display:block;width:100%;height:24dvh;object-fit:contain;margin:8px auto';
+      image.alt='Example with the stock cat photo';
+    }
     const file=dialog.querySelector('input');dialog.querySelector('[data-upload]').onclick=()=>file.click();
     if(optionalPhoto){
       const skip=document.createElement('button');skip.type='button';skip.className='studio-link';skip.textContent='Continue without a photo';skip.onclick=show;file.after(skip);
@@ -142,7 +151,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       if(!designs.length)grid.textContent='No stickers available.';
       for(const sticker of designs){
         const id=sticker.catalogueId,name=sticker.name,pick=document.createElement('button');
-        pick.type='button';pick.innerHTML=catalogueThumbnail(sticker);pick.append(document.createTextNode(name));
+        pick.type='button';mountCatalogueThumbnail(pick,sticker);pick.append(document.createTextNode(name));
         pick.setAttribute('aria-pressed',String(state.second?.id===id));
         pick.onclick=async()=>{
           if(busy)return;busy=true;
@@ -324,7 +333,6 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function reopen(){if(!dialog.open)dialog.showModal();show();}
   if(item.maskSheet&&['placementFrame','placementPostcard'].includes(document.documentElement.dataset.workroom)){
-    const sample=new Image();sample.src='assets/guest/wheel-031.webp';
-    sample.decode().then(()=>{if(dialog.open){state.crop.photo=sample;show();}}).catch(uploadStep);
+    stockCatPhoto().then(sample=>{if(dialog.open){state.crop.photo=sample;show();}}).catch(uploadStep);
   }else if(item.maskSheet&&!pairedPreview)uploadStep();else show();
 }

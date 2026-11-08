@@ -3,6 +3,7 @@ import {guestItems,guestSelection} from './guest-selection.mjs?v=complete-sticke
 import {mainRecords} from './main-art.mjs';
 import {recordDesign,prepareSharedFrame} from './shared-designs.mjs';
 import {loadSheet} from './compositor.mjs';
+import {displayPhotoThumbnail} from './stock-photo.mjs';
 
 const kinds={Photos:'frame',Postcards:'postcard',Flowers:'flowers',Reminders:'reminder','Love notes':'love'};
 const wheelOrder=Object.keys(guestSelection);
@@ -80,6 +81,16 @@ export async function prepareCatalogueDesign(item){
   if(!item.preparePhoto)return prepareSharedFrame(item);
   const image=await catalogueImage(item);
   return prepareSharedFrame({...item,sharedId:item.catalogueId,master:image instanceof HTMLCanvasElement?image.toDataURL():image.src});
+}
+export function mountCatalogueThumbnail(host,item){
+  if(item.sharedId && ['frame','postcard'].includes(item.kind)){
+    const image=new Image();
+    image.alt='';image.draggable=false;
+    host.replaceChildren(image);
+    displayPhotoThumbnail(image,item);
+    return;
+  }
+  host.innerHTML=catalogueThumbnail(item);
 }
 let maskSerial=0;
 export function catalogueThumbnail(item){

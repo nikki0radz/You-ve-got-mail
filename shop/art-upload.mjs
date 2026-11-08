@@ -1,6 +1,6 @@
 import {deleteEntry,libraryCode,listQueue,newCode,readEntry,refreshSharedArt,saveEntry,sharedItems} from './shared-art.mjs';
 import {mainCategories,manage,ownerUnlocked,unlockManager,lockManager,queueScope,refreshMainArt,refreshAfterWrite,uploadMain} from './main-art.mjs';
-import {catalogueRecords,catalogueImage,catalogueThumbnail} from './catalogue.mjs';
+import {catalogueRecords,catalogueImage,mountCatalogueThumbnail} from './catalogue.mjs';
 import {defaultPhotoArea} from './shared-designs.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 
@@ -86,11 +86,13 @@ function drawLibrary(){
   bulk.innerHTML=selecting?'<section class="art-sort"><strong>'+selected.size+' selected</strong>'+action('page-select','Select this page')+'<label>Move to<select data-dest>'+opt('','Keep current category',dest)+[...categories().keys()].map(c=>opt(c,c,dest)).join('')+'</select></label><label>Artwork type<select data-bulk-kind>'+opt('','Keep current type',bulkKind)+Object.entries(kinds).map(([k,v])=>opt(k,v,bulkKind)).join('')+'</select></label><label>Replace tags (optional)<input data-bulk-tags maxlength="700" placeholder="food, brunch" value="'+esc(bulkTags)+'"></label><div class="art-actions">'+action('move','Apply to selected','primary')+action('delete','Delete selected')+'</div></section>':'';
   for(const control of bulk.querySelectorAll('[data-art=move],[data-art=delete]'))control.disabled=!selected.size||busy;
   page=Math.max(0,Math.min(page,pages-1));
-  const tiles=items.slice(page*12,page*12+12).map(item=>{
+  const visible=items.slice(page*12,page*12+12);
+  const tiles=visible.map(item=>{
     const label=item.name||item.category;
-    return '<button type="button" class="art-tile" data-item="'+esc(item.id)+'" '+(selecting?'aria-pressed="'+selected.has(item.id)+'"':'')+' aria-label="'+(selecting?'Select ':'Edit ')+esc(label)+'"><span class="art-thumb">'+catalogueThumbnail(item.design)+'</span><b>'+esc(label)+'</b><small>'+esc(item.category)+'</small></button>';
+    return '<button type="button" class="art-tile" data-item="'+esc(item.id)+'" '+(selecting?'aria-pressed="'+selected.has(item.id)+'"':'')+' aria-label="'+(selecting?'Select ':'Edit ')+esc(label)+'"><span class="art-thumb"></span><b>'+esc(label)+'</b><small>'+esc(item.category)+'</small></button>';
   });
   by('[data-gallery]').innerHTML=tiles.length?'<div class="art-tiles">'+tiles.join('')+'</div>':'<p>No pictures match this view.</p>';
+  by('[data-gallery]').querySelectorAll('.art-thumb').forEach((host,i)=>mountCatalogueThumbnail(host,visible[i].design));
   if(pages>1){
     by('[data-gallery]').insertAdjacentHTML('beforeend','<nav class="art-pages" aria-label="Library pages">'+action('previous','Previous')+'<span>'+(page+1)+' / '+pages+'</span>'+action('next','Next')+'</nav>');
     by('[data-art="previous"]').disabled=page===0;by('[data-art="next"]').disabled=page===pages-1;

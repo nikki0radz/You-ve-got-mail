@@ -18,7 +18,7 @@ export function mountFrameReel(root,items,first,preview,onSelect,onUse) {
     const observer=new IntersectionObserver(entries=>{
       for(const {target,isIntersecting} of entries){
         if(!isIntersecting)continue;
-        target.innerHTML=preview(items[Number(target.dataset.preview)]);
+        preview(target,items[Number(target.dataset.preview)]);
         observer.unobserve(target);
       }
     },{root:strip,rootMargin:'0px 100%'});
