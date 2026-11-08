@@ -1,0 +1,6 @@
+.art-pending{position:relative}
+.art-pending::after,.image-loading-label::before{content:'';display:block;width:18px;height:18px;border:2px solid #a1c6bc;border-top-color:#365a40;border-radius:50%;animation:spin 1s linear infinite;pointer-events:none}
+.art-pending::after{position:absolute;left:calc(50% - 9px);top:calc(50% - 9px)}
+.image-loading-label{display:flex;align-items:center;justify-content:center;gap:10px;min-height:80px}
+.library-grid>button,.mail-row{content-visibility:auto;contain-intrinsic-size:auto 70px}
+@media(prefers-reduced-motion:reduce){.art-pending::after,.image-loading-label::before{animation:none}}

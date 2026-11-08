@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Tab responsiveness check</title></head><body>
+<button id="run" disabled>Run tab responsiveness check</button><p id="result" role="status">Loading sample app…</p><iframe title="App performance sample" src="../design/page.html?page=home" style="width:390px;height:780px"></iframe>
+<script type="module">
+const frame=document.querySelector('iframe'),result=document.querySelector('#result');
+function ready(){if(frame.contentWindow?.designSurface){document.querySelector('#run').disabled=false;result.textContent='Ready';}else requestAnimationFrame(ready);}
+frame.onload=ready;
+document.querySelector('#run').onclick=()=>{
+ try{
+  const w=frame.contentWindow,d=w.document,phone=w.Pigeon,calls={};
+  w.designSurface.configure({layout:{styles:{},variants:{}},editing:false,selected:'',textScale:1});
+  const original={};for(const key of ['mailbox','wasRead','friendsCached','setTheme','name','deliveryPrefs']){original[key]=phone[key];calls[key]=0;phone[key]=(...args)=>{calls[key]++;return original[key](...args);};}
+  const tab=id=>d.querySelector('[data-action=tab][data-id='+id+']').click();
+  tab('home');const home=d.querySelector('#home-wheel');tab('inbox');tab('settings');tab('home');
+  const before={...calls},started=performance.now();
+  for(let i=0;i<40;i++)for(const key of ['inbox','settings','home'])tab(key);
+  const elapsed=performance.now()-started;
+  const extra=Object.fromEntries(Object.keys(calls).map(k=>[k,calls[k]-before[k]]));
+  if(d.querySelector('#home-wheel')!==home)throw Error('Home was rebuilt');
+  if(Object.values(extra).some(Boolean))throw Error('Repeated native calls: '+JSON.stringify(extra));
+  if(d.querySelectorAll('.setting-dropdown').length)throw Error('Wrong tab');
+  tab('settings');if(d.querySelectorAll('.setting-dropdown').length!==3)throw Error('Settings duplicated');
+  tab('home');for(const key of Object.keys(original))phone[key]=original[key];
+  result.textContent='PASS: 120 tab changes in '+Math.round(elapsed)+' ms total; zero additional native calls; same Home DOM and three settings dropdowns.';
+ }catch(e){result.textContent='FAIL: '+e.message;throw e;}
+};
+</script></body></html>

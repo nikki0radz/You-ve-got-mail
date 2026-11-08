@@ -4,6 +4,7 @@ import {mainRecords} from './main-art.mjs';
 import {recordDesign,prepareSharedFrame} from './shared-designs.mjs';
 import {loadSheet} from './compositor.mjs';
 import {displayPhotoThumbnail} from './stock-photo.mjs';
+import {watchImage} from './ui-tasks.mjs';
 
 const kinds={Photos:'frame',Postcards:'postcard',Flowers:'flowers',Reminders:'reminder','Love notes':'love'};
 const wheelOrder=Object.keys(guestSelection);
@@ -88,9 +89,11 @@ export function mountCatalogueThumbnail(host,item){
     image.alt='';image.draggable=false;
     host.replaceChildren(image);
     displayPhotoThumbnail(image,item);
+    watchImage(image,host);
     return;
   }
   host.innerHTML=catalogueThumbnail(item);
+  const image=host.querySelector('img');if(image)watchImage(image,host);
 }
 let maskSerial=0;
 export function catalogueThumbnail(item){

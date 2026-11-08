@@ -1,4 +1,5 @@
 import {pages} from './pages.mjs';
+const theme=new URLSearchParams(location.search).get('theme')==='dark'?'dark':'light';
 const key=new URLSearchParams(location.search).get('page'),guest=pages[key]?.[1]==='One-time link';
 if(!pages[key])throw Error('Unknown preview page');
 // The real app screens run against disposable example data in this document.
@@ -27,9 +28,9 @@ if(guest){
     post:(id,op,raw)=>queueMicrotask(()=>{let result={error:'Device action · preview only'};if(op==='friends')result={data:people};if(op==='reply'){const body=JSON.parse(raw),row=mail.find(m=>m.id===body.id);if(row){row.reply=body.text||'';result={data:{ok:true}};}}window.postOfficeResult(id,JSON.stringify(result));})};
   document.documentElement.dataset.workroom=key;
   const {createState,STORAGE_KEY}=await import('../domain.mjs');
-  values.set(STORAGE_KEY,JSON.stringify({...createState(),theme:'light'}));
+  values.set(STORAGE_KEY,JSON.stringify({...createState(),theme,profile:{...createState().profile,name:'Nicole'}}));
   await import('../app.js');
-  if(document.querySelector('#theme')?.checked)click('#theme');
+  const {phoneCache}=await import('../post/phone-cache.mjs');await phoneCache.refresh();
   if(['inbox','sent','thread','friends','reply','quick','replyPicker'].includes(key))click('[data-action=tab][data-id=inbox]');
   if(key==='sent')click('[data-folder=sent]');
   if(key==='friends')click('[data-book]');

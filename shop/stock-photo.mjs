@@ -1,5 +1,6 @@
 import {loadSheet} from './compositor.mjs';
 import {prepareSharedFrame} from './shared-designs.mjs';
+import {idleTurn} from './ui-tasks.mjs';
 
 let cat;
 export async function stockCatPhoto(){
@@ -17,6 +18,7 @@ async function photoThumbnail(item){
   const art=new Image();
   art.crossOrigin='anonymous';art.src=item.master;
   await art.decode();
+  await idleTurn();
   const prepared=await prepareSharedFrame(item,art);
   const mask=new Image();
   mask.src=prepared.maskSheet;
@@ -46,6 +48,7 @@ export function displayPhotoThumbnail(image,item){
   const cached=thumbnails.get(key);
   if(cached){image.src=cached;return;}
   pending=pending.then(async()=>{
+    await idleTurn();
     if(!image.isConnected)return;
     let src=thumbnails.get(key);
     if(!src){
