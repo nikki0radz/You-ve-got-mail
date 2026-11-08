@@ -6,15 +6,23 @@ permissions:
   contents: read
 jobs:
   downloads:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["0.1.30", "0.1.29"]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Download published installers and verify signed bytes
         run: |
           set -euo pipefail
-          for version in 0.1.29 0.1.30; do
-            curl --fail --silent --show-error --location --retry 4 --retry-all-errors "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-$version.apk" -o "$version.apk"
-          done
-          echo '0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d  0.1.29.apk' | sha256sum -c -
-          echo 'dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e  0.1.30.apk' | sha256sum -c -
-          curl -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/latest.json" | jq -e '.version=="0.1.30" and .code==31'
-          curl -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/catalogue/items" | jq -e '.categories | type=="array"'
+          version=${{ matrix.version }}
+          curl --max-time 40 --retry 2 --retry-all-errors -fsSL -H 'Accept: application/octet-stream' "https://pigeon-post-delivery.nikki0radz.chatgpt.site/downloads/Youve-Got-Mail-$version.apk" -o "$version.apk"
+          if [ "$version" = 0.1.30 ]; then
+            expected=dab79cf7aff56a97a77904d77c8e2e92cdd1a53af35815afa3e276804da3540e
+          else
+            expected=0a003f0ae99616eaec07ab1a102f3bfef5170fa3dcda2bd7dbaddf7ac708825d
+          fi
+          echo "$expected  $version.apk" | sha256sum -c -
+          curl --max-time 15 --retry 2 -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/workroom/latest.json" | jq -e '.version=="0.1.30" and .code==31'
+          curl --max-time 15 --retry 2 -fsS "https://pigeon-post-delivery.nikki0radz.chatgpt.site/api/catalogue/items" | jq -e '.categories | type=="array"'
