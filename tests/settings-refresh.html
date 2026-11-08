@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Settings refresh regression</title>
+<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../post/post.css"><link rel="stylesheet" href="../post/settings.css"><link rel="stylesheet" href="../post/review-019.css"><link rel="stylesheet" href="../post/review-036.css"></head>
+<body><button id="run">Run refresh regression checks</button><p id="result" role="status">Ready</p><main id="app"></main>
+<script type="module">
+import {settingsPage,wireSettings} from '../post/settings.mjs';
+const prefs={fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,backdropOpacity:70};
+let writes=0;
+window.Pigeon={deliveryPrefs:()=>JSON.stringify(prefs),deliverySetting:(key,value)=>{writes++;prefs[key]=value==='true'||value==='false'?value==='true':Number(value);},settingsAction:()=>{}};
+const root=document.querySelector('#app'),result=document.querySelector('#result');
+const assert=(yes,message)=>{if(!yes)throw Error(message);};
+document.querySelector('#run').onclick=()=>{
+ try{
+  root.innerHTML=settingsPage();wireSettings(root);writes=0;
+  const select=root.querySelector('[data-pref=fullPopup]'),menu=select.nextElementSibling,heading=menu.querySelector('summary');
+  root.querySelector('[data-section=delivery]').open=true;menu.open=true;heading.focus();
+  for(let i=0;i<20;i++)wireSettings(root);
+  assert(root.querySelectorAll('.setting-dropdown').length===3,'Refresh duplicated dropdowns');
+  assert(select.nextElementSibling===menu&&menu.open&&document.activeElement===heading,'Refresh replaced the active control');
+  menu.after(menu.cloneNode(true),menu.cloneNode(true));wireSettings(root);
+  assert(select.parentElement.querySelectorAll('.setting-dropdown').length===1,'Old duplicates were not removed');
+  menu.querySelector('[data-value=false]').click();
+  assert(prefs.fullPopup===false&&writes===1,'One choice must save exactly once');
+  assert(heading.textContent==='Notification only'&&!menu.open,'Choice did not update');
+  assert(root.querySelector('[data-pref=onUnlock]').disabled,'Dependent setting did not disable');
+  prefs.fullPopup=true;wireSettings(root);
+  assert(heading.textContent==='Full pop-up'&&!root.querySelector('[data-pref=onUnlock]').disabled,'Native preference change did not refresh');
+  root.innerHTML=settingsPage();wireSettings(root);
+  assert(root.querySelectorAll('.setting-dropdown').length===3,'Fresh render did not initialize');
+  root.querySelector('[data-section=delivery]').open=true;
+  result.textContent='PASS: 20 resumes, focus/open state, old-duplicate cleanup, single save, dependent settings, native refresh and fresh render.';
+ }catch(error){result.textContent='FAIL: '+error.message;throw error;}
+};
+</script></body></html>

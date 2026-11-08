@@ -34,7 +34,16 @@ export function installSocial(state,save,refresh){
     refresh();profile();return true;
   }
   function profile(){
-    show('My profile',`<figure class="photo-booth"><img src="${profilePhoto(state.profile)}" alt="Your pigeon portrait"><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change picture','change','pill')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
+    show('My profile',`<figure class="photo-booth"><button type="button" class="profile-photo-open" data-social="enlarge" aria-label="Enlarge profile picture"><img src="${profilePhoto(state.profile)}" alt="Your profile picture"></button><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change picture','change')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
+    on('enlarge',()=>{
+      const trigger=dialog.querySelector('[data-social=enlarge]'),viewer=document.createElement('dialog');
+      viewer.id='profile-photo-viewer';viewer.setAttribute('aria-label','Enlarged profile picture');
+      viewer.innerHTML=`<button type="button" aria-label="Close enlarged profile picture">×</button><img src="${profilePhoto(state.profile)}" alt="${esc(state.profile.name)}’s profile picture">`;
+      document.body.append(viewer);viewer.querySelector('button').onclick=()=>viewer.close();
+      viewer.onclick=e=>{if(e.target===viewer)viewer.close();};
+      viewer.onclose=()=>{viewer.remove();if(trigger.isConnected)trigger.focus({preventScroll:true});};
+      viewer.showModal();
+    });
     on('change',()=>{choice=Number.isInteger(state.profile.pigeon)?state.profile.pigeon:-1;wall();});
     on('edit',()=>{
       show('What should we call you?',`<label>Your name<input maxlength="40" class="social-input social-name" value="${esc(state.profile.name)}"></label>${btn('Save name','save')}`,profile);
@@ -45,7 +54,7 @@ export function installSocial(state,save,refresh){
     const tiles=birds.map((n,i)=>avatarSettings().hidden.includes(i)?'':`<button class="bird-choice" data-index="${i}" aria-pressed="${choice===i}"><span aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*25}%"></span>${esc(n)}</button>`).join('');
     const uploads=(await catalogueRecords({includeAvatars:true})).filter(row=>row.kind==='avatar');
     const extra=uploads.map(row=>`<button class="bird-choice" data-avatar="${esc(row.id)}" aria-pressed="false">${catalogueThumbnail(row.design)}${esc(row.name||'Profile picture')}</button>`).join('');
-    show('Choose your profile picture',`<div class="bird-wall">${tiles}${extra}</div>${btn('Use this pigeon','use')}${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
+    show('Choose your profile picture',`<div class="bird-wall">${tiles}${extra}</div>${btn('Use this picture','use')}${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
     for(const tile of dialog.querySelectorAll('[data-avatar]'))tile.onclick=async()=>{try{const row=uploads.find(r=>r.id===tile.dataset.avatar),img=await catalogueImage(row.design);const side=Math.min(img.width,img.height);saveProfile({photo:squarePhoto(img,[(img.width-side)/2,(img.height-side)/2,side,side],true),pigeon:-1});}catch(e){alert(e.message);}};
     const use=dialog.querySelector('[data-social=use]');use.disabled=choice<0||avatarSettings().hidden.includes(choice);
     for(const tile of dialog.querySelectorAll('.bird-choice[data-index]'))tile.onclick=()=>{choice=Number(tile.dataset.index);for(const b of dialog.querySelectorAll('.bird-choice'))b.setAttribute('aria-pressed',String(b===tile));use.disabled=false;};
