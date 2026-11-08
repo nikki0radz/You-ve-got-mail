@@ -44,11 +44,11 @@ jobs:
           sdkmanager "system-images;android-35;google_apis;x86_64" "emulator"
           curl -fsSL https://dl.google.com/android/repository/emulator-linux_x64-12414864.zip -o "$RUNNER_TEMP/emu35.zip"
           unzip -q "$RUNNER_TEMP/emu35.zip" -d "$RUNNER_TEMP/pinned"
-          mv "$ANDROID_HOME/emulator" "$RUNNER_TEMP/original-emulator"
-          mv "$RUNNER_TEMP/pinned/emulator" "$ANDROID_HOME/emulator"
           export ANDROID_AVD_HOME="$RUNNER_TEMP/avds"
           mkdir -p "$ANDROID_AVD_HOME"
           echo no | avdmanager create avd -f -n PigeonQA -p "$ANDROID_AVD_HOME/PigeonQA.avd" -k "system-images;android-35;google_apis;x86_64" -d pixel_6
+          mv "$ANDROID_HOME/emulator" "$RUNNER_TEMP/original-emulator"
+          mv "$RUNNER_TEMP/pinned/emulator" "$ANDROID_HOME/emulator"
           test -s "$ANDROID_AVD_HOME/PigeonQA.avd/config.ini"
           printf 'avd.ini.encoding=UTF-8\npath=%s/PigeonQA.avd\ntarget=android-35\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/PigeonQA.ini"
           "$ANDROID_HOME/emulator/emulator" -list-avds
