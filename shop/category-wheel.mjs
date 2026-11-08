@@ -12,9 +12,9 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   const rail=root.querySelector('.category-reel'),slots=[categories.at(-1),...categories,categories[0]];
   if(root.id==='home-wheel'){
     const divider=document.createElement('div');divider.setAttribute('role','separator');divider.setAttribute('aria-label','Home divider');
-    divider.className='home-divider';divider.dataset.baseLook=divider.dataset.reviewLook='separator-5';
+    divider.className='home-divider';divider.dataset.baseLook=divider.dataset.reviewLook='separator-3';
     root.querySelector('.wheel').prepend(divider);
-    rail.dataset.baseLook=rail.dataset.reviewLook='wheelrim-4';
+    rail.dataset.baseLook=rail.dataset.reviewLook='wheelrim-1';
   }
   if(!categories.length){
     root.querySelector('.wheel > p').hidden=true;rail.hidden=true;
