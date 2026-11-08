@@ -34,6 +34,10 @@ export function wireSettings(root){
   const native=Boolean(window.Pigeon?.deliveryPrefs);
   for(const select of panel.querySelectorAll('select[data-pref]')){
     select.hidden=true;
+    // Android refreshes preferences on resume and after permission changes.
+    // Reuse the control so repeated refreshes preserve its focus and open state.
+    const menus=select.parentElement.querySelectorAll(':scope > .setting-dropdown');
+    if(menus.length){for(const extra of [...menus].slice(1))extra.remove();continue;}
     const menu=document.createElement('details');menu.className='setting-dropdown';
     const heading=document.createElement('summary');menu.append(heading);
     const list=document.createElement('div');list.setAttribute('role','listbox');list.setAttribute('aria-label',select.closest('label').querySelector('span').textContent);

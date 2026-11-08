@@ -1,0 +1,13 @@
+/* Larger artwork previews and borderless profile photos. */
+#mail-window:has(.mail-proof){width:calc(100% - 12px);max-width:480px;padding:14px}
+#mail-window .mail-proof,#mail-window .mail-proof.small{width:100%;height:auto;max-height:62dvh;object-fit:contain;padding:0}
+#flow .arrival-preview,#flow .upload-preview{width:100%;max-height:54dvh;object-fit:contain}
+#app .profile-link img{width:72px;height:72px;border:0;outline:0;box-shadow:none;background:transparent;border-radius:50%;object-fit:cover}
+#social-flow .photo-booth{width:min(228px,100%);margin:4px auto 18px;padding:0;background:transparent;box-shadow:none;transform:none;color:var(--mm-text)}
+#social-flow .profile-photo-open{display:block;width:100%;padding:0;border:0;background:transparent;border-radius:50%;cursor:zoom-in}
+html[data-theme] #social-flow .photo-booth img{width:100%;height:auto;aspect-ratio:1;object-fit:cover;border:0;outline:0;box-shadow:none;background:transparent;border-radius:50%}
+#social-flow .profile-photo-open:focus-visible{outline:3px solid var(--mm-text);outline-offset:4px}
+#profile-photo-viewer{box-sizing:border-box;width:min(96vw,720px);max-width:720px;max-height:94dvh;padding:44px 12px 12px;border:0;border-radius:22px;background:var(--mm-panel);box-shadow:0 12px 50px #0006;overflow:auto}
+#profile-photo-viewer img{display:block;width:100%;height:auto;max-height:calc(94dvh - 60px);object-fit:contain;border:0;border-radius:12px}
+#profile-photo-viewer button{position:absolute;top:3px;right:6px;width:44px;height:40px;min-height:40px;padding:0;border:0;background:transparent;color:var(--mm-text);font:30px/1 system-ui;cursor:pointer}
+:is(#social-flow button[data-social=change],#mail-window button.mb-button[data-mb=request]){display:block;width:100%;margin:12px 0 6px;background:#365a40;color:#fff9e8;border:1px solid #234532;border-radius:28px;box-shadow:0 3px 0 #243e2d;padding:9px 17px;min-height:46px;font:800 20px/1.3 PostalBaloo,system-ui}

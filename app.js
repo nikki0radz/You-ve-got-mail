@@ -190,6 +190,7 @@ window.addEventListener('online',refreshArtwork);
 render();refreshArtwork();setTimeout(catchUp,600);setInterval(catchUp,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)catchUp()});
 
 window.pigeonBack=()=>{
+  const photoViewer=document.querySelector('#profile-photo-viewer[open]');if(photoViewer){photoViewer.close();return true;}
   if(window.pigeonReviewBack?.())return true;
   const upload=document.querySelector('#art-upload[open]');if(upload){upload.close();return true;}
   if(homeColours.close())return true;

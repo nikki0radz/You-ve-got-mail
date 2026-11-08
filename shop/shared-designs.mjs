@@ -7,7 +7,7 @@ const primaryCategories=new Map([
 const subjects={frame:'frame',postcard:'postcard',flowers:'flowers',love:'love note',hug:'hug',reminder:'reminder',sticker:'sticker'};
 const categorySubjects=new Map([
   ['photos','frame'],['photo frames','frame'],['frames','frame'],['postcards','postcard'],
-  ['stickers','sticker'],['pigeons','pigeon'],['notes','note'],['love notes','love note'],['flowers','flowers'],
+  ['stickers','sticker'],['pigeons','sticker'],['notes','note'],['love notes','love note'],['flowers','flowers'],
   ['reminders','reminder'],['hugs','hug'],['uncategorised','sticker']
 ]);
 const extraPrefix='shared/';
