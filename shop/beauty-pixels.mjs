@@ -5,14 +5,14 @@ export function blendBeautyPixels(original,softened,skinMask,teethMask){
   if(!a[i+3])continue;
   if(s[i+3]){
    const edge=Math.abs((a[i]*.2126+a[i+1]*.7152+a[i+2]*.0722)-(b[i]*.2126+b[i+1]*.7152+b[i+2]*.0722));
-   const amount=.22*(s[i+3]/255)*Math.max(0,1-edge/20);
+   const amount=.30*(s[i+3]/255)*Math.max(0,1-edge/20);
    for(let c=0;c<3;c++)a[i+c]+= (b[i+c]-a[i+c])*amount;
   }
   if(t[i+3]){
    const r=a[i],g=a[i+1],blue=a[i+2],light=r*.2126+g*.7152+blue*.0722;
    // Leave dark mouth pixels, lips and gums alone; retain tooth shading.
    if(light>105&&r-g<32&&g-blue<75&&Math.max(r,g,blue)-Math.min(r,g,blue)<85){
-    const strength=.16*t[i+3]/255,lift=(255-light)*.035;
+    const strength=.20*t[i+3]/255,lift=(255-light)*.04;
     a[i]=Math.min(255,r+lift);a[i+1]=Math.min(255,g+lift);
     a[i+2]=Math.min(255,blue+(Math.max(r,g)-blue)*strength+lift);
    }

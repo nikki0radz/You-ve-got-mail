@@ -5,3 +5,6 @@ dist/
 
 dist-android/
 shop/beauty-vendor/
+android/.gradle/
+android/build/
+android/local.properties

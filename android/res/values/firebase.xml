@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="google_app_id" translatable="false">1:529846975356:android:95d4f26d9399e06f3482f9</string>
+  <string name="google_api_key" translatable="false">AIzaSyDfQ4DzJtaFJ4hzMmKxDvv2TnBe7A-7hrI</string>
+  <string name="gcm_defaultSenderId" translatable="false">529846975356</string>
+  <string name="project_id" translatable="false">you-ve-got-mail-f8f2b</string>
+</resources>

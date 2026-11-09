@@ -24,7 +24,7 @@ test('smoothing gently reduces texture while preserving strong facial edges',()=
 test('teeth whitening reduces a slight yellow cast only inside the detected open mouth',()=>{
  const original=image(210,200,160,255, 210,200,160,255);
  blendBeautyPixels(original,image(...original.data),image(0,0,0,0,0,0,0,0),image(255,255,255,255,0,0,0,0));
- assert.ok(original.data[2]>160&&original.data[2]<=171);assert.ok(original.data[0]-210<4);assert.deepEqual([...original.data.slice(4)],[210,200,160,255]);
+ assert.ok(original.data[2]>160&&original.data[2]<=174);assert.ok(original.data[0]-210<4);assert.deepEqual([...original.data.slice(4)],[210,200,160,255]);
 });
 test('red lips, gums and a dark mouth are never whitened',()=>{
  const original=image(190,95,100,255, 50,35,25,255),before=original.data.slice();

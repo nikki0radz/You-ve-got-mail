@@ -1,0 +1,42 @@
+plugins { id 'com.android.application' version '8.9.2' }
+
+android {
+    namespace 'uk.co.pigeonpost.mail'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'uk.co.pigeonpost.mail'
+        minSdk 28
+        targetSdk 35
+        versionCode 46
+        versionName '0.1.45'
+    }
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = [layout.buildDirectory.dir('generated/mail-assets')]
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    packaging { resources.excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*'] }
+}
+
+dependencies {
+    implementation 'com.google.firebase:firebase-messaging:25.0.1'
+    implementation 'androidx.work:work-runtime:2.10.1'
+}
+
+tasks.register('buildWeb', Exec) { workingDir '..'; commandLine 'npm', 'run', 'build' }
+tasks.register('stageWebAssets', Sync) {
+    dependsOn 'buildWeb'
+    from '../dist'
+    into layout.buildDirectory.dir('generated/mail-assets/site')
+}
+tasks.named('preBuild').configure { dependsOn 'stageWebAssets' }

@@ -19,6 +19,7 @@ final class Mail {
     static final String GUEST="https://nikki0radz.github.io/You-ve-got-mail/guest.html#";
     static final String ALERT="incoming", QUIET="inbox", LISTEN="listening";
     static final java.util.concurrent.ExecutorService io=java.util.concurrent.Executors.newSingleThreadExecutor();
+    private static final Object SYNC_LOCK=new Object();
     static SharedPreferences prefs(Context c){return c.getSharedPreferences("mail",0);}
     static synchronized String owner(Context c){
         String key=prefs(c).getString("owner","");
@@ -114,14 +115,18 @@ final class Mail {
         synchronized(Mail.class){if(value.equals(prefs(c).getString(key,"")))prefs(c).edit().remove(key).commit();}
     }
     static void sync(Context c)throws Exception{
-        try{PostOffice.friends(c);}catch(Exception ignored){}
-        try{Replies.sync(c);}catch(Exception e){Log.w("Pigeon","Reply sync will retry",e);}
+        synchronized(SYNC_LOCK){
+        boolean incomplete=false;
+        try{PostOffice.friends(c);}catch(Exception ignored){incomplete=true;}
+        try{Replies.sync(c);}catch(Exception ignored){incomplete=true;}
         new Handler(Looper.getMainLooper()).post(()->UnlockQueue.watch(c.getApplicationContext()));
         for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
-            try{flushOutcome(c,key);}catch(Exception ignored){}
+            try{flushOutcome(c,key);}catch(Exception ignored){incomplete=true;}
         }
-        for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0)return;
+        for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0){if(incomplete)throw new IOException("Mailbox sync will retry");return;}
             JSONObject m=arr.getJSONObject(0);accept(c,m,true);request(c,"ack",new JSONObject().put("id",m.getString("id")));}
+        PushConnection.sync(c,false);
+        }
     }
     static void markRead(Context c,String id){prefs(c).edit().putBoolean("read:"+id,true).apply();c.getSystemService(NotificationManager.class).cancel(id,5);c.getSystemService(NotificationManager.class).cancel(id,1);}
     static void state(Context c,JSONObject m,String status){try{m.put("status",status);save(c,m);}catch(Exception e){Log.e("Pigeon","Unable to update receipt",e);}}

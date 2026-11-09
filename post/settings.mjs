@@ -27,7 +27,7 @@ export function settingsPage(){
   section('phone','Phone & appearance','Set the backdrop and check phone permissions.',
     toggle('beautyFilter','Natural beauty filter')+'<p class="setting-hint">Subtle skin smoothing and gentle teeth whitening in the camera. Processed on your phone.</p>'+
     '<label class="setting-field backdrop-strength"><span>Black backdrop opacity</span><output data-opacity for="backdrop-alpha"></output><input type="range" id="backdrop-alpha" data-pref="backdropOpacity" min="0" max="100" step="1"></label>'+
-    (native?'<div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+(read().permissionSetup?action('deliverySetup','Delivery setup'):'')+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to receive parcels over other apps.</p>'))+
+    (native?'<div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+(read().permissionSetup?action('deliverySetup','Delivery setup'):'')+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>'+(read().pushSupported?'<p class="setting-hint" data-push-state></p>':''):'<p class="setting-hint">Open the Android app to receive parcels over other apps.</p>'))+
   section('account','Profile & invitations','Your pigeon and one-time links.',link('profile','Your profile','Change your name or pigeon.')+link('test-link','One-time link','Invite someone to send you a parcel.'))+
   section('about','About & updates','A quick guide and your installed version.',(native?action('updates','Check for updates'):'')+link('about','About Pigeon Post','What it does and how to use it.'))+'</section>';
 }
@@ -57,6 +57,7 @@ export function wireSettings(root){
     }
     panel.querySelector('[data-opacity]').value=s.backdropOpacity+'%';
     if(native){
+      const push=panel.querySelector('[data-push-state]');if(push)push.textContent='Push connection · '+(s.pushStatus||'Connecting…');
       for(const [key,caption,ok] of [['overlay','Display over apps',s.overlay],['notifications','Phone notifications',s.notifications],['precise','Precise schedules',s.precise]]){
         panel.querySelector('[data-platform='+key+']').textContent=caption+' · '+(ok?'On':'Set up');
       }

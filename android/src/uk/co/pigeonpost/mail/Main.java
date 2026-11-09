@@ -209,7 +209,7 @@ public class Main extends Activity {
         else startActivity(new Intent(this,OpenParcel.class).putExtra("id",id));
         i.removeExtra("id");
     }
-    protected void onResume(){super.onResume();foreground=true;if(deliverySetup!=null)deliverySetup.resume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
+    protected void onResume(){super.onResume();foreground=true;PushConnection.start(this);if(deliverySetup!=null)deliverySetup.resume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
     protected void onPause(){cameraFlash(false);foreground=false;super.onPause();}
     private void loadDesign(DesignBundle release){
         if(isDestroyed()||isFinishing())return;
@@ -302,7 +302,9 @@ public class Main extends Activity {
         case "cameraFlashOn":cameraFlash(true);break;
         case "cameraFlashOff":cameraFlash(false);break;
         case "simulateFriendRequest":
-            if(!FriendRequests.show(this,FriendRequests.TEST,"Practice pigeon",true))toast("Simulation is ready in the app. Enable Android notifications to see its phone notification.");
+            if(!Mail.enabled(this,FriendRequests.CHANNEL)){toast("Enable phone notifications to test the Firebase notification.");break;}
+            if(!PushConnection.registered(this)){toast("Push is still connecting. Try this notification test again shortly.");PushConnection.start(this);break;}
+            Mail.io.execute(()->{try{Mail.request(this,"device/test",new JSONObject().put("token",Mail.prefs(this).getString("pushToken","")));runOnUiThread(()->toast("Test push sent. Watch for the test friend-request notification."));}catch(Exception unavailable){runOnUiThread(()->toast("Couldn’t send the test push. Check your connection and try again."));}});
             break;
         case "clearFriendRequestSimulation":FriendRequests.clearTest(this);break;
         case "deliverySetup":deliverySetup.start();break;
@@ -353,7 +355,7 @@ public class Main extends Activity {
             finally{if(connection!=null)connection.disconnect();}
         });
     }
-    void listen(){startForegroundService(new Intent(this,Live.class));}
+    void listen(){if(!PushConnection.registered(this))startForegroundService(new Intent(this,Live.class));}
     void invite(){new AlertDialog.Builder(this).setTitle("Let a friend send one parcel").setMessage("Your friend can choose a sticker or frame in their browser. The app checks for incoming mail in the background.").setPositiveButton("Create link",(d,k)->Mail.io.execute(()->{
         try{String token=Mail.request(this,"links",new JSONObject()).getString("token");if(!token.matches("[a-f0-9]{64}"))throw new IOException();
             runOnUiThread(()->{if(isFinishing()||isDestroyed())return;listen();Intent i=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,Mail.GUEST+token);startActivity(Intent.createChooser(i,"Share one-use mail link"));});
@@ -420,7 +422,7 @@ public class Main extends Activity {
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
-                data.put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
+                data.put("pushSupported",true).put("pushStatus",PushConnection.status(Main.this)).put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();

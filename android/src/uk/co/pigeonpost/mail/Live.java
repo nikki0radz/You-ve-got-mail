@@ -5,7 +5,7 @@ public class Live extends Service {
     final Handler ui=new Handler(Looper.getMainLooper());
     long deadline; boolean alive;
     final Runnable check=new Runnable(){public void run(){
-        if(!alive||SystemClock.elapsedRealtime()>deadline){stopSelf();return;}
+        if(!alive||PushConnection.registered(Live.this)||SystemClock.elapsedRealtime()>deadline){stopSelf();return;}
         Mail.io.execute(()->{try{Mail.sync(Live.this);}catch(Exception ignored){}ui.postDelayed(this,5000);});
     }};
     public int onStartCommand(Intent i,int flags,int startId){
