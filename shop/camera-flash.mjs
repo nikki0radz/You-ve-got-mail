@@ -13,12 +13,12 @@ export function waitForCameraFrame(video){
 
 // Illuminate the subject, let exposure settle, then save a new camera frame.
 // The white overlay never becomes part of the exported image.
-export async function captureWithFlash({track,facing,enabled,screen,capture,active=()=>true,settle=()=>new Promise(resolve=>setTimeout(resolve,facing==='user'?800:400)),linger=()=>new Promise(resolve=>setTimeout(resolve,300)),nextFrame=()=>Promise.resolve()}){
+export async function captureWithFlash({track,facing,enabled,screen,capture,active=()=>true,settle=()=>new Promise(resolve=>setTimeout(resolve,facing==='user'?1600:400)),linger=()=>new Promise(resolve=>setTimeout(resolve,300)),nextFrame=()=>Promise.resolve()}){
  if(!active())throw Error('The camera was closed.');
  if(!enabled)return capture();
  const selfie=facing==='user';let torchAttempted=false;
  try{
-  if(selfie)screen(true);
+  if(selfie)await screen(true);
   else{
    if(!hasCameraTorch(track))throw Error('Back flash isn’t available in this camera view.');
    torchAttempted=true;await track.applyConstraints({advanced:[{torch:true}]});
@@ -32,7 +32,7 @@ export async function captureWithFlash({track,facing,enabled,screen,capture,acti
   if(selfie&&active())await linger();
   return image;
  }finally{
-  if(selfie)screen(false);
+  if(selfie)await screen(false);
   if(torchAttempted)try{await track.applyConstraints({advanced:[{torch:false}]});}catch{track.stop();}
  }
 }

@@ -2,7 +2,7 @@
 .frame-camera [data-flash] small{font:700 12px/1.2 system-ui}
 .frame-camera [data-flash][aria-pressed=true]{background:#f8e7a7;color:#253e31;border-color:#f8e7a7}
 .frame-camera [data-flash]:disabled{opacity:.6;cursor:default}
-.frame-camera [data-screen-flash]{position:absolute;inset:0;background:#fff1df;z-index:3;pointer-events:none}
+.frame-camera [data-screen-flash]{position:absolute;inset:0;background:#fff9f2;z-index:3;pointer-events:none}
 .frame-camera [data-screen-flash][hidden]{display:none}
 .frame-camera [data-flash-hint]{font-size:12px;margin:6px 0}
 .frame-camera .camera-readout{display:grid;gap:2px;min-width:0}

@@ -3,6 +3,7 @@ import {drawCameraPhoto} from './camera-pixels.mjs';
 import {captureWithFlash,hasCameraTorch,waitForCameraFrame} from './camera-flash.mjs';
 import {beautyEnabled} from './beauty-pref.mjs';
 import {createBeautyCamera} from './beauty-camera.mjs';
+import {createScreenFlash} from './screen-flash.mjs';
 export function openFrameCamera(item){
  return new Promise(resolve=>{
   if(!document.querySelector('link[data-camera-flash-style]')){const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./camera-flash.css',import.meta.url);style.dataset.cameraFlashStyle='';document.head.append(style);}
@@ -16,13 +17,13 @@ export function openFrameCamera(item){
   let brightFlash=false;try{brightFlash=Boolean(JSON.parse(window.Pigeon?.deliveryPrefs?.()||'{}').screenFlashBrightness);}catch{}
   const beauty=beautyEnabled()?createBeautyCamera(message=>{if(!closed){const label=dialog.querySelector('[data-beauty-status]');if(label.textContent!==message)label.textContent=message;}}):null;
   if(!beauty)dialog.querySelector('[data-beauty-status]').textContent='Natural filter · Off';
-  function screenLight(on){screenFlash.hidden=closed||!on;if(brightFlash)window.Pigeon.settingsAction(on&&!closed?'cameraFlashOn':'cameraFlashOff');}
+  const screenLight=createScreenFlash({bridge:window.Pigeon,eventTarget:window,show:on=>{screenFlash.hidden=!on;},active:()=>!closed,boost:brightFlash});
   function updateFlash(){
    const available=facing==='user'||hasCameraTorch(stream?.getVideoTracks()[0]);
    flash.disabled=switching||capturing||!stream||!available;
    flash.setAttribute('aria-label',facing==='user'?'Screen flash':'Back camera flash');flash.setAttribute('aria-pressed',String(available&&flashOn[facing]));
    flashLabel.textContent=available?(flashOn[facing]?'On':'Off'):'N/A';
-   flashHint.textContent=!stream?'':!available?'Back flash isn’t available in this camera view.':flashOn[facing]?(facing==='user'?(brightFlash?'Warm screen flash · maximum brightness':'Warm screen flash'):'Flash fires when you take the photo.'):'';
+   flashHint.textContent=!stream?'':!available?'Back flash isn’t available in this camera view.':flashOn[facing]?(facing==='user'?(brightFlash?'Warm screen flash · brightness boost':'Warm screen flash'):'Flash fires when you take the photo.'):'';
   }
   function stop(){stream?.getTracks().forEach(track=>track.stop());stream=null;}
   function close(file=null){if(closed)return;closed=true;cameraTicket++;screenLight(false);beauty?.close();stop();cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',hidden);dialog.close();dialog.remove();resolve(file);}

@@ -31,6 +31,7 @@ public class Main extends Activity {
     private boolean firstPageLoaded,designChecking,foreground;
     private boolean brightCameraFlash;
     private float previousCameraBrightness=-1f;
+    private int previousFlashStatusBar,previousFlashNavigationBar,previousFlashUi;
     private final Runnable clearCameraFlash=()->cameraFlash(false);
     private final Runnable initialDesign=()->loadDesign(designBundle);
     private FrameLayout frame;
@@ -38,12 +39,25 @@ public class Main extends Activity {
         designHandler.removeCallbacks(clearCameraFlash);
         if(on&&foreground&&!isFinishing()&&!isDestroyed()){
             WindowManager.LayoutParams params=getWindow().getAttributes();
-            if(!brightCameraFlash)previousCameraBrightness=params.screenBrightness;
-            brightCameraFlash=true;params.screenBrightness=1f;getWindow().setAttributes(params);
-            designHandler.postDelayed(clearCameraFlash,2500);
+            if(!brightCameraFlash){
+                previousCameraBrightness=params.screenBrightness;
+                previousFlashStatusBar=getWindow().getStatusBarColor();
+                previousFlashNavigationBar=getWindow().getNavigationBarColor();
+                previousFlashUi=getWindow().getDecorView().getSystemUiVisibility();
+            }
+            brightCameraFlash=true;params.screenBrightness=WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL;getWindow().setAttributes(params);
+            int warm=Color.rgb(255,249,242);
+            frame.setForeground(new android.graphics.drawable.ColorDrawable(warm));
+            getWindow().setStatusBarColor(warm);getWindow().setNavigationBarColor(warm);
+            getWindow().getDecorView().setSystemUiVisibility(previousFlashUi|View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+            // Covers slow bridge/frame delivery as well as the exposure hold. Always restored on pause.
+            designHandler.postDelayed(clearCameraFlash,5000);
         }else if(brightCameraFlash){
             WindowManager.LayoutParams params=getWindow().getAttributes();params.screenBrightness=previousCameraBrightness;
             brightCameraFlash=false;getWindow().setAttributes(params);
+            frame.setForeground(null);
+            getWindow().setStatusBarColor(previousFlashStatusBar);getWindow().setNavigationBarColor(previousFlashNavigationBar);
+            getWindow().getDecorView().setSystemUiVisibility(previousFlashUi);
         }
     }
     void bars(boolean dark){
@@ -355,6 +369,16 @@ public class Main extends Activity {
     }
     void reply(JSONObject m){pendingReply=m.optString("id");dispatchIntent();}
     public class Bridge {
+        @JavascriptInterface public void screenFlash(boolean on,int ticket){
+            runOnUiThread(()->{
+                cameraFlash(on);
+                // Acknowledge only after the window update has had a rendering opportunity.
+                // This confirms the request, not a measurement of the panel's physical luminance.
+                if(on)web.postOnAnimation(()->web.postOnAnimation(()->{
+                    if(!isDestroyed())web.evaluateJavascript("window.dispatchEvent(new CustomEvent('pigeon-screen-flash',{detail:{ticket:"+ticket+",applied:"+brightCameraFlash+"}}))",null);
+                }));
+            });
+        }
         @JavascriptInterface public void saveReview(String json){
             if(json==null || json.isEmpty())return;
             runOnUiThread(()->{

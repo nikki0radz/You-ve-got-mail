@@ -3,12 +3,19 @@
 <body style="margin:16px;background:#fff9ed;color:#253e31;font:16px system-ui">
 <h1>Camera flash checks</h1><p>Simulated stream: checks controls and cleanup, not physical flash.</p>
 <label><input type="checkbox" id="hardware" checked> Back camera supports flash</label>
+<label><input type="checkbox" id="acknowledge" checked> Simulated Android acknowledges brightness</label>
 <button id="open" type="button">Open test camera</button><p id="result" role="status">Ready</p><pre id="events" aria-label="Flash events"></pre><img id="photo" alt="Saved test photo" style="max-width:200px">
 <script type="module">
 import {openFrameCamera} from '../shop/frame-camera.mjs';
 const log=[],events=document.querySelector('#events'),result=document.querySelector('#result');
 function record(value){log.push(value);events.textContent=log.join('\n');}
 window.Pigeon={deliveryPrefs:()=>JSON.stringify({screenFlashBrightness:true}),settingsAction:key=>record('simulated native '+key)};
+window.Pigeon.screenFlash=(on,ticket)=>{
+ record('simulated native brightness '+(on?'on':'off'));
+ if(on&&document.querySelector('#acknowledge').checked)setTimeout(()=>{
+  record('simulated native ready');window.dispatchEvent(new CustomEvent('pigeon-screen-flash',{detail:{ticket,applied:true}}));
+ },250);
+};
 Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async getUserMedia({video}){
  const facing=typeof video.facingMode==='object'?(video.facingMode.exact||video.facingMode.ideal):video.facingMode;
  const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;const ctx=canvas.getContext('2d');
