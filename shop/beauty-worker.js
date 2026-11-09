@@ -10,9 +10,7 @@ async function initialize(){
  ]);
  const binary=new Uint8Array(parts[0].length+parts[1].length);binary.set(parts[0]);binary.set(parts[1],parts[0].length);
  const inferenceCanvas=new OffscreenCanvas(1,1),engine={wasmBinary:binary,canvas:inferenceCanvas};self.Module=engine;
- detector=await FaceLandmarker.createFromOptions({wasmLoaderPath:new URL('vision_wasm_internal.js',base).href,wasmBinaryPath:new URL('runtime-1.txt',base).href},{baseOptions:{modelAssetBuffer:parts[2],delegate:'CPU'},canvas:inferenceCanvas,runningMode:'VIDEO',numFaces:1,minFaceDetectionConfidence:.6,minFacePresenceConfidence:.6,minTrackingConfidence:.6,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:false});
- // CPU inference still uses a GL texture for its image input in this SDK.
- if(!engine.ctx&&!engine.createContext(inferenceCanvas,true,true,{majorVersion:2})&&!engine.createContext(inferenceCanvas,true,true,{majorVersion:1}))throw Error('Camera filter graphics unavailable');
+ detector=await FaceLandmarker.createFromOptions({wasmLoaderPath:new URL('vision_wasm_internal.js',base).href,wasmBinaryPath:new URL('runtime-1.txt',base).href},{baseOptions:{modelAssetBuffer:parts[2],delegate:'GPU'},canvas:inferenceCanvas,runningMode:'VIDEO',numFaces:1,minFaceDetectionConfidence:.6,minFacePresenceConfidence:.6,minTrackingConfidence:.6,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:false});
  renderNaturalBeauty=pixels.renderNaturalBeauty;
 }
 function process(bitmap){
