@@ -29,8 +29,23 @@ public class Main extends Activity {
     private volatile DesignBundle designBundle;
     private final Handler designHandler=new Handler(Looper.getMainLooper());
     private boolean firstPageLoaded,designChecking,foreground;
+    private boolean brightCameraFlash;
+    private float previousCameraBrightness=-1f;
+    private final Runnable clearCameraFlash=()->cameraFlash(false);
     private final Runnable initialDesign=()->loadDesign(designBundle);
     private FrameLayout frame;
+    void cameraFlash(boolean on){
+        designHandler.removeCallbacks(clearCameraFlash);
+        if(on&&foreground&&!isFinishing()&&!isDestroyed()){
+            WindowManager.LayoutParams params=getWindow().getAttributes();
+            if(!brightCameraFlash)previousCameraBrightness=params.screenBrightness;
+            brightCameraFlash=true;params.screenBrightness=1f;getWindow().setAttributes(params);
+            designHandler.postDelayed(clearCameraFlash,2500);
+        }else if(brightCameraFlash){
+            WindowManager.LayoutParams params=getWindow().getAttributes();params.screenBrightness=previousCameraBrightness;
+            brightCameraFlash=false;getWindow().setAttributes(params);
+        }
+    }
     void bars(boolean dark){
         int colour=Color.parseColor(dark?"#192824":"#faf4e5");frame.setBackgroundColor(colour);
         getWindow().setStatusBarColor(colour);getWindow().setNavigationBarColor(colour);
@@ -164,7 +179,7 @@ public class Main extends Activity {
         web.evaluateJavascript("Boolean(window.pigeonBack?.())",handled->{if(!"true".equals(handled)&&!isFinishing())finish();});
     }
     @Override public void onBackPressed(){handleBack();}
-    protected void onDestroy(){if(deliverySetup!=null)deliverySetup.destroy();if(videoPermission!=null){videoPermission.deny();videoPermission=null;}designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
+    protected void onDestroy(){cameraFlash(false);if(deliverySetup!=null)deliverySetup.destroy();if(videoPermission!=null){videoPermission.deny();videoPermission=null;}designHandler.removeCallbacksAndMessages(null);imageImports.shutdownNow();Delivery.closeActivityWindow(this);super.onDestroy();}
     @Override protected void onSaveInstanceState(Bundle out){if(deliverySetup!=null)deliverySetup.save(out);super.onSaveInstanceState(out);}
     protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);incoming(i);}
     void dispatchIntent(){
@@ -181,7 +196,7 @@ public class Main extends Activity {
         i.removeExtra("id");
     }
     protected void onResume(){super.onResume();foreground=true;if(deliverySetup!=null)deliverySetup.resume();if(webReady)web.evaluateJavascript("window.refreshDeliverySettings?.()",null);checkDesignUpdates();UnlockQueue.watch(this);if(Mail.prefs(this).contains("owner"))Mail.io.execute(()->{try{Mail.sync(this);}catch(Exception ignored){}runOnUiThread(()->{if(!isDestroyed())web.evaluateJavascript("window.refreshMailbox?.()",null);});});}
-    protected void onPause(){foreground=false;super.onPause();}
+    protected void onPause(){cameraFlash(false);foreground=false;super.onPause();}
     private void loadDesign(DesignBundle release){
         if(isDestroyed()||isFinishing())return;
         designHandler.removeCallbacks(initialDesign);designBundle=release;firstPageLoaded=true;webReady=false;
@@ -270,6 +285,8 @@ public class Main extends Activity {
     void openSetting(String key){
         try{
         switch(key){
+        case "cameraFlashOn":cameraFlash(true);break;
+        case "cameraFlashOff":cameraFlash(false);break;
         case "deliverySetup":deliverySetup.start();break;
         case "overlay":startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));break;
         case "notifications":
@@ -375,7 +392,7 @@ public class Main extends Activity {
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
-                data.put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
+                data.put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();

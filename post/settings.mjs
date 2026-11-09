@@ -1,11 +1,12 @@
 import {themeToggle} from './home.mjs';
+import {beautyEnabled,setBeautyEnabled} from '../shop/beauty-pref.mjs';
 const defaults={fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,friendAlerts:false,replyAlerts:true,backdropOpacity:70};
 let preview={...defaults};
 try{
   const saved=JSON.parse(localStorage.getItem('pigeon.backdrop')||'{}');
   if(Number.isInteger(saved.backdropOpacity)&&saved.backdropOpacity>=0&&saved.backdropOpacity<=100)preview.backdropOpacity=saved.backdropOpacity;
 }catch{}
-function read(){return window.Pigeon?.deliveryPrefs?{...defaults,...JSON.parse(Pigeon.deliveryPrefs())}:preview;}
+function read(){return {...(window.Pigeon?.deliveryPrefs?{...defaults,...JSON.parse(Pigeon.deliveryPrefs())}:preview),beautyFilter:beautyEnabled()};}
 export function backdropOpacity(){return read().backdropOpacity??defaults.backdropOpacity;}
 const link=(action,title,copy)=>'<button type="button" data-action="'+action+'" class="setting-link"><span><strong>'+title+'</strong><small>'+copy+'</small></span><i aria-hidden="true">›</i></button>';
 const action=(key,title)=>'<button type="button" data-platform="'+key+'" class="setting-pill">'+title+'</button>';
@@ -24,6 +25,7 @@ export function settingsPage(){
   section('alerts','Alerts','Warnings, timing and friend updates.',
     toggle('warning','Warn before a pop-up')+select('warningSeconds','Warning time',[[3,'3 seconds'],[10,'10 seconds'],[15,'15 seconds']])+toggle('friendAlerts','Friend status changes')+toggle('replyAlerts','Reply notifications'))+
   section('phone','Phone & appearance','Set the backdrop and check phone permissions.',
+    toggle('beautyFilter','Natural beauty filter')+'<p class="setting-hint">Subtle skin smoothing and gentle teeth whitening in the camera. Processed on your phone.</p>'+
     '<label class="setting-field backdrop-strength"><span>Black backdrop opacity</span><output data-opacity for="backdrop-alpha"></output><input type="range" id="backdrop-alpha" data-pref="backdropOpacity" min="0" max="100" step="1"></label>'+
     (native?'<div class="permission-list" data-base-look="permissionactions-5" data-review-look="permissionactions-5">'+(read().permissionSetup?action('deliverySetup','Delivery setup'):'')+action('overlay','Display over apps')+action('notifications','Phone notifications')+action('warningChannel','Warning banner settings')+action('precise','Precise schedules')+'</div>':'<p class="setting-hint">Open the Android app to receive parcels over other apps.</p>'))+
   section('account','Profile & invitations','Your pigeon and one-time links.',link('profile','Your profile','Change your name or pigeon.')+link('test-link','One-time link','Invite someone to send you a parcel.'))+
@@ -66,7 +68,8 @@ export function wireSettings(root){
   panel.onchange=e=>{
     const k=e.target.dataset.pref;if(!k)return;
     const value=e.target.type==='checkbox'?e.target.checked:k==='warningSeconds'||k==='backdropOpacity'?Number(e.target.value):e.target.value==='true';
-    if(native)Pigeon.deliverySetting(k,String(value));
+    if(k==='beautyFilter')setBeautyEnabled(value);
+    else if(native)Pigeon.deliverySetting(k,String(value));
     else{
       preview={...preview,[k]:value};
       if(k==='backdropOpacity')try{localStorage.setItem('pigeon.backdrop',JSON.stringify({backdropOpacity:preview.backdropOpacity}));}catch{}

@@ -35,7 +35,11 @@ Sharing an invitation automatically starts a temporary live listening session. A
 
 All 30 reminder templates start with the original illustrated wording. Tap the reminder to replace that wording directly, or add a separate note. The guest link offers the four selected reminders. Transparent studio exports start at 1440 × 2688; photo-heavy parcels may reduce colour precision or dimensions to fit the service limit.
 
-The in-app camera has a labelled flash switch for each lens, off by default. Front flash briefly lights the screen white while the camera captures your face. Back flash briefly enables the camera light when the device exposes torch control; unsupported camera views show N/A and still take photos with flash off. Switching cameras or closing the camera releases the light. Physical flash and exposure still need checking on the target phone.
+The in-app camera has a labelled flash switch for each lens, off by default. Android 0.1.42 uses a warm ivory selfie flash at the app window’s maximum brightness for about 1.1 seconds. It restores the prior window brightness after capture, on camera cancellation, on pause or destruction, and after a safety timeout. This uses no additional Android permission. Back flash briefly enables the camera light when the device exposes torch control; unsupported camera views show N/A and still take photos with flash off. The rear LED colour is controlled by the phone.
+
+**Settings → Phone & appearance → Natural beauty filter** defaults on and remembers an explicit off choice. It uses local face landmarks for subtle smoothing that excludes the eyes and lips, and slightly reduces a yellow cast only within the open mouth. It preserves the captured photo’s resolution and processes frames in a dedicated worker. The model loads only when the camera is used with the filter enabled; preview work uses smaller frames. If graphics or model loading is unavailable, the camera explicitly shows that the original photo is being used. Tracking, exposure and maximum physical screen brightness still need testing on the target phone.
+
+The pinned MediaPipe runtime and model are downloaded by `scripts/prepare-beauty-assets.mjs` on the first clean build and included in the app and published design release. Generated vendor binaries stay out of Git; the downloader checks the model checksum and includes the upstream licence.
 
 ## Guest delivery
 

@@ -1,25 +1,31 @@
 import {artwork} from './studio-scene.mjs';
 import {drawCameraPhoto} from './camera-pixels.mjs';
 import {captureWithFlash,hasCameraTorch,waitForCameraFrame} from './camera-flash.mjs';
+import {beautyEnabled} from './beauty-pref.mjs';
+import {createBeautyCamera} from './beauty-camera.mjs';
 export function openFrameCamera(item){
  return new Promise(resolve=>{
   if(!document.querySelector('link[data-camera-flash-style]')){const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./camera-flash.css',import.meta.url);style.dataset.cameraFlashStyle='';document.head.append(style);}
   const dialog=document.createElement('dialog');dialog.className='frame-camera';dialog.setAttribute('aria-label','Take a photo inside your frame');
-  dialog.innerHTML='<video autoplay muted playsinline></video><div class="live-frame-view" aria-label="Live camera with selected frame"></div><div data-screen-flash hidden aria-hidden="true"></div><header><button type="button" data-cancel aria-label="Cancel camera">×</button><span data-status role="status">Opening camera…</span></header><footer><p>Double-tap the picture to switch cameras</p><div><button type="button" data-switch aria-label="Switch front and back cameras">⇄</button><button type="button" data-shutter aria-label="Take photo" disabled>📸</button><button type="button" data-flash aria-label="Screen flash" aria-pressed="false" disabled><span aria-hidden="true">⚡</span><small>Off</small></button></div><p data-flash-hint role="status"></p><p data-error role="alert"></p></footer>';
+  dialog.innerHTML='<video autoplay muted playsinline></video><div class="live-frame-view" aria-label="Live camera with selected frame"></div><div data-screen-flash hidden aria-hidden="true"></div><header><button type="button" data-cancel aria-label="Cancel camera">×</button><span class="camera-readout"><span data-status role="status">Opening camera…</span><small data-beauty-status role="status"></small></span></header><footer><p>Double-tap the picture to switch cameras</p><div><button type="button" data-switch aria-label="Switch front and back cameras">⇄</button><button type="button" data-shutter aria-label="Take photo" disabled>📸</button><button type="button" data-flash aria-label="Screen flash" aria-pressed="false" disabled><span aria-hidden="true">⚡</span><small>Off</small></button></div><p data-flash-hint role="status"></p><p data-error role="alert"></p></footer>';
   document.body.append(dialog);dialog.showModal();
   const video=dialog.querySelector('video'),view=dialog.querySelector('.live-frame-view'),status=dialog.querySelector('[data-status]'),error=dialog.querySelector('[data-error]'),shutter=dialog.querySelector('[data-shutter]'),swap=dialog.querySelector('[data-switch]');
   const flash=dialog.querySelector('[data-flash]'),flashLabel=flash.querySelector('small'),flashHint=dialog.querySelector('[data-flash-hint]'),screenFlash=dialog.querySelector('[data-screen-flash]');
   const flashOn={user:false,environment:false};
   const photo=document.createElement('canvas');let stream=null,facing='user',mirrored=true,closed=false,switching=false,capturing=false,drawing=false,lastFrame=0,lastTap=null,raf=0,cameraTicket=0;
+  let brightFlash=false;try{brightFlash=Boolean(JSON.parse(window.Pigeon?.deliveryPrefs?.()||'{}').screenFlashBrightness);}catch{}
+  const beauty=beautyEnabled()?createBeautyCamera(message=>{if(!closed){const label=dialog.querySelector('[data-beauty-status]');if(label.textContent!==message)label.textContent=message;}}):null;
+  if(!beauty)dialog.querySelector('[data-beauty-status]').textContent='Natural filter · Off';
+  function screenLight(on){screenFlash.hidden=closed||!on;if(brightFlash)window.Pigeon.settingsAction(on&&!closed?'cameraFlashOn':'cameraFlashOff');}
   function updateFlash(){
    const available=facing==='user'||hasCameraTorch(stream?.getVideoTracks()[0]);
    flash.disabled=switching||capturing||!stream||!available;
    flash.setAttribute('aria-label',facing==='user'?'Screen flash':'Back camera flash');flash.setAttribute('aria-pressed',String(available&&flashOn[facing]));
    flashLabel.textContent=available?(flashOn[facing]?'On':'Off'):'N/A';
-   flashHint.textContent=!stream?'':!available?'Back flash isn’t available in this camera view.':flashOn[facing]?(facing==='user'?'Screen lights up when you take the photo.':'Flash fires when you take the photo.'):'';
+   flashHint.textContent=!stream?'':!available?'Back flash isn’t available in this camera view.':flashOn[facing]?(facing==='user'?(brightFlash?'Warm screen flash · maximum brightness':'Warm screen flash'):'Flash fires when you take the photo.'):'';
   }
   function stop(){stream?.getTracks().forEach(track=>track.stop());stream=null;}
-  function close(file=null){if(closed)return;closed=true;cameraTicket++;screenFlash.hidden=true;stop();cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',hidden);dialog.close();dialog.remove();resolve(file);}
+  function close(file=null){if(closed)return;closed=true;cameraTicket++;screenLight(false);beauty?.close();stop();cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',hidden);dialog.close();dialog.remove();resolve(file);}
   function hidden(){if(document.hidden)close();}
   async function start(which,exact=false){
    const ticket=++cameraTicket;switching=true;shutter.disabled=true;swap.disabled=true;stop();updateFlash();status.textContent='Opening camera…';
@@ -40,7 +46,9 @@ export function openFrameCamera(item){
    if(closed)return;raf=requestAnimationFrame(paint);if(switching||capturing||drawing||!stream||video.readyState<2||time-lastFrame<67)return;
    drawing=true;lastFrame=time;
    try{
-    drawCameraPhoto(video,mirrored,photo);
+    drawCameraPhoto(video,mirrored,photo,beauty?720:Infinity);
+    const ticket=cameraTicket;if(beauty?.ready)await beauty.apply(photo);
+    if(closed||ticket!==cameraTicket||capturing)return;
     const rendered=item?.maskSheet?await artwork(item,{photo,zoom:1,panX:.5,panY:.5},'',1.25):photo;
     if(!closed){if(item?.maskSheet)view.replaceChildren(rendered);else if(view.firstChild!==photo)view.replaceChildren(photo);}
    }catch(e){if(!closed)error.textContent=e.message;}finally{drawing=false;}
@@ -51,7 +59,7 @@ export function openFrameCamera(item){
   shutter.onclick=async()=>{
    if(switching||capturing||shutter.disabled||closed)return;capturing=true;shutter.disabled=true;swap.disabled=true;updateFlash();error.textContent='';status.textContent='Taking photo…';
    const track=stream?.getVideoTracks()[0],ticket=cameraTicket;
-   try{const saved=await captureWithFlash({track,facing,enabled:flashOn[facing]&&(facing==='user'||hasCameraTorch(track)),screen:on=>{screenFlash.hidden=closed||!on;},active:()=>!closed&&ticket===cameraTicket, nextFrame:()=>waitForCameraFrame(video),capture:()=>drawCameraPhoto(video,mirrored,document.createElement('canvas'))});const blob=await new Promise(ok=>saved.toBlob(ok,'image/jpeg',.96));if(!blob)throw Error('The photo could not be saved.');if(!closed)close(new File([blob],facing==='user'?'Selfie.jpg':'Photo.jpg',{type:'image/jpeg'}));}
+   try{const saved=await captureWithFlash({track,facing,enabled:flashOn[facing]&&(facing==='user'||hasCameraTorch(track)),screen:screenLight,active:()=>!closed&&ticket===cameraTicket, nextFrame:()=>waitForCameraFrame(video),capture:()=>drawCameraPhoto(video,mirrored,document.createElement('canvas'))});if(beauty){status.textContent='Finishing natural filter…';await beauty.waitUntilReady();if(!closed)await beauty.apply(saved);}if(closed)return;const blob=await new Promise(ok=>saved.toBlob(ok,'image/jpeg',.96));if(!blob)throw Error('The photo could not be saved.');if(!closed)close(new File([blob],facing==='user'?'Selfie.jpg':'Photo.jpg',{type:'image/jpeg'}));}
    catch(e){if(!closed){if(track?.readyState==='ended')await start(facing);error.textContent=e.message;shutter.disabled=!stream;status.textContent=stream?(mirrored?'Front camera':'Back camera'):'Camera unavailable';}}
    finally{capturing=false;if(!closed){swap.disabled=false;updateFlash();}}
   };

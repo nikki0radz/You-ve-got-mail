@@ -4,7 +4,7 @@ import {hasCameraTorch,captureWithFlash,waitForCameraFrame} from '../shop/camera
 function fixture({facing='environment',supported=true}={}){
  const events=[];let torch=false;
  const track={getCapabilities:()=>({torch:supported}),getSettings:()=>({torch}),applyConstraints:async({advanced})=>{torch=advanced[0].torch;events.push(torch?'torch on':'torch off');},stop:()=>events.push('stop')};
- return {events,track,options:{track,facing,enabled:true,screen:on=>events.push(on?'screen on':'screen off'),settle:async()=>events.push('settle'),nextFrame:async()=>events.push('new frame'),capture:()=>{events.push('capture');return 'photo';}}};
+ return {events,track,options:{track,facing,enabled:true,screen:on=>events.push(on?'screen on':'screen off'),settle:async()=>events.push('settle'),linger:async()=>events.push('hold'),nextFrame:async()=>events.push('new frame'),capture:()=>{events.push('capture');return 'photo';}}};
 }
 test('rear flash illuminates before capture and switches off afterwards',async()=>{
  const {events,options}=fixture();assert.equal(await captureWithFlash(options),'photo');
@@ -12,7 +12,7 @@ test('rear flash illuminates before capture and switches off afterwards',async()
 });
 test('selfie flash uses the screen while capturing the camera feed, and always clears',async()=>{
  const {events,options}=fixture({facing:'user',supported:false});
- await captureWithFlash(options);assert.deepEqual(events,['screen on','settle','new frame','capture','screen off']);
+ await captureWithFlash(options);assert.deepEqual(events,['screen on','settle','new frame','capture','hold','screen off']);
  events.length=0;options.capture=()=>{throw Error('No pixels');};
  await assert.rejects(captureWithFlash(options),/No pixels/);assert.equal(events.at(-1),'screen off');
 });

@@ -27,8 +27,12 @@ document.querySelector('#run').onclick=()=>{
   assert(heading.textContent==='Full pop-up'&&!root.querySelector('[data-pref=onUnlock]').disabled,'Native preference change did not refresh');
   root.innerHTML=settingsPage();wireSettings(root);
   assert(root.querySelectorAll('.setting-dropdown').length===3,'Fresh render did not initialize');
+  const beauty=root.querySelector('[data-pref=beautyFilter]');assert(beauty.checked,'Natural filter must default on');
+  beauty.checked=false;beauty.dispatchEvent(new Event('change',{bubbles:true}));
+  root.innerHTML=settingsPage();wireSettings(root);assert(!root.querySelector('[data-pref=beautyFilter]').checked,'Beauty off choice did not persist');
+  root.querySelector('[data-pref=beautyFilter]').checked=true;root.querySelector('[data-pref=beautyFilter]').dispatchEvent(new Event('change',{bubbles:true}));
   root.querySelector('[data-section=delivery]').open=true;
-  result.textContent='PASS: 20 resumes, focus/open state, old-duplicate cleanup, single save, dependent settings, native refresh and fresh render.';
+  result.textContent='PASS: 20 resumes, focus/open state, old-duplicate cleanup, single save, dependent settings, native refresh, fresh render and beauty default/persistence.';
  }catch(error){result.textContent='FAIL: '+error.message;throw error;}
 };
 </script></body></html>

@@ -7,3 +7,7 @@ test('rear camera stays unmirrored, including after switching from the front cam
  const video={videoWidth:1280,videoHeight:720},output=canvas();drawCameraPhoto(video,true,output);output.calls.length=0;drawCameraPhoto(video,false,output);assert.deepEqual(output.calls[0],['setTransform',1,0,0,1,0,0]);assert.equal(output.calls.some(([name])=>name==='scale'||name==='translate'),false);assert.equal(output.width,1280);
 });
 test('a shutter cannot capture a camera that has not produced a frame',()=>{assert.throws(()=>drawCameraPhoto({videoWidth:0,videoHeight:0},false,canvas()),/Wait for the camera/);});
+test('smaller beauty preview frames never reduce the saved photo resolution',()=>{
+ const video={videoWidth:1080,videoHeight:1920},preview=canvas(),saved=canvas();drawCameraPhoto(video,true,preview,720);drawCameraPhoto(video,true,saved);
+ assert.equal(preview.width,405);assert.equal(preview.height,720);assert.equal(saved.width,1080);assert.equal(saved.height,1920);
+});

@@ -8,6 +8,7 @@
 import {openFrameCamera} from '../shop/frame-camera.mjs';
 const log=[],events=document.querySelector('#events'),result=document.querySelector('#result');
 function record(value){log.push(value);events.textContent=log.join('\n');}
+window.Pigeon={deliveryPrefs:()=>JSON.stringify({screenFlashBrightness:true}),settingsAction:key=>record('simulated native '+key)};
 Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async getUserMedia({video}){
  const facing=typeof video.facingMode==='object'?(video.facingMode.exact||video.facingMode.ideal):video.facingMode;
  const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;const ctx=canvas.getContext('2d');

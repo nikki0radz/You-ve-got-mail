@@ -1,6 +1,7 @@
 // Both the live preview and saved photo use this exact orientation transform.
-export function drawCameraPhoto(video,mirrored,canvas){
- const width=video.videoWidth,height=video.videoHeight;
+export function drawCameraPhoto(video,mirrored,canvas,maxEdge=Infinity){
+ const scale=Math.min(1,maxEdge/Math.max(video.videoWidth,video.videoHeight));
+ const width=Math.round(video.videoWidth*scale),height=Math.round(video.videoHeight*scale);
  if(!width||!height)throw Error('Wait for the camera to be ready.');
  if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
  const ctx=canvas.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,width,height);

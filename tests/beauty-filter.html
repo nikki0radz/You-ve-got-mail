@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Natural filter validation</title></head><body style="font:16px system-ui;background:#fff9ed;color:#253e31"><h1>Natural filter validation</h1><p>Internal test with a NASA public-domain sample. Processing stays in this browser.</p><button id="run">Run filter</button><p id="status" role="status">Ready</p><div style="display:flex;gap:12px;flex-wrap:wrap"><figure><figcaption>Original</figcaption><img id="original" src="beauty-test.png" width="360" alt="Original NASA astronaut sample"></figure><figure><figcaption>Natural filter</figcaption><canvas id="output" style="width:360px"></canvas></figure></div><pre id="result"></pre><script type="module">
+import {createBeautyCamera} from '../shop/beauty-camera.mjs';
+import {renderNaturalBeauty} from '../shop/beauty-render.mjs';
+document.querySelector('#run').onclick=async()=>{
+ const status=document.querySelector('#status'),beauty=createBeautyCamera(message=>status.textContent=message);
+ try{
+  const image=document.querySelector('#original');await image.decode();
+  const out=document.querySelector('#output');out.width=image.naturalWidth;out.height=image.naturalHeight;const ctx=out.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);const before=ctx.getImageData(0,0,out.width,out.height);
+  const start=performance.now();
+  if(new URL(location.href).searchParams.has('render')){
+   beauty.close();const faces=await (await fetch('beauty-landmarks.json')).json();
+   const offscreen=new OffscreenCanvas(out.width,out.height);offscreen.getContext('2d').drawImage(out,0,0);renderNaturalBeauty(offscreen,faces);ctx.drawImage(offscreen,0,0);status.textContent='Pixel effect test · CPU model landmarks';
+  }else{if(!await beauty.waitUntilReady())throw Error('Model could not initialize');await beauty.apply(out);}
+  const elapsed=performance.now()-start,after=ctx.getImageData(0,0,out.width,out.height);let changed=0,sum=0,max=0,background=0;
+  for(let i=0;i<before.data.length;i+=4){const diff=Math.max(...[0,1,2].map(c=>Math.abs(before.data[i+c]-after.data[i+c])));if(diff)changed++;sum+=diff;max=Math.max(max,diff);const y=Math.floor(i/4/out.width);if(y<50&&diff)background++;}
+  if(!changed)throw Error('No filter pixels changed');if(background)throw Error('Background changed');if(max>25)throw Error('Filter exceeded subtle limit');
+  document.querySelector('#result').textContent=JSON.stringify({pass:true,width:out.width,height:out.height,changedPixels:changed,meanMaxChannelDelta:sum/(out.width*out.height),maxChannelDelta:max,unchangedBackground:background===0,workerMs:elapsed},null,2);
+ }catch(error){document.querySelector('#result').textContent='FAIL: '+error.message;throw error;}finally{beauty.close();}
+};
+</script></body></html>
