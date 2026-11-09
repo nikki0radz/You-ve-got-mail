@@ -6,6 +6,7 @@ export function createPhoneCache({bridge,yieldControl=idleTurn,changed=()=>{}}){
  return {
   rows:()=>rows,friends:()=>friends,ready:()=>loaded,wasRead:id=>seen.has(id),
   markRead(id){seen.add(id);writes.add(id);changed();flush().catch(()=>{});},
+  async refreshFresh(){if(pending)await pending;return this.refresh();},
   refresh(){if(pending)return pending;pending=(async()=>{
    const phone=bridge();if(!phone?.mailbox)return false;
    await yieldControl();await flush();const raw=phone.mailbox(),next=JSON.parse(raw);

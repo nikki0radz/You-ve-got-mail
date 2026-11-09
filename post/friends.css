@@ -1,0 +1,21 @@
+#app .people-heading .people-toggle{display:flex;align-items:center;gap:7px;flex:1;min-width:0;padding:6px 0;border:0;border-radius:8px;background:transparent;color:var(--mm-text);box-shadow:none;text-align:left}
+#app .people-toggle b{white-space:nowrap}
+#app .people-chevron{flex:none;transition:transform .15s}
+#app .people-toggle[aria-expanded=true] .people-chevron{transform:rotate(180deg)}
+#app .people-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+#app .people-heading>[data-book]{padding:8px 10px;flex:none;font-size:13px}
+#app .request-count{display:inline-grid;place-items:center;min-width:23px;height:23px;padding:0 5px;border-radius:20px;background:#a52e40;color:#fff;font:700 13px/1 system-ui;flex:none}
+#app #people-list[hidden]{display:none}
+#app .friend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));overflow:visible;gap:8px;margin:8px 0 14px}
+#app .friend-grid .mail-friend{min-width:0;max-width:100%;overflow-wrap:anywhere;align-content:start;gap:4px}
+#app .no-friends{margin:10px 4px 18px;color:var(--mm-text)}
+#app .pending-friends{display:flex;align-items:center;justify-content:space-between;width:100%;margin:10px 0;padding:11px 14px;border:1px solid var(--mm-edge);border-radius:14px;background:var(--mm-panel);color:var(--mm-text);font:700 16px/1.4 system-ui}
+#mail-window .friend-request-card{text-align:center}
+#mail-window .friend-request-card h3{font:800 24px/1.2 PostalBaloo,system-ui;margin:8px}
+#mail-window .friend-response{display:flex;gap:10px;margin:16px 0}
+#mail-window .friend-response button{flex:1}
+#mail-window button[data-mb=accept-request]{background:#365a40;color:#fff9e8;border-color:#234532;box-shadow:0 3px 0 #243e2d;font:800 20px/1.3 PostalBaloo,system-ui}
+#mail-window .simulation-label{color:inherit;font:600 13px/1.5 system-ui;padding:10px;border:1px dashed currentColor;border-radius:10px}
+#art-upload .art-request-test{margin:20px 0;padding:14px;border:1px dashed var(--mm-text);border-radius:16px;color:var(--mm-text);background:var(--mm-panel)}
+#art-upload .art-request-test button{margin:5px 4px 5px 0}
+@media(prefers-reduced-motion:reduce){#app .people-chevron{transition:none}}

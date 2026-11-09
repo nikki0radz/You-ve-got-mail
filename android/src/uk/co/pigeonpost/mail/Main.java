@@ -301,6 +301,10 @@ public class Main extends Activity {
         switch(key){
         case "cameraFlashOn":cameraFlash(true);break;
         case "cameraFlashOff":cameraFlash(false);break;
+        case "simulateFriendRequest":
+            if(!FriendRequests.show(this,FriendRequests.TEST,"Practice pigeon",true))toast("Simulation is ready in the app. Enable Android notifications to see its phone notification.");
+            break;
+        case "clearFriendRequestSimulation":FriendRequests.clearTest(this);break;
         case "deliverySetup":deliverySetup.start();break;
         case "overlay":startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));break;
         case "notifications":
@@ -416,7 +420,7 @@ public class Main extends Activity {
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
-                data.put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
+                data.put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();

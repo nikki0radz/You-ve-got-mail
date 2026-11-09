@@ -8,7 +8,9 @@ import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
 import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
-import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem} from './post/mailbox.mjs';
+import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends} from './post/mailbox.mjs';
+import {pendingFriendRequests} from './post/friend-requests.mjs';
+import {createRequestPrompts} from './post/friend-state.mjs';
 import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
 import {installSocial} from './post/social.mjs';
 import {openShop,backInShop} from './shop/shop.mjs';
@@ -26,7 +28,8 @@ let homeColours;
 let nativeTheme,nativeName;
 function applyTheme(){if(nativeTheme!==state.theme){window.Pigeon?.setTheme?.(state.theme==='dark');nativeTheme=state.theme;}document.documentElement.dataset.theme=state.theme;document.querySelector('meta[name="theme-color"]').content=state.theme==='dark'?'#111c19':'#a1c6bc';homeColours?.apply()}
 let localFolder='inbox';
-function finishStartup(){document.getElementById('app-loading')?.remove();app.inert=false;app.removeAttribute('aria-busy');}
+let requestPrompts;
+function finishStartup(){document.getElementById('app-loading')?.remove();app.inert=false;app.removeAttribute('aria-busy');queueRequestPrompt();}
 function recipientName(id){return id==='self'?'Myself':state.friends.find(friend=>friend.id===id)?.name||'Owen';}
 function localSent(){
  const rows=[...state.inbox.filter(m=>m.recipient),...state.scheduled].sort((a,b)=>(b.createdAt||Date.parse(b.when))-(a.createdAt||Date.parse(a.when)));
@@ -47,14 +50,15 @@ async function mountHomeWheel(){
 }
 function updateUnreadBadge(){
  const btn=app.querySelector('.app-nav [data-id="inbox"]');if(!btn)return;
- let count=0;try{count=window.Pigeon?.mailbox?unreadCount(phoneCache.rows(),id=>phoneCache.wasRead(id)):state.inbox.filter(m=>!m.read).length;}catch{}
- const badge=btn.querySelector('.inbox-count');badge.hidden=!count;badge.textContent=count>99?'99+':String(count);btn.setAttribute('aria-label',count?'Inbox, '+count+' unread':'Inbox');
+ let count=pendingFriendRequests().length;try{count+=window.Pigeon?.mailbox?unreadCount(phoneCache.rows(),id=>phoneCache.wasRead(id)):state.inbox.filter(m=>!m.read).length;}catch{}
+ const badge=btn.querySelector('.inbox-count');badge.hidden=!count;badge.textContent=count>99?'99+':String(count);btn.setAttribute('aria-label',count?'Inbox, '+count+' unread items including pending friend requests':'Inbox');
 }
 const pageCache=new Map();let renderedTab;
 function render(reuse=false){const previous=app.querySelector('.page-content');if(previous&&renderedTab)pageCache.set(renderedTab,previous);const cached=reuse===true?pageCache.get(tab):null;applyTheme();app.innerHTML=`${header(state,tab==='home',false)}${window.Pigeon?"":'<div class="draft-label">Browser preview · local deliveries only</div>'}<div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${cached?'':tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span>${id==='inbox'?'<b class="inbox-count" hidden aria-hidden="true"></b>':''}</button>`).join('')}</nav>`;if(cached)app.querySelector('.page-content').replaceWith(cached);renderedTab=tab;pageCache.set(tab,app.querySelector('.page-content'));if(tab==='settings'){if(!cached)wireSettings(app);app.querySelector('#theme').checked=state.theme==='dark';}
  updateUnreadBadge();
  if(tab==='home'&&!cached)mountHomeWheel();else finishStartup();
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
+ if(tab==='inbox'&&!window.Pigeon?.mailbox){const content=app.querySelector('.page-content');if(!cached)content.insertAdjacentHTML('afterbegin',peopleSection());wirePeople(app,render);}
  if(window.Pigeon?.name&&nativeName!==state.profile.name){Pigeon.name(state.profile.name);nativeName=state.profile.name;}
 }
 homeColours=setupHomeColours({app,getTheme:()=>state.theme,setTheme:value=>{state.theme=value;persist();render()},isHome:()=>tab==='home'});
@@ -179,15 +183,20 @@ for(const [id,name,open] of demoPeople){
   if(!state.friends.some(f=>f.id===id))state.friends.push({id,name,open,popups:true,ring:false,demo:true});
 }
 const social=installSocial(state,persist,render);
+function queueRequestPrompt(){requestAnimationFrame(()=>requestPrompts?.pump());}
+requestPrompts=createRequestPrompts({requests:pendingFriendRequests,available:()=>Boolean(window.pigeonAppReady&&!document.hidden&&!flow&&!document.getElementById('app-loading')&&!document.querySelector('dialog[open],#phone-studio,input:focus,textarea:focus,select:focus,[contenteditable="true"]:focus')),open:request=>{tab='inbox';render();openFriendRequests(render,request);}});
+document.addEventListener('close',()=>{pageCache.delete('inbox');if(tab==='inbox')render();queueRequestPrompt();},true);
+document.addEventListener('focusout',queueRequestPrompt);
+window.addEventListener('friend-requests-changed',()=>{updateUnreadBadge();pageCache.delete('inbox');if(tab==='inbox'&&!document.querySelector('dialog[open]'))render();queueRequestPrompt();});
 window.refreshMailbox=()=>phoneCache.refresh().catch(()=>{});
-let mailPaint;window.addEventListener('phone-mail-updated',()=>{cancelAnimationFrame(mailPaint);mailPaint=requestAnimationFrame(()=>{updateUnreadBadge();pageCache.delete('inbox');if(tab==='inbox'&&!document.querySelector('dialog[open]'))render();});});
+let mailPaint;window.addEventListener('phone-mail-updated',()=>{cancelAnimationFrame(mailPaint);mailPaint=requestAnimationFrame(()=>{updateUnreadBadge();pageCache.delete('inbox');if(tab==='inbox'&&!document.querySelector('dialog[open]'))render();queueRequestPrompt();});});
 window.openParcelAction=async id=>{if(id!=='@settings')await phoneCache.refresh().catch(()=>{});if(id==='@settings'){tab='settings';render();return;}tab='inbox';render();if(id==='@friends')friendsWindow(render);else if(id.startsWith('@inbox:'))openMailboxItem(id.slice(7),render);else replyTo(id,render);};
 if(window.Pigeon){state.receiving=Pigeon.isOpen();
-  phoneCache.refresh().catch(()=>{});setInterval(()=>{if(!document.hidden)phoneCache.refresh().catch(()=>{});},15000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)phoneCache.refresh().catch(()=>{});});
+  phoneCache.refresh().catch(()=>{});refreshFriends().catch(()=>{});setInterval(()=>{if(!document.hidden)refreshFriends().catch(()=>{});},15000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){requestPrompts.reset();phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});refreshFriends().catch(()=>{});}});
 }
 if(!window.Pigeon&&new URLSearchParams(location.search).get('review')==='settings')tab='settings';
-window.refreshDeliverySettings=()=>{phoneCache.refresh().catch(()=>{});if(tab==='settings')wireSettings(app);else pageCache.delete('settings');refreshArtwork();};
+window.refreshDeliverySettings=()=>{requestPrompts.reset();phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});if(tab==='settings')wireSettings(app);else pageCache.delete('settings');refreshArtwork();};
 window.addEventListener('shared-art-updated',()=>{
  updateUnreadBadge();
  pageCache.delete('home');if(tab==='home')mountHomeWheel();

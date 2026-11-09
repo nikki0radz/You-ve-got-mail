@@ -46,6 +46,7 @@ final class Mail {
         NotificationManager n=c.getSystemService(NotificationManager.class);
         n.createNotificationChannel(new NotificationChannel("replies","Replies",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel("friends","Friend status changes",NotificationManager.IMPORTANCE_DEFAULT));
+        n.createNotificationChannel(new NotificationChannel(FriendRequests.CHANNEL,"Friend requests",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(ALERT,"Incoming mail warnings",NotificationManager.IMPORTANCE_HIGH));
         n.createNotificationChannel(new NotificationChannel(QUIET,"Mailbox deliveries",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(LISTEN,"Incoming parcel checks",NotificationManager.IMPORTANCE_LOW));
@@ -122,7 +123,7 @@ final class Mail {
         for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0)return;
             JSONObject m=arr.getJSONObject(0);accept(c,m,true);request(c,"ack",new JSONObject().put("id",m.getString("id")));}
     }
-    static void markRead(Context c,String id){prefs(c).edit().putBoolean("read:"+id,true).apply();c.getSystemService(NotificationManager.class).cancel(id,5);}
+    static void markRead(Context c,String id){prefs(c).edit().putBoolean("read:"+id,true).apply();c.getSystemService(NotificationManager.class).cancel(id,5);c.getSystemService(NotificationManager.class).cancel(id,1);}
     static void state(Context c,JSONObject m,String status){try{m.put("status",status);save(c,m);}catch(Exception e){Log.e("Pigeon","Unable to update receipt",e);}}
     static String label(JSONObject m){return m.optString("sender","A friend")+" sent you "+m.optString("kind","mail");}
 }

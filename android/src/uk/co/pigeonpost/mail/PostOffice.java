@@ -15,12 +15,12 @@ final class PostOffice {
         return p.getBoolean("open",true)?"open":p.getBoolean("closedInbox",p.getBoolean("quiet",true))?"inbox":"closed";
     }
     static void profile(Context c)throws Exception{
-        SharedPreferences p=Mail.prefs(c);String mode=mode(c),name=p.getString("displayName","Nicole");
+        SharedPreferences p=Mail.prefs(c);String mode=mode(c),name=p.getString("displayName","New pigeon");
         if(mode.equals(p.getString("publishedMode",""))&&name.equals(p.getString("publishedName","")))return;
         JSONObject me=Mail.request(c,"profile",new JSONObject().put("name",name).put("mode",mode));
         p.edit().putString("publishedMode",mode).putString("publishedName",name).putString("code",me.getString("code")).apply();
     }
-    static JSONObject friends(Context c)throws Exception{
+    static synchronized JSONObject friends(Context c)throws Exception{
         profile(c);SharedPreferences p=Mail.prefs(c);long cursor=p.getLong("friendsCursor",-1);
         JSONObject data=Mail.request(c,"friends"+(cursor<0?"":"?cursor="+cursor),null);
         JSONArray events=data.optJSONArray("events");
@@ -32,6 +32,7 @@ final class PostOffice {
                 c.getSystemService(NotificationManager.class).notify("friend:"+e.optString("code"),3,n);
             }
         }
+        FriendRequests.update(c,data.optJSONArray("incoming"));
         data.remove("events");p.edit().putLong("friendsCursor",data.getLong("cursor")).putString("friendsSnapshot",data.toString()).apply();return data;
     }
     static String status(String mode){return "open".equals(mode)?"Open to mail":"inbox".equals(mode)?"Inbox only":"Closed to mail";}
@@ -59,7 +60,10 @@ final class PostOffice {
         if("receipt".equals(op)){
             String secret=Mail.prefs(c).getString("receipt:"+id,"");
             if(secret.isEmpty())throw new IOException("Receipt unavailable");
-            return Mail.authorized("receipt",null,secret);
+            JSONObject receipt=Mail.authorized("receipt",null,secret);
+            JSONObject sent=new JSONObject(Mail.prefs(c).getString("s:"+id,"{}"));
+            Replies.receive(c,new JSONObject(receipt.toString()).put("id",id).put("sender",sent.optString("sender","A friend")).put("senderCode",sent.optString("code")),true,false);
+            return receipt;
         }
         if("reply".equals(op)){
             JSONObject item=Mail.meta(c,id);if(!item.has("id")||"scheduled".equals(item.optString("status")))throw new IOException("Parcel unavailable");

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head><base href="../">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111c19">
+  <meta name="description" content="A tiny pigeon. A minor inconvenience. Send playful parcels to your friends.">
+  <title>You've Got Mail</title>
+  <link rel="icon" type="image/webp" href="assets/pigeon.webp">
+  <link rel="stylesheet" href="styles.css?v=parcel-android-1">
+  <link rel="stylesheet" href="shop/shop.css?v=2">
+  <link rel="stylesheet" href="design/phone-home.css"><link rel="stylesheet" href="post/post.css"><link rel="stylesheet" href="shop/studio.css"><link rel="stylesheet" href="post/mailbox.css"><link rel="stylesheet" href="post/settings.css"><link rel="stylesheet" href="post/home-fit.css?v=hanging-sign-2">
+  <link rel="stylesheet" href="design/live-review.css">
+  <link rel="stylesheet" href="post/review-019.css">
+  <link rel="stylesheet" href="post/review-020.css">
+  <link rel="stylesheet" href="post/review-022.css"><link rel="stylesheet" href="post/review-025.css"><link rel="stylesheet" href="post/review-026.css">
+<link rel="stylesheet" href="shop/art-upload.css"><link rel="stylesheet" href="post/review-032.css"><link rel="stylesheet" href="post/review-036.css">
+<link rel="stylesheet" href="post/review-039.css">
+<link rel="stylesheet" href="post/review-040.css">
+<link rel="stylesheet" href="post/review-041.css">
+<link rel="stylesheet" href="post/performance.css">
+<link rel="stylesheet" href="post/friends.css">
+</head>
+<body>
+  <style>
+    #app-loading{position:fixed;inset:0;z-index:1000;display:grid;place-content:center;justify-items:center;gap:14px;padding:28px;text-align:center;background:var(--mm-bg,#fff9ed);color:var(--mm-text,#203936);font:800 21px/1.4 PostalBaloo,system-ui}
+    #app-loading .boot-spinner{width:42px;height:42px;border:4px solid #a1c6bc;border-top-color:#365a40;border-radius:50%;animation:spin 1s linear infinite}
+    #app-loading button{padding:10px 24px;background:#365a40;color:#fff9e8;border:0;border-radius:24px;font:inherit}
+    @media(prefers-reduced-motion:reduce){#app-loading .boot-spinner{animation:none}}
+  </style>
+  <div id="app-loading" role="status" aria-live="polite"><span class="boot-spinner" aria-hidden="true"></span><span data-boot-message>Opening the post office…</span><button type="button" hidden onclick="location.reload()">Try again</button></div>
+  <main id="app" class="mm-phone" aria-label="You've Got Mail" aria-busy="true" inert></main>
+  <script>setTimeout(function(){var screen=document.getElementById('app-loading');if(!screen)return;var app=document.getElementById('app');if(app.childElementCount){screen.remove();app.inert=false;app.removeAttribute('aria-busy');}else{screen.querySelector('[data-boot-message]').textContent='The post office could not open. Please try again.';screen.querySelector('.boot-spinner').hidden=true;screen.querySelector('button').hidden=false;}},12000);</script>
+  <dialog id="flow" aria-labelledby="flow-title"></dialog>
+  <dialog id="mail-window" aria-label="Mailbox"></dialog>
+  <dialog id="social-flow" aria-label="Pigeon post"></dialog>
+  <dialog id="parcel-shop" aria-label="Pick and post"></dialog>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <script>
+(()=>{
+ const storage=window.localStorage,caseName=new URLSearchParams(location.search).get('case')||'primary',prefix='pigeon.fixture.friends.'+caseName+'.';
+ Object.defineProperty(window,'localStorage',{value:{getItem:k=>storage.getItem(prefix+k),setItem:(k,v)=>storage.setItem(prefix+k,v),removeItem:k=>storage.removeItem(prefix+k)}});
+ localStorage.setItem('pigeon.main-art.owner','FIXTURE');
+ let book=JSON.parse(localStorage.getItem('fixtureBook')||'{"me":{"code":"123456789A"},"friends":[],"incoming":[],"outgoing":[]}');
+ const persist=()=>localStorage.setItem('fixtureBook',JSON.stringify(book));
+ const send=value=>parent.postMessage({type:'fixture-log',caseName,value},location.origin);
+ const fetchOriginal=fetch.bind(window);
+ window.fetch=(input,options={})=>{
+  const url=new URL(typeof input==='string'?input:input.url,location.href);
+  if(url.pathname.includes('/api/catalogue/')){
+   const path=url.pathname.split('/api/catalogue/')[1];
+   const categories=['Photos','Notes','Flowers','Stickers','Reminders','Postcards','Love notes'].map(name=>({name}));
+   return Promise.resolve(Response.json(path==='items'?{items:[],categories,avatars:{hidden:[]},more:false}:{}));
+  }
+  return fetchOriginal(input,options);
+ };
+ const prefs={appVersion:'0.1.44',friendRequestNotifications:true,fullPopup:true,onUnlock:true,closedInbox:true,warning:true,warningSeconds:3,backdropOpacity:25,notifications:true};
+ window.Pigeon={mailbox:()=> '[]',friendsCached:()=>JSON.stringify(book),wasRead:()=>false,markRead:()=>{},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,deliveryPrefs:()=>JSON.stringify(prefs),deliverySetting:(key,value)=>prefs[key]=value==='true',settingsAction:key=>send('Simulated Android action: '+key),post:(ticket,op,raw)=>{
+  const body=JSON.parse(raw);send('Simulated server action: '+op);
+  if(op==='accept'||op==='decline'){
+   const request=book.incoming.find(friend=>friend.code===body.code);book.incoming=book.incoming.filter(friend=>friend.code!==body.code);
+   if(op==='accept'&&request)book.friends.push({...request,mode:'open'});persist();
+  }
+  queueMicrotask(()=>window.postOfficeResult(ticket,JSON.stringify({data:book})));
+ }};
+ const add=()=>{book.incoming=[{name:'Owen',code:'ABCDEF1234'}];persist();window.refreshMailbox?.();};
+ window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.data?.type!=='fixture-command')return;
+  switch(event.data.command){
+   case 'incoming':add();break;
+   case 'empty':book={me:{code:'123456789A'},friends:[],incoming:[],outgoing:[]};persist();localStorage.removeItem('pigeon.friend-request.practice');location.reload();break;
+   case 'reopen':location.reload();break;
+   case 'busy':{
+    const d=document.createElement('dialog');d.innerHTML='<h2>Busy editor test</h2><p>The request must wait until this closes.</p><button data-queue>Queue a request</button><button data-close>Close editor</button>';
+    d.querySelector('[data-queue]').onclick=add;d.querySelector('[data-close]').onclick=()=>{d.close();d.remove();};document.body.append(d);d.showModal();break;
+   }
+  }
+ });
+})();
+</script><script type="module" src="app.js?v=hanging-sign-2"></script>
+  <script type="module" src="design/live-review.mjs"></script>
+</body>
+</html>
