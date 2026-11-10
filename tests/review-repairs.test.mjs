@@ -25,8 +25,8 @@ test('existing phones receive consistent mailbox surfaces and selected tab witho
  const local=storage({[key]:{surface:'app',view:'inbox / sent',theme:'light',targets:{'.mailbox-heading > img':{colours:{background:'#fff9ed'},comment:'Keep artwork'},'.people-heading':{colours:{background:'#faf4e5'}},'.mail-row span':{colours:{background:'#fff9ed',text:'#365a40'}},'.people-heading button':{colours:{background:'#365a40'}}}},[linked]:{'#app .mail-tabs button[aria-pressed=true]':{colours:{background:'#fff9ed'}},'#app .app-nav button[aria-current=page]':{colours:{background:'#365a40'}}}});
  local.setItem('pigeon.repair.circles-inbox.036','1');repairLatestReview(local);
  const targets=JSON.parse(local.getItem(key)).targets,nav=JSON.parse(local.getItem(linked));
- for(const selector of ['.mailbox-heading > img','.people-heading','.mail-row span'])assert.equal(targets[selector].colours.background,'#f8f1dd');
- assert.equal(targets['.mailbox-heading > img'].comment,'Keep artwork');assert.equal(targets['.mail-row span'].colours.text,'#365a40');assert.equal(targets['.people-heading button'].colours.background,'#365a40');
+ for(const selector of ['.mailbox-heading > img','.mail-row span'])assert.equal(targets[selector].colours.background,'#f8f1dd');
+ assert.equal(targets['.mailbox-heading > img'].comment,'Keep artwork');assert.equal(targets['.mail-row span'].colours.text,'#365a40');assert.equal(targets['.people-heading button'].colours.background,undefined);
  assert.equal(nav['#app .mail-tabs button[aria-pressed=true]'].colours.background,'#f8f1dd');assert.equal(nav['#app .app-nav button[aria-current=page]'].colours.background,'#365a40');
  targets['.people-heading'].colours.background='#fff9ed';local.setItem(key,JSON.stringify({surface:'app',view:'inbox / sent',theme:'light',targets}));repairLatestReview(local);
  assert.equal(JSON.parse(local.getItem(key)).targets['.people-heading'].colours.background,'#fff9ed');
@@ -38,4 +38,17 @@ test('all separator options survive saved-layout validation',async()=>{
   const reviewLook='recipientdivider-'+option;
   assert.equal(cleanLayout({styles:{'view-divider':{reviewLook}}}).styles['view-divider'].reviewLook,reviewLook);
  }
+});
+
+test('plain Your people removes old heading fills while retaining comments and friend card colours',()=>{
+ const key='pigeon.live-review.v1.people',local=storage({[key]:{surface:'app',view:'inbox / inbox',theme:'dark',targets:{
+  '#app .people-heading':{colours:{background:'#365a40',text:'#fff9ed'},comment:'Keep this comment'},
+  '#app .people-toggle':{colours:{background:'#365a40'}},
+  '.mail-friend':{colours:{background:'#365a40'}},
+  '.people-heading [data-book]':{colours:{background:'#365a40'}}
+ }}});
+ repairLatestReview(local);const targets=JSON.parse(local.getItem(key)).targets;
+ assert.deepEqual(targets['#app .people-heading'].colours,{});assert.equal(targets['#app .people-heading'].comment,'Keep this comment');
+ assert.equal(targets['#app .people-toggle'].colours.background,undefined);
+ assert.equal(targets['.mail-friend'].colours.background,'#365a40');assert.equal(targets['.people-heading [data-book]'].colours.background,'#365a40');
 });

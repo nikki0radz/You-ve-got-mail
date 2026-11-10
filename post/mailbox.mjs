@@ -174,7 +174,26 @@ export function replyTo(id,refresh){
 }
 async function view(m,refresh){
   if(!m)return;if(!m.sent)phoneCache.markRead(m.id);
-  if(m.isReply){page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+thumb(m.id)+'" alt="Sticker reply">':'')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';confirmOpening(m);if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
+  if(m.isReply){
+    let replyImage='',warning='',verified=false;
+    if(m.remote&&m.originalId){
+      page('Opening reply…','<p data-reply-loading>Checking for the picture and message…</p>');
+      const loading=el().querySelector('[data-reply-loading]');
+      try{
+        const r=await post('receipt',{id:m.originalId});
+        if(!loading.isConnected||!el().open)return;
+        replyImage=typeof r.replyImage==='string'&&r.replyImage.startsWith('data:image/png;base64,')?r.replyImage:'';
+        m={...m,text:typeof r.reply==='string'?r.reply:'',hasImage:Boolean(replyImage)};verified=true;
+        await phoneCache.refreshFresh().catch(()=>{});
+        if(!loading.isConnected||!el().open)return;
+      }catch{
+        if(!loading.isConnected||!el().open)return;
+        warning='Could not refresh this reply. Showing the copy saved on this phone.';
+        if(m.text==='null'&&!m.hasImage){m={...m,text:''};warning='This reply did not download correctly. Connect to the internet and try again.';}
+      }
+    }
+    const content=Boolean(m.text||m.hasImage);
+    page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+esc(replyImage||thumb(m.id))+'" alt="Picture reply">':'')+(!content&&verified?'<p>No reply is attached to this parcel yet.</p>':'')+(warning?'<p role="status">'+esc(warning)+'</p>':'')+button('retry-reply','Refresh reply')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';if(content)confirmOpening(m);action('retry-reply',()=>view(m,refresh));if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
   page((m.sent?'To ':'From ')+m.sender,'<p>'+esc(parcelKind(m.kind))+' · '+esc(date(m.when))+'</p><img class="mail-proof" src="'+(m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m)))+'" alt="Parcel artwork"><div class="thread-reply"></div>'+(!m.sent?(m.status==='scheduled'?button('cancel','Cancel scheduled delivery'):m.status==='cancelled'?'':button('reply','Reply')):''));
   if(!m.sent){enlargeMailArtwork(el());confirmOpening(m);}
   const answer=el().querySelector('.thread-reply');action('reply',()=>replyTo(m.id,refresh));action('cancel',()=>{Pigeon.cancelScheduled(m.id);el().close();phoneCache.refresh().then(refresh).catch(()=>{});});

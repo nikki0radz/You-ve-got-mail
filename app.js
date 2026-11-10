@@ -7,7 +7,7 @@ import {openPhoneStudio,closePhoneStudio} from './design/phone-home.mjs';
 import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
 import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
-import {mountCategoryWheel} from './shop/category-wheel.mjs';
+import {mountCategoryWheel,restoreCategoryWheel} from './shop/category-wheel.mjs';
 import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends,publishFriendProfile} from './post/mailbox.mjs';
 import {pendingFriendRequests} from './post/friend-requests.mjs';
 import {createRequestPrompts} from './post/friend-state.mjs';
@@ -63,7 +63,7 @@ function updateUnreadBadge(){
 const pageCache=new Map();let renderedTab;
 function render(reuse=false){const previous=app.querySelector('.page-content');if(previous&&renderedTab)pageCache.set(renderedTab,previous);const cached=reuse===true?pageCache.get(tab):null;applyTheme();app.innerHTML=`${header(state,tab==='home',false)}${window.Pigeon?"":'<div class="draft-label">Browser preview · local deliveries only</div>'}<div class="page-content ${tab==='inbox'?'mailbox-layout':''}" ${tab==='inbox'?'data-base-look="mailbox-3" data-review-look="mailbox-3"':''}>${cached?'':tab==='home'?home(state):tab==='inbox'?inbox():settingsPage()}</div><nav class="app-nav" aria-label="Main navigation">${[['home','Post office','home'],['inbox','Inbox','inbox'],['settings','Settings','settings']].map(([id,label,ic])=>`<button data-action="tab" data-id="${id}" ${tab===id?'aria-current="page"':''}>${icon(ic)}<span>${label}</span>${id==='inbox'?'<b class="inbox-count" hidden aria-hidden="true"></b>':''}</button>`).join('')}</nav>`;if(cached)app.querySelector('.page-content').replaceWith(cached);renderedTab=tab;pageCache.set(tab,app.querySelector('.page-content'));if(tab==='settings'){if(!cached)wireSettings(app);app.querySelector('#theme').checked=state.theme==='dark';}
  updateUnreadBadge();
- if(tab==='home'&&!cached)mountHomeWheel();else finishStartup();
+ if(tab==='home'&&!cached)mountHomeWheel();else{if(tab==='home')restoreCategoryWheel(cached);finishStartup();}
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(tab==='inbox'&&!window.Pigeon?.mailbox){const content=app.querySelector('.page-content');if(!cached)content.insertAdjacentHTML('afterbegin',peopleSection());wirePeople(app,render);}
  if(window.Pigeon?.name&&nativeName!==state.profile.name){Pigeon.name(state.profile.name);nativeName=state.profile.name;}

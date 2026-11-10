@@ -1,6 +1,13 @@
 import {shopCategoryName} from './shared-designs.mjs';
 import {wheelChoices,mountCatalogueThumbnail} from './catalogue.mjs';
 
+// Detached cached pages and background tabs can lose their horizontal scroll offset.
+export function restoreCategoryWheel(root){root?.querySelector('.category-reel')?.restoreCategoryWheel?.();}
+function restoreVisibleWheels(){if(!document.hidden)document.querySelectorAll('.category-reel').forEach(rail=>rail.restoreCategoryWheel?.());}
+window.addEventListener('resize',restoreVisibleWheels);
+window.addEventListener('pageshow',restoreVisibleWheels);
+document.addEventListener('visibilitychange',restoreVisibleWheels);
+
 export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrowse,designs,onSelect}){
   const choices=wheelChoices(designs),categories=choices.map(item=>item.category);
   const first=Math.max(0,categories.indexOf(initialCategory));
@@ -24,8 +31,10 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
     button.onclick=()=>{if(performance.now()<suppressUntil)return;if(Math.abs(position()-slot)<.05)onBrowse(key);else move(slot);};
     return button;
   });
-  let selected=-1,timer,drag=null,suppressUntil=0;
-  const step=()=>cards[1].getBoundingClientRect().left-cards[0].getBoundingClientRect().left;
+  let selected=first+1,timer,drag=null,suppressUntil=0,restoring=false;
+  let painted=-1;
+  // Computed layout width retains subpixels and ignores preview/animation transforms.
+  const step=()=>parseFloat(getComputedStyle(cards[0]).width)+(parseFloat(getComputedStyle(rail).columnGap)||0);
   const position=()=>step()?rail.scrollLeft/step():first+1;
   function move(slot,instant=false){
     rail.scrollTo({left:slot*step(),behavior:instant||matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
@@ -37,13 +46,13 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
       card.style.setProperty('--orb-scale',String(.98-.36*d));card.style.setProperty('--orb-alpha',String(1-.55*d));
       card.style.zIndex=String(Math.round(100*(1-d)));
     });
-    if(nearest===selected)return;
-    selected=nearest;const key=slots[selected],label=shopCategoryName(key);
+    selected=nearest;if(nearest===painted)return;
+    painted=nearest;const key=slots[selected],label=shopCategoryName(key);
     cards.forEach((card,i)=>{card.tabIndex=i===selected?0:-1;card.setAttribute('aria-current',String(i===selected));card.setAttribute('aria-label',(i===selected?'Browse ':'Show ')+shopCategoryName(slots[i]).toLowerCase());});
     root.querySelector('.wheel-paper small').textContent=(categories.indexOf(key)+1)+' / '+categories.length;
     root.querySelector('.wheel-paper h3').textContent=label;onSelect?.(key);
   }
-  rail.onscroll=()=>{paint();clearTimeout(timer);timer=setTimeout(()=>{
+  rail.onscroll=()=>{if(restoring||document.hidden||!rail.isConnected||!rail.clientWidth)return;paint();clearTimeout(timer);timer=setTimeout(()=>{
     if(drag||!rail.isConnected)return;
     if(selected===0)move(categories.length,true);else if(selected===slots.length-1)move(1,true);
   },180);};
@@ -63,5 +72,14 @@ export function mountCategoryWheel(root,{initialCategory='Photos',onBack,onBrows
   function endDrag(){if(!drag)return;if(drag.moved){const slot=Math.round(position());suppressUntil=performance.now()+350;rail.style.scrollSnapType='';move(slot);}drag=null;}
   rail.onpointerup=rail.onpointercancel=rail.onlostpointercapture=endDrag;
   rail.onpointerleave=()=>{if(drag&&!drag.moved)drag=null;};
-  move(first+1,true);paint();
+  rail.restoreCategoryWheel=()=>{
+    clearTimeout(timer);drag=null;rail.style.scrollSnapType='';
+    if(!rail.isConnected||!rail.clientWidth)return;
+    restoring=true;
+    // Keep the chosen category, not an obsolete pixel offset from another layout.
+    const target=selected===0?categories.length:selected===slots.length-1?1:selected;
+    move(target,true);paint();
+    requestAnimationFrame(()=>{if(rail.isConnected&&rail.clientWidth){move(target,true);paint();}restoring=false;});
+  };
+  rail.restoreCategoryWheel();
 }

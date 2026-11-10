@@ -20,7 +20,7 @@
 #art-upload .art-request-test button{margin:5px 4px 5px 0}
 @media(prefers-reduced-motion:reduce){#app .people-chevron{transition:none}}
 /* The address book heading is plain writing, independent of older design presets. */
-#app .address-book .people-heading,#app .address-book .people-toggle,#app .address-book .people-toggle b{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--mm-text);border-radius:0}
+html[data-theme] body #app .address-book .people-heading,html[data-theme] body #app .address-book button.people-toggle,html[data-theme] body #app .address-book .people-toggle b{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--mm-text)!important;border-radius:0!important;background-image:none!important}
 #app .address-book .people-heading{padding:7px 0;margin:0}
 #app .address-book .friend-grid .mail-friend{border:1px solid var(--mm-edge);border-radius:16px;padding:12px 8px;background:var(--mm-panel);color:var(--mm-text)}
 #app .friend-grid .mail-friend img{width:58px;height:58px;object-fit:cover;background:transparent;border:0;box-shadow:none}

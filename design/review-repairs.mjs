@@ -22,6 +22,7 @@ function repairCirclesInbox(storage){
 // A separate marker also updates devices that applied the earlier correction.
 export function repairLatestReview(storage){
  repairCirclesInbox(storage);
+ repairPeopleHeading(storage);
  const marker='pigeon.repair.mailbox-magnolia.037';
  try{
   if(storage.getItem(marker))return;
@@ -45,6 +46,24 @@ export function repairLatestReview(storage){
    if(selector.includes('.mail-tabs')&&lightBackground(target.colours?.background)){target.colours.background='#f8f1dd';changed=true;}
   }
   if(changed)storage.setItem(key,JSON.stringify(items));
+  storage.setItem(marker,'1');
+ }catch{}
+}
+
+// Remove obsolete saved heading fills without changing friend cards or comments.
+function repairPeopleHeading(storage){
+ const marker='pigeon.repair.plain-people.047';
+ try{
+  if(storage.getItem(marker))return;
+  for(const key of Object.keys(storage).filter(key=>key.startsWith('pigeon.live-review.v1.'))){
+   const entry=JSON.parse(storage.getItem(key));if(entry?.surface!=='app')continue;
+   let changed=false;
+   for(const [selector,target] of Object.entries(entry.targets||{})){
+    if(!/people-heading|people-toggle/.test(selector)||/data-book|mail-friend|request-count/.test(selector))continue;
+    for(const prop of ['background','text','border'])if(target.colours?.[prop]){delete target.colours[prop];changed=true;}
+   }
+   if(changed)storage.setItem(key,JSON.stringify(entry));
+  }
   storage.setItem(marker,'1');
  }catch{}
 }
