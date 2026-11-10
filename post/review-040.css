@@ -1,0 +1,5 @@
+html[data-theme=dark] #app .app-nav button[aria-current=page]{background:#52705c;color:#fff9ed}
+html[data-theme=dark] #app .mail-tabs{--folder-bar:#52705c}
+html[data-theme=dark] :is(#parcel-shop .parcel-note textarea,#parcel-shop .art-writing textarea,#mail-window textarea){background:#52705c;color:#fff9ed}
+#app .mail-read-actions{display:flex;justify-content:flex-end;margin:4px 0}
+#app .mail-read-actions button{background:transparent;color:var(--mm-text);border:0;text-decoration:underline;text-underline-offset:3px;padding:8px 0;font:650 13px system-ui;min-height:40px}

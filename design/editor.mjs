@@ -13,6 +13,8 @@ for(const group of new Set(Object.values(pages).map(p=>p[1]))){
   const list=document.createElement('optgroup');list.label=group;
   for(const [id,[name,g]] of Object.entries(pages))if(group===g)list.append(new Option(name,id));$('page').append(list);
 }
+$('preview-theme').value=new URLSearchParams(location.search).get('theme')==='dark'?'dark':'light';
+$('preview-theme').onchange=()=>{cache();const u=new URL(location.href);u.searchParams.set('theme',$('preview-theme').value);location.assign(u);};
 $('page').value=screen;$('page').onchange=()=>{cache();const u=new URL(location.href);u.searchParams.set('page',$('page').value);location.assign(u)};
 document.querySelector('h1').textContent=pageName;
 for(const f of frames)f.src=frameURL(screen);

@@ -8,6 +8,7 @@ import {scaled} from '../shop/transport-image.mjs';
 import {phoneCache} from './phone-cache.mjs';
 import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend-requests.mjs';
 import {watchImage} from '../shop/ui-tasks.mjs';
+import {enlargeMailArtwork} from './mail-art-viewer.mjs';
 
 let mailboxImages;
 const pending=new Map();let sequence=0,folder='inbox',person='';
@@ -34,6 +35,7 @@ window.postOfficeResult=(id,raw)=>{const promise=pending.get(id);if(!promise)ret
 const el=()=>document.querySelector('#mail-window');
 function page(title,body,back){
   const d=el();
+  delete d.dataset.mailArtViewer;
   // Keep private sender names out of the design export.
   d.dataset.reviewScreen=title.replace(/^(Reply to |A note for |To |From ).+$/,(_,prefix)=>prefix.trim()+' parcel');
   delete d.dataset.receipt;if(!d.open)d.showModal();
@@ -131,8 +133,9 @@ export function replyTo(id,refresh){
 }
 async function view(m,refresh){
   if(!m)return;if(!m.sent)phoneCache.markRead(m.id);
-  if(m.isReply){page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+thumb(m.id)+'" alt="Sticker reply">':'')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';action('done',()=>{el().close();refresh();});refresh();return;}
+  if(m.isReply){page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+thumb(m.id)+'" alt="Sticker reply">':'')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
   page((m.sent?'To ':'From ')+m.sender,'<p>'+esc(parcelKind(m.kind))+' · '+esc(date(m.when))+'</p><img class="mail-proof" src="'+(m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m)))+'" alt="Parcel artwork"><div class="thread-reply"></div>'+(!m.sent?(m.status==='scheduled'?button('cancel','Cancel scheduled delivery'):m.status==='cancelled'?'':button('reply','Reply')):''));
+  if(!m.sent)enlargeMailArtwork(el());
   const answer=el().querySelector('.thread-reply');action('reply',()=>replyTo(m.id,refresh));action('cancel',()=>{Pigeon.cancelScheduled(m.id);el().close();phoneCache.refresh().then(refresh).catch(()=>{});});
   if(m.sent&&!m.selfSent){try{const r=await post('receipt',{id:m.id});if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();}answer.textContent=r.reply||(!r.replyImage?'No reply yet.':'Sticker reply');if(r.replyImage?.startsWith('data:image/png;base64,')){const i=new Image();i.className='mail-proof';i.src=r.replyImage;i.alt='Reply';answer.append(i);}}catch(e){answer.textContent=e.message;}}
   else if(m.pictureReply||m.reply){answer.textContent=m.pictureReply?'Your sticker reply':'You replied: '+m.reply;if(m.pictureReply){const i=new Image();i.className='mail-proof';i.src=thumb('reply-'+m.id);answer.append(i);}}

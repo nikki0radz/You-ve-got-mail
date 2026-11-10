@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Inbox artwork check</title><style>body{font:16px system-ui;background:#dce7e0;color:#203a30}iframe{width:390px;height:780px;border:1px solid #738c7c}button{padding:12px;margin:4px}#result{max-width:700px}</style></head><body><button id="run">Check inbox viewing</button><p id="result">Ready</p><iframe title="Phone inbox" src="../design/page.html?page=inbox"></iframe><script type="module">
+const frame=document.querySelector('iframe'),result=document.querySelector('#result');
+const assert=(v,m)=>{if(!v)throw Error(m);};
+const rect=n=>n.getBoundingClientRect();
+const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=1600;
+const ctx=canvas.getContext('2d');ctx.fillStyle='#dd6089';ctx.beginPath();ctx.ellipse(500,800,45,60,0,0,Math.PI*2);ctx.fill();
+const tiny=canvas.toDataURL();
+async function run(){
+ try{
+  const w=frame.contentWindow,d=w.document;
+  w.designSurface.configure({layout:{styles:{},variants:{}},editing:false,selected:'',textScale:1});
+  const {phoneCache}=await w.eval("import('../post/phone-cache.mjs')");
+  const {openMailboxItem}=await w.eval("import('../post/mailbox.mjs')");
+  const {fitPreview}=await w.eval("import('../shop/preview-image.mjs')");
+  const base={sender:'Example sender',kind:'A photo',status:'received',created:Date.now(),when:Date.now()};
+  w.Pigeon.mailbox=()=>JSON.stringify([{...base,id:'photo'},{...base,id:'sticker',isReply:true,hasImage:true},{...base,id:'text',isReply:true,text:'Just saying hi'},{...base,id:'sent',sent:true}]);
+  await phoneCache.refreshFresh();
+  for(const [width,height] of [[320,720],[390,780],[430,900]]){
+   frame.style.width=width+'px';frame.style.height=height+'px';
+   for(const theme of ['light','dark']){
+    d.querySelector('[data-action=tab][data-id=settings]').click();
+    const toggle=d.querySelector('#theme');toggle.checked=theme==='dark';toggle.dispatchEvent(new w.Event('change',{bubbles:true}));
+    d.querySelector('[data-action=tab][data-id=inbox]').click();
+    for(const id of ['photo','sticker']){
+     await openMailboxItem(id,()=>{});
+     const dialog=d.querySelector('#mail-window'),img=dialog.querySelector('.mail-art-stage img');
+     assert(img,'Received image needs full-page viewer');
+     await fitPreview(img);img.src=tiny;await img.decode();await fitPreview(img);await img.decode();
+     await new Promise(w.requestAnimationFrame);
+     assert(d.documentElement.dataset.theme===theme,'Actual app theme did not change');
+     const box=rect(dialog),stage=rect(img.parentElement),art=rect(img);
+     assert(Math.abs(box.width-width)<2&&Math.abs(box.height-height)<2,'Viewer must fill phone at '+width);
+     assert(stage.height>height*.70&&art.width>=width-2,'Artwork must use available page');
+     assert(img.naturalWidth<110&&img.naturalHeight<140,'Tiny sticker placement padding was retained');
+     assert(getComputedStyle(img).objectFit==='contain','Artwork must not be clipped');
+     assert(dialog.scrollHeight<=dialog.clientHeight+1,'Viewer must not need scrolling');
+     const close=dialog.querySelector('[data-x]');assert(rect(close).bottom<=height,'Close unreachable');close.click();assert(!dialog.open,'Close failed');
+    }
+   }
+  }
+  await openMailboxItem('photo',()=>{});d.querySelector('[data-mb=reply]').click();
+  assert(!d.querySelector('#mail-window').hasAttribute('data-mail-art-viewer'),'Reply composer inherited viewer layout');
+  d.querySelector('[data-x]').click();await openMailboxItem('text',()=>{});
+  assert(!d.querySelector('.mail-art-stage')&&d.querySelector('.received-reply').textContent==='Just saying hi','Text reply changed');
+  d.querySelector('[data-x]').click();await openMailboxItem('photo',()=>{});
+  result.textContent='PASS: 320, 390 and 430px; light/dark; photos and sticker replies fill the page; tiny padded artwork enlarged; proportions preserved; no scrolling; close and reply work; text replies unchanged.';
+ }catch(e){result.textContent='FAIL: '+e.message;throw e;}
+}
+document.querySelector('#run').onclick=run;
+</script></body></html>
