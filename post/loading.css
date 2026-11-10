@@ -1,0 +1,17 @@
+/* One loading language for screens, controls, artwork, uploads and camera status. */
+.mail-opening{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:120px;color:inherit;text-align:center}
+.mail-loading-dots{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:8px;height:24px;vertical-align:middle;pointer-events:none}
+.mail-loading-dots>i{box-sizing:border-box;display:block;flex:none;width:9px;height:9px;border-radius:50%;background:currentColor;animation:mail-loading-dot 1s ease-in-out infinite}
+.mail-loading-dots>i:nth-child(2){animation-delay:.15s}
+.mail-loading-dots>i:nth-child(3){animation-delay:.3s}
+@keyframes mail-loading-dot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-7px);opacity:1}}
+.loading-status{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.button-loading{position:relative;color:transparent!important;-webkit-text-fill-color:transparent!important}
+.button-loading>:not(.mail-loading-dots){opacity:0!important}
+.button-loading>.mail-loading-dots{position:absolute;inset:0;display:flex!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;color:var(--loading-ink);-webkit-text-fill-color:var(--loading-ink)}
+.art-pending{position:relative}
+.art-pending>.art-loading-dots{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1}
+.art-pending>.art-loading-dots>i{width:6px;height:6px}
+@media(prefers-reduced-motion:reduce){.mail-loading-dots>i{box-sizing:border-box;animation:none;opacity:1}}
+
+.mail-loading-dots[hidden]{display:none}

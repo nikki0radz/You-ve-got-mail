@@ -1,3 +1,4 @@
+import {mailLoading,loadingButton,loadingStatus} from '../post/mail-loading.mjs';
 import {simulateFriendRequest,clearFriendSimulation} from '../post/friend-requests.mjs';
 import {birds} from '../post/profile-options.mjs';
 import {sortArtwork} from './art-tools.mjs';
@@ -27,18 +28,19 @@ function header(title,body){
   dialog.innerHTML='<header><button type="button" class="art-close" data-art="close" aria-label="Close">×</button></header><h2>'+title+'</h2>'+body+'<p class="art-feedback" role="status"></p>';
   message(feedback);
 }
-function message(text){feedback=text;const el=by('.art-feedback');if(el)el.textContent=text;}
+let finishFeedback=()=>{},finishProgress=()=>{};
+function message(text){finishFeedback();feedback=text;const el=by('.art-feedback');if(el){if(/^(Saving|Loading|Uploading|Preparing).*…$/.test(text))finishFeedback=loadingStatus(el,text);else el.textContent=text;}}
 function ownerLogin(){
   view='login';feedback='';
   header('Artwork manager','<p>Enter your private owner code to edit the main library.</p><form class="art-join"><label>Owner code<input name="code" type="password" required autocomplete="current-password" spellcheck="false"></label><button class="primary">Unlock manager</button></form>');
   by('form').onsubmit=async e=>{
-    e.preventDefault();const submit=by('form button');submit.disabled=true;
+    e.preventDefault();const submit=by('form button'),done=loadingButton(submit,'Unlocking manager');
     try{await unlockManager(by('[name=code]').value);await loadManager();}
-    catch(err){message(err.message);}finally{submit.disabled=false;}
+    catch(err){message(err.message);}finally{done();}
   };
 }
 async function loadManager(){
-  await refreshMainArt();rows=await listQueue(scope);await reloadCatalogue();feedback='';overview();
+  message('Loading artwork…');await refreshMainArt();rows=await listQueue(scope);await reloadCatalogue();feedback='';overview();
 }
 async function reloadCatalogue(){
   catalogue=(await catalogueRecords({includeAvatars:true})).filter(row=>!row.hidden);
@@ -114,7 +116,7 @@ function drawRows(){
   by('.art-queue').hidden=!rows.length&&!reading&&!busy;
   by('ol').innerHTML=rows.map((row,index)=>'<li><span><b>'+esc(row.name||row.fileName)+'</b><small>'+esc(row.error || (row.width+' × '+row.height))+'</small></span>'+
     '<button type="button" data-drop="'+index+'" '+(busy||reading?'disabled':'')+'>Remove</button></li>').join('');
-  by('[data-progress]').textContent=progress|| (rows.length?rows.length+' queued':'');
+  finishProgress();const line=by('[data-progress]');if(progress)finishProgress=loadingStatus(line,progress);else line.textContent=rows.length?rows.length+' queued':'';
   by('[data-art="choose"]').disabled=busy||reading;
   by('[data-art="upload"]').disabled=busy||reading||!rows.length;
 }
@@ -231,7 +233,7 @@ async function details(row){
   stage.onpointerup=stage.onpointercancel=()=>{origin=null;show();};
   savedFields=fieldState();
   by('[data-art="save-edit"]').onclick=async()=>{
-    if(busy||reading)return;busy=true;by('[data-art="save-edit"]').disabled=true;
+    if(busy||reading)return;busy=true;const done=loadingButton(by('[data-art="save-edit"]'),'Saving details');
     try{const {category,kind}=pickValues();
       const valid=a=>a&&[a.x,a.y,a.w,a.h].every(Number.isFinite)&&a.x>=0&&a.y>=0&&a.w>=.01&&a.h>=.01&&a.x+a.w<=1.00001&&a.y+a.h<=1.00001;
       if(kind==='postcard'&&(!valid(textArea)||!Number.isFinite(textArea.rotation)||Math.abs(textArea.rotation)>180))throw Error('Keep the writing area inside the picture and the angle between −180° and 180°.');
@@ -242,7 +244,7 @@ async function details(row){
       await manage('items/'+row.id,{...values,seq:row.seq||0,tags:by('[data-tags]').value.split(',').map(s=>s.trim()).filter(Boolean)});
       await syncManager();feedback='Picture updated.';overview();
     }catch(e){message(e.message);if(e.status===409)await syncManager().catch(()=>{});}
-    finally{busy=false;const save=by('[data-art="save-edit"]');if(save)save.disabled=false;drawRows();}
+    finally{busy=false;done();drawRows();}
   };
 }
 export async function openArtworkUploads(){
@@ -254,7 +256,7 @@ export async function openArtworkUploads(){
     dialog.addEventListener('click',async e=>{
       const btn=e.target.closest('button');if(!btn)return;
       if((busy||reading)&&!['close'].includes(btn.dataset.art))return;
-      try{
+      const done=loadingButton(btn);try{
         if(btn.dataset.item){
           if(busy||reading)return message('Please wait for the upload to finish.');
           if(selecting){const id=btn.dataset.item;if(selected.has(id))selected.delete(id);else selected.add(id);drawLibrary();return;}
@@ -286,13 +288,13 @@ export async function openArtworkUploads(){
           case 'cancel-edit':if(busy)break;feedback='';overview();break;
 
         }
-      }catch(err){if(err.status===403)ownerLogin();message(err.message);}
+      }catch(err){if(err.status===403)ownerLogin();message(err.message);}finally{done();}
     });
   }
   if(!dialog.open)dialog.showModal();
   if(busy||reading)return;
   if(!ownerUnlocked()){ownerLogin();return;}
-  try{await loadManager();}catch(e){if(!ownerUnlocked())ownerLogin();else {view='error';header('Artwork manager',action('retry-load','Try again'));};message(e.message);}
+  header('Artwork manager',mailLoading('Loading artwork…'));try{await loadManager();}catch(e){if(!ownerUnlocked())ownerLogin();else {view='error';header('Artwork manager',action('retry-load','Try again'));};message(e.message);}
 }
 
 async function batchAction(ids,operation){
@@ -317,7 +319,7 @@ function categoryPage(){
   header('Manage categories','<form data-create><label>New category<input name="name" maxlength="60" required placeholder="e.g. Food frames"></label><button class="primary">Create category</button></form>'+
     (list.length?'<form data-category-edit><label>Existing category<select name="from">'+list.map(c=>opt(c.name,c.name,'')).join('')+'</select></label><label>Category name<input name="name" required maxlength="60"></label><div class="art-actions"><button class="primary">Rename</button>'+action('remove-category','Delete category')+'</div></form>':'')+action('cancel-edit','Back to pictures'));
   async function change(body){
-    if(busy)return;busy=true;
+    if(busy)return;busy=true;message('Saving…');
     try{await manage('categories',body);await syncManager();categoryPage();message('Categories updated.');}
     catch(e){message(e.message);}finally{busy=false;}
   }
@@ -330,7 +332,7 @@ function categoryPage(){
 }
 async function importPage(){
   view='import';feedback='';
-  header('Import previous uploads','<p>Choose pictures from your previous shared library to publish in the main library.</p><div data-import-list></div>'+action('publish-import','Publish selected','primary')+action('cancel-edit','Back'));
+  header('Import previous uploads','<p>Choose pictures from your previous shared library to publish in the main library.</p><div data-import-list>'+mailLoading('Loading pictures…')+'</div>'+action('publish-import','Publish selected','primary')+action('cancel-edit','Back'));
   await refreshSharedArt();if(view!=='import')return;
   const entries=sharedItems(),published=new Set(catalogue.map(r=>r.id));
   const candidates=entries.filter(r=>!published.has(r.id));
@@ -339,7 +341,7 @@ async function importPage(){
   publish.onclick=async()=>{
     if(busy)return;
     const checks=[...dialog.querySelectorAll('[data-import-list] input:checked')];if(!checks.length)return message('Select a picture first.');
-    busy=true;publish.disabled=true;let count=0;
+    busy=true;const done=loadingButton(publish,'Publishing pictures');let count=0;
     try{
       for(const check of checks){
         const previous=await readEntry('items',libraryCode(),check.value);if(!previous)continue;
@@ -351,7 +353,7 @@ async function importPage(){
         ++count;check.checked=false;check.disabled=true;message(count+' published.');
       }
       await syncManager();feedback=count+' published.';overview();
-    }catch(e){message(count+' published. '+e.message);}finally{busy=false;publish.disabled=false;drawRows();}
+    }catch(e){message(count+' published. '+e.message);}finally{busy=false;done();drawRows();}
   };
 }
 
@@ -365,7 +367,7 @@ async function avatarPage(){
  const hidden=new Set(avatarSettings().hidden||[]),uploads=catalogue.filter(r=>r.kind==='avatar');
  header('Profile picture options','<p>Choose which pictures appear in the profile picker. Existing profile photos stay as they are.</p><input hidden type="file" data-avatar-png accept="image/png,.png" multiple>'+action('avatar-upload','＋ Upload profile pictures','primary')+'<h3>Uploaded pictures</h3><div class="art-tiles">'+uploads.map(r=>'<button class="art-tile" data-item="'+esc(r.id)+'">'+catalogueThumbnail(r.design)+'<b>'+esc(r.name||'Profile picture')+'</b></button>').join('')+'</div><h3>Pigeon portraits</h3><div class="avatar-controls">'+birds.map((name,i)=>'<label><span class="avatar-sprite" style="background-position:'+i%6*20+'% '+Math.floor(i/6)*25+'%"></span><span>'+esc(name)+'</span><input type="checkbox" data-avatar-visible="'+i+'" '+(hidden.has(i)?'':'checked')+'></label>').join('')+'</div><div class="art-actions">'+action('avatar-back','Back')+action('avatar-save','Save available portraits','primary')+'</div>');
  by('[data-art=avatar-back]').onclick=overview;
- by('[data-art=avatar-save]').onclick=async()=>{try{const hidden=[...dialog.querySelectorAll('[data-avatar-visible]:not(:checked)')].map(el=>Number(el.dataset.avatarVisible));await manage('avatars',{hidden});await syncManager();message('Profile picture options saved for everyone.');}catch(e){message(e.message);}};
+ by('[data-art=avatar-save]').onclick=async()=>{const done=loadingButton(by('[data-art=avatar-save]'),'Saving profile pictures');try{const hidden=[...dialog.querySelectorAll('[data-avatar-visible]:not(:checked)')].map(el=>Number(el.dataset.avatarVisible));await manage('avatars',{hidden});await syncManager();message('Profile picture options saved for everyone.');}catch(e){message(e.message);}finally{done();}};
  by('[data-art=avatar-upload]').onclick=()=>by('[data-avatar-png]').click();
  by('[data-avatar-png]').onchange=async e=>{try{if(!mainCategories().some(c=>c.name==='Profile pictures')){await manage('categories',{action:'create',name:'Profile pictures'});await refreshAfterWrite();}await addFiles([...e.target.files],{category:'Profile pictures',kind:'avatar'});await avatarPage();}catch(err){message(err.message);}};
 }

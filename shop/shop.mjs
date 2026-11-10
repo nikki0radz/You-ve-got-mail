@@ -1,3 +1,4 @@
+import {mailLoading,loadingButton} from '../post/mail-loading.mjs';
 import {offerCamera} from './camera-choice.mjs';
 import {fonts,isNotePaper} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
@@ -43,7 +44,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   if(dialog.open)return;
   // A close event is queued by the browser. Finish the previous session before reopening.
   dialog.onclose?.();
-  dialog.showModal();
+  dialog.showModal();dialog.innerHTML=mailLoading('Loading artwork…');
   const cleanup=()=>{if(dialog.open)return;clearTimeout(refreshTimer);window.removeEventListener('shared-art-updated',scheduleListingUpdate);dialog.onclose=null;disposeReel?.();latest++;if(previewURL)URL.revokeObjectURL(previewURL);dialog.classList.remove('editing','guest-studio');dialog.replaceChildren();trigger?.focus();if(!completed)options.onCancel?.();};
   dialog.onclose=cleanup;
   let cancel=()=>dialog.close();
@@ -107,8 +108,8 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
     shell(label,items.length+' '+unit,(guestLibrary?'':backButton)+content,back,guestLibrary);
     const remember=item=>chosenDesign.set(group,designKey(item));
     const pick=async item=>{
-      const rail=dialog.querySelector('.frame-rail,.library-grid');
-      try{item=await prepareCatalogueDesign(item);}catch(error){if(rail?.isConnected)report(error);return;}
+      const rail=dialog.querySelector('.frame-rail,.library-grid');const button=[...rail?.querySelectorAll('button')||[]].find(b=>b.dataset.design===item.catalogueId);const done=loadingButton(button,'Opening artwork');
+      try{item=await prepareCatalogueDesign(item);}catch(error){if(rail?.isConnected)report(error);return;}finally{done();}
       if(!dialog.open||!rail?.isConnected)return;
       remember(item);if(grid)gridScroll=dialog.scrollTop;
       backFromItem=()=>library(grid);chooseItem(item);
@@ -139,7 +140,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
   function stages(){return [...(current.maskSheet?['Upload photo','Fit photo']:[]),...(current.textBox?['Write']:[]),'Place on screen','Finishing touches','Ready'];}
   function selectControl(key,opts){return '<label>'+key+'<select data-setting="'+key.toLowerCase()+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(draft[key.toLowerCase()]===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
   async function paint(){
-    const token=++latest,slot=dialog.querySelector('.parcel-canvas'),page=stages()[step];
+    const token=++latest,slot=dialog.querySelector('.parcel-canvas'),page=stages()[step];if(slot&&!slot.childElementCount)slot.innerHTML=mailLoading('Preparing preview…');
     try{
       const density=page==='Ready'?2:1;
       const showCat=current.sharedId&&current.maskSheet&&!draft.photo&&page==='Upload photo';
@@ -151,7 +152,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       finished=placed?scene(art,draft,density):art;slot.replaceChildren(finished);
       if(page==='Ready')dialog.querySelectorAll('[data-export]').forEach(b=>b.disabled=false);
     }
-    catch(e){if(token===latest)report(e)}
+    catch(e){if(token===latest){slot?.querySelector('.mail-opening')?.remove();report(e);}}
   }
   function edit(){
     cancel=()=>confirmExit(()=>dialog.close());
@@ -217,7 +218,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
       catch{report(new Error('Could not open that picture. Try JPG or PNG.'))}finally{URL.revokeObjectURL(url);}
     };
     dialog.querySelectorAll('[data-export]').forEach(btn=>btn.onclick=async()=>{
-      const c=finished;if(!c)return;
+      const c=finished;if(!c)return;const done=loadingButton(btn,'Preparing picture');
       try{
         if(btn.dataset.export==='test'){dirty=false;dialog.close();onTest(c.toDataURL('image/png'),current.name,current.category);return;}
         if(window.Pigeon&&btn.dataset.export==='save'){window.Pigeon.savePNG(c.toDataURL('image/png'));return;}
@@ -225,7 +226,7 @@ export async function openShop(onTest, initialCategory, options={}, initialDesig
         if(btn.dataset.export==='share'&&navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});return;}
         const link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download=file.name;link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
         if(btn.dataset.export==='share')dialog.querySelector('.parcel-error').textContent='PNG downloaded. Attach it in your messaging app.';
-      }catch(e){if(e.name!=='AbortError')report(e)}
+      }catch(e){if(e.name!=='AbortError')report(e)}finally{done();}
     });paint();
   }
   function scheduleListingUpdate(){

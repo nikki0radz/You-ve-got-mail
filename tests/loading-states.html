@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Shared loading checks</title><style>body{font:16px system-ui;background:#dce7e0;color:#203a30}iframe{width:390px;height:820px;border:1px solid #738c7c}button{padding:12px;margin:4px}</style></head><body><button id="run">Check loading states</button><p id="result">Ready · simulated profiles only</p><iframe title="Phone app" src="mail-status-app.html"></iframe><script type="module">
+const frame=document.querySelector('iframe'),result=document.querySelector('#result'),assert=(v,m)=>{if(!v)throw Error(m);},tick=()=>new Promise(requestAnimationFrame);
+async function until(fn){for(let i=0;i<500;i++){if(fn())return;await tick();}throw Error('Timed out waiting for loading state');}
+document.querySelector('#run').onclick=async()=>{
+ try{
+ const w=frame.contentWindow,d=w.document;await until(()=>d.querySelector('[data-home-send]:not([disabled])'));
+ const {loadingButton,loadingStatus}=await w.eval('import('+JSON.stringify(new URL('post/mail-loading.mjs',d.baseURI).href)+')');
+ const {watchImage}=await w.eval('import('+JSON.stringify(new URL('shop/ui-tasks.mjs',d.baseURI).href)+')');
+ const test=d.createElement('button');test.textContent='Test';test.disabled=true;test.setAttribute('aria-label','Original');d.body.append(test);let done=loadingButton(test,'Checking');assert(test.querySelectorAll('.mail-loading-dots i').length===3,'Button dots missing');done();assert(test.disabled&&test.textContent==='Test'&&test.getAttribute('aria-label')==='Original'&&!test.hasAttribute('aria-busy'),'Button accessibility state lost');test.remove();
+ const line=d.createElement('p');d.body.append(line);const old=loadingStatus(line,'First'),last=loadingStatus(line,'Second');old();assert(line.querySelectorAll('i').length===3,'Older task cleared new loading state');last();assert(!line.querySelector('i')&&!line.hasAttribute('aria-busy'),'Status stayed busy');line.remove();
+ const host=d.createElement('span'),img=new w.Image();host.append(img);d.body.append(host);img.src='data:image/png;base64,broken';watchImage(img,host);await until(()=>!host.hasAttribute('aria-busy'));assert(!host.querySelector('.mail-loading-dots'),'Failed image stayed busy');host.remove();
+ d.querySelector('[data-action=tab][data-id=inbox]').click();await until(()=>d.querySelector('[data-people-toggle]'));d.querySelector('[data-people-toggle]').click();d.querySelector('[data-friend="ABCDEF1234"]').click();await until(()=>d.querySelector('.friend-profile-photo'));
+ for(const theme of ['light','dark'])for(const width of [320,430]){
+ d.documentElement.dataset.theme=theme;frame.style.width=width+'px';await tick();
+ const refresh=d.querySelector('[data-mb=refresh-person]'),view=d.querySelector('[data-mb=person-mail]'),portrait=d.querySelector('.friend-profile-photo'),r=refresh.getBoundingClientRect(),v=view.getBoundingClientRect();assert(Math.abs(r.top-v.top)<2&&r.left>v.right&&r.right<=width,'Refresh profile is not on the right');
+ w.fixtureFriendDelay=300;w.fixtureFriendError=false;refresh.click();assert(refresh.disabled&&refresh.getAttribute('aria-busy')==='true'&&refresh.querySelectorAll('i').length===3,'Refresh has no loading dots');assert(portrait.isConnected,'Refresh hides the profile');const dot=refresh.querySelector('i');assert(w.getComputedStyle(dot).animationName==='mail-loading-dot'&&dot.getBoundingClientRect().width===9,'Dots are not visible/animated');await until(()=>!refresh.isConnected);assert(!d.querySelector('.button-loading'),'Success stayed busy');
+ }
+ const refresh=d.querySelector('[data-mb=refresh-person]');w.fixtureFriendError=true;refresh.click();await until(()=>!refresh.disabled);assert(!refresh.querySelector('.mail-loading-dots')&&!refresh.hasAttribute('aria-busy')&&refresh.textContent==='Refresh profile','Failed refresh did not restore button');assert(d.querySelector('.mb-error').textContent.includes('unavailable'),'Refresh failure is not explained');
+ result.textContent='PASS · Refresh profile on right at 320/430px in light/dark; profile stays visible; animated dots during refresh; success/error cleanup; original button accessibility restored; overlapping status and failed image cleanup. Simulated profiles only.';
+ }catch(e){result.textContent='FAIL · '+e.message;}
+};
+</script></body></html>

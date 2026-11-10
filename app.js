@@ -1,3 +1,4 @@
+import {mailLoading} from './post/mail-loading.mjs';
 import {phoneCache} from './post/phone-cache.mjs';
 import {unreadCount} from './post/unread.mjs';
 import {repairLatestReview} from './design/review-repairs.mjs';
@@ -46,7 +47,7 @@ function browseHomeCategory(category){
 async function mountHomeWheel(){
  const root=app.querySelector('#home-wheel'),generation=++wheelGeneration;
  if(!root)return;
- let designs;
+ let designs;root.innerHTML=mailLoading('Loading artwork…');
  try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load. Reopen Post office to retry.';finishStartup();return;}
  if(!root.isConnected||generation!==wheelGeneration)return;
  const send=app.querySelector('[data-home-send]');
@@ -137,7 +138,7 @@ if(flow.type==='about'){
  let version='';try{version=JSON.parse(window.Pigeon?.deliveryPrefs?.()||'{}').appVersion||'';}catch{}
  shell('About Pigeon Post',`<div class="pigeon-handbook"><p>A tiny pigeon. A little interruption. Send friends stickers, photos, postcards and notes that can pop up on their phone.</p><details><summary>Connect with a friend</summary><p>Open Inbox, tap Friends, then share your friend code or add theirs. Accept the request to exchange parcels.</p></details><details><summary>Send a parcel</summary><p>Swipe through the categories in Post office and tap a circle. Pick your artwork, add a photo or note if you like, then choose who it is for. Choose Now or Later, review it and tap Send parcel. Myself sends it to your own phone.</p></details><details><summary>Control incoming mail</summary><p>Tap the post-office sign to open or close your mail. In Settings, choose pop-ups or notifications, warning time and what happens while closed. Your phone permissions must allow the delivery style you choose.</p></details><details><summary>Read and reply</summary><p>Inbox holds received parcels; Sent holds parcels you have sent. Open a parcel to view it or reply. Scheduled parcels show their arrival time.</p></details><details><summary>Artwork and updates</summary><p>The shared artwork library refreshes when you open the app online. Published design changes download automatically when the app is idle. Use Check for updates for changes that need a new app installation.</p></details><p class="installed-version">${version?'Installed app version '+esc(version):window.Pigeon?'Installed app version: check for updates to enable version details.':'Browser preview'}</p></div>`,{next:'Done',nextAction:'done',cancelButton:false});return}
 if(flow.type==='blocked'){shell('The post office is closed.',`<p>Turn receiving on to test an incoming pop-up.</p>`,{next:'Open to mail',nextAction:'enable'});return}
-if(flow.type==='sending'){shell('Pigeon in transit…',`<div class="loader" role="status" aria-label="Preparing local test"></div><p class="helper">Preparing a test on this device.</p>`,{cancelButton:false});dialog.querySelector('[data-flow=cancel]').hidden=true;return}
+if(flow.type==='sending'){shell('Pigeon in transit…',`${mailLoading('Preparing local test…')}<p class="helper">Preparing a test on this device.</p>`,{cancelButton:false});dialog.querySelector('[data-flow=cancel]').hidden=true;return}
 if(flow.type==='result'){shell(flow.title,`<p>${esc(flow.message)}</p>`,{next:'Done',nextAction:'done',cancelButton:false});return}
 }
 function error(text){dialog.querySelector('#flow-error').textContent=text}

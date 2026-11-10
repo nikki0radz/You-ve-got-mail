@@ -1,3 +1,4 @@
+import {mailLoading,loadingButton,loadingStatus} from './mail-loading.mjs';
 import {fitPreview} from '../shop/preview-image.mjs';
 import {scaled} from '../shop/transport-image.mjs';
 import {mountCategoryWheel} from '../shop/category-wheel.mjs?v=complete-stickers';
@@ -37,7 +38,7 @@ refreshArtwork();
 function loadChoices(){choose();}
 async function choose(){
   const generation=++choiceGeneration;
-  steps.dataset.reviewScreen='categories';status.textContent='';
+  steps.dataset.reviewScreen='categories';status.textContent='';steps.innerHTML=mailLoading('Loading artwork…');
   try{
     const designs=await catalogueDesigns();
     if(generation!==choiceGeneration||steps.dataset.reviewScreen!=='categories')return;
@@ -68,7 +69,7 @@ function rememberKey(){
 }
 function loading(){
   steps.dataset.reviewScreen="preparing delivery";
-  steps.innerHTML='<section class="flight dispatch-envelope"><small>PIGEON POST · DISPATCH DESK</small><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt="Pigeon with its satchel"></div><h2>Preparing your delivery</h2><p></p><div class="airmail-route" aria-hidden="true"><span>POST OFFICE</span><i></i><span>NICOLE</span></div></section>';
+  steps.innerHTML='<section class="flight dispatch-envelope"><small>PIGEON POST · DISPATCH DESK</small><div class="dispatch-seal"><img src="assets/home/mascot.webp" alt="Pigeon with its satchel"></div><h2>Preparing your delivery</h2>'+mailLoading('')+'<p></p><div class="airmail-route" aria-hidden="true"><span>POST OFFICE</span><i></i><span>NICOLE</span></div></section>';
   steps.querySelector('.airmail-route span:last-child').textContent=recipientName.toUpperCase();
   steps.querySelector('.flight p').textContent=draft.later?'Tucking your parcel away for its scheduled delivery.':'One little parcel, addressed to '+recipientName+'.';
   status.textContent=preview?'Preview only · No mail will be sent.':'';
@@ -148,25 +149,25 @@ function showReceipt(key){
     sign.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[state]||paths.inbox)+'</svg>';
   }
   if(!key){display({});heading.textContent='Delivery preview';detail.textContent=draft?.later&&draft.time?'Scheduled preview · '+new Date(draft.time).toLocaleString():'Immediate delivery preview';where.textContent='This preview stays in your browser. Use a one-time link to deliver a parcel.';check.textContent='Back to designs';check.onclick=choose;status.textContent='';return;}
-  heading.textContent='Checking delivery…';status.textContent='';
+  const finishInitial=loadingStatus(heading,'Checking delivery…');status.textContent='';
   async function refresh(manual=false){
-    if(checking||!check.isConnected)return;checking=true;check.disabled=true;clearTimeout(pollTimer);
+    if(checking||!check.isConnected)return;checking=true;const finishCheck=manual?loadingButton(check,'Checking delivery'):()=>{};check.disabled=true;clearTimeout(pollTimer);
     let expired=false,hasReply=false;
     try{
       const result=await api('receipt',key);
       if(!check.isConnected)return;
-      display(result);
+      finishInitial();display(result);
       hasReply=Boolean(result.reply||result.replyImage);reply.textContent=result.reply?'Nicole replied: '+result.reply:'';
       if(typeof result.replyImage==='string'&&result.replyImage.startsWith('data:image/png;base64,')){
         const image=new Image();image.src=result.replyImage;image.alt='Sticker reply from Nicole';image.style.cssText='width:100%;max-width:220px;height:auto;max-height:320px;object-fit:contain';reply.append(image);
       }
       status.textContent=manual?'Receipt checked just now.':'';
     }catch(e){
-      expired=e.status===404;
+      finishInitial();expired=e.status===404;
       if(expired){sign.replaceChildren();heading.textContent='Receipt unavailable';detail.textContent='This receipt may have expired. Ask Nicole for a fresh invitation.';}
       status.textContent=expired?'':'Couldn’t refresh the receipt. Try again when you’re connected.';
     }finally{
-      checking=false;check.disabled=expired;
+      checking=false;finishCheck();check.disabled=expired;
       if(!expired&&check.isConnected)pollTimer=setTimeout(()=>{if(!document.hidden)refresh();else pollTimer=setTimeout(()=>refresh(),30000);},confirmed?30000:7000);
     }
   }
@@ -216,4 +217,5 @@ async function start(){
     status.textContent=e.message;
   }
 }
-start();
+const finishInvitation=loadingStatus(status,'Checking your invitation…');
+start().finally(finishInvitation);

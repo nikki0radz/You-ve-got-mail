@@ -1,3 +1,4 @@
+import {mailLoading,loadingButton,loadingStatus} from '../post/mail-loading.mjs';
 import {offerCamera} from './camera-choice.mjs';
 import {fonts,fontSpec,isNotePaper,writingBox} from './lettering.mjs';
 import {colourButton} from './colour-wheel.mjs';
@@ -38,10 +39,10 @@ export function startGuestStudio(dialog,item,back,onReady){
   }
   function setCanvas(el,c){if(el?.isConnected)el.querySelector('.layer-image').replaceChildren(c);}
   async function paintArt(){
-    const id=++serial,el=dialog.querySelector('[data-layer=art]');try{
+    const id=++serial,el=dialog.querySelector('[data-layer=art]'),slot=el?.querySelector('.layer-image');if(slot&&!slot.childElementCount)slot.innerHTML=mailLoading('Preparing picture…');try{
       const c=await artwork(item,{...state.crop,ink:state.ink,paper:state.paper,font:state.font},editing==='art'?'':state.words);
       if(id===serial)setCanvas(el,c);
-    }catch(e){grabError(e);}
+    }catch(e){if(id===serial)slot?.querySelector('.mail-opening')?.remove();grabError(e);}
   }
   async function paintNote(){
     if(!state.note)return;await document.fonts.load(fontSpec(state.note.font,20));
@@ -138,13 +139,13 @@ export function startGuestStudio(dialog,item,back,onReady){
     fitPhoto(dialog,item,crop,applied=>{state.crop=applied;dirty=true;show();},cancelCrop);
   }
   async function upload(input){
-    if(!input.files?.[0])return;const source=input.files[0];input.value='';
+    if(!input.files?.[0])return;const source=input.files[0];input.value='';const done=loadingStatus(dialog.querySelector('.studio-error'),'Opening photo…');
     try{const img=await readPhoto(source);if(input.isConnected)openCrop({photo:img,zoom:1,panX:.5,panY:.5});}
-    catch(e){grabError(e);}
+    catch(e){grabError(e);}finally{done();}
   }
   async function bindStickerPicker(panel){
     const grid=panel.querySelector('.sticker-grid');
-    if(grid.dataset.loading)return;grid.dataset.loading='true';
+    if(grid.dataset.loading)return;grid.dataset.loading='true';grid.innerHTML=mailLoading('Loading stickers…');
     try{
       const designs=(await catalogueDesigns()).filter(item=>item.kind==='sticker'&&!item.textBox);
       if(!panel.isConnected)return;
@@ -155,7 +156,7 @@ export function startGuestStudio(dialog,item,back,onReady){
         pick.type='button';mountCatalogueThumbnail(pick,sticker);pick.append(document.createTextNode(name));
         pick.setAttribute('aria-pressed',String(state.second?.id===id));
         pick.onclick=async()=>{
-          if(busy)return;busy=true;
+          if(busy)return;busy=true;const done=loadingButton(pick,'Opening sticker');
           try{
             const source=await catalogueImage(sticker);
             const img=new Image();if(source instanceof HTMLCanvasElement)img.src=source.toDataURL();
@@ -164,11 +165,11 @@ export function startGuestStudio(dialog,item,back,onReady){
             const position=state.second||makeLayer(1,170,700);
             state.second=contain({...position,id,name,image:img,ratio:img.naturalHeight/img.naturalWidth});
             active='second';dirty=true;show();tool('second').focus();
-          }catch(error){grabError(error);}finally{busy=false;}
+          }catch(error){grabError(error);}finally{busy=false;done();}
         };
         grid.append(pick);
       }
-    }catch(error){grabError(error);}finally{delete grid.dataset.loading;}
+    }catch(error){if(panel.isConnected)grid.textContent='The stickers could not load. Close and reopen the picker to retry.';grabError(error);}finally{delete grid.dataset.loading;}
     if(state.second)tool('remove-second').onclick=()=>{state.second=null;active='art';dirty=true;show();tool('second').focus();};
   }
   function layer(key,label){
@@ -323,7 +324,7 @@ export function startGuestStudio(dialog,item,back,onReady){
       if(item.maskSheet&&!optionalPhoto&&!state.crop.photo){error.textContent='Upload a photo to fill your frame.';return;}
       if(item.textBox&&!state.words.trim()&&!(optionalPhoto&&state.crop.photo)){error.textContent='Tap the writing area and add your words first.';startText('art');return;}
       if(state.note&&!state.note.text.trim()){error.textContent='Write on the banner or tap Remove note.';startText('note');return;}
-      busy=true;const ready=tool('ready'),caption=ready.textContent;ready.disabled=true;ready.textContent='Preparing your parcel…';ready.setAttribute('aria-busy','true');error.textContent='';
+      busy=true;const done=loadingButton(tool(action==='ready'?'ready':action),'Preparing your parcel');error.textContent='';
       try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const canvas=await renderParcel(item,state,dialog.designGeometry?.());if(action==='ready')await onReady(canvas.toDataURL('image/png'),item.name,item.category,reopen);
         else{
           const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
@@ -332,7 +333,7 @@ export function startGuestStudio(dialog,item,back,onReady){
           if(action==='share'&&navigator.canShare?.({files:[file]}))await navigator.share({files:[file]});
           else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
         }}
-      catch(e){grabError(e);error.scrollIntoView({block:'nearest'});}finally{busy=false;ready.disabled=false;ready.textContent=caption;ready.removeAttribute('aria-busy');}
+      catch(e){grabError(e);error.scrollIntoView({block:'nearest'});}finally{busy=false;done();}
     };
     dialog.scrollTop=0;
   }

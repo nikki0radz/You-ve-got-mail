@@ -11,7 +11,7 @@ import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend
 import {watchImage} from '../shop/ui-tasks.mjs';
 import {watchReceipt} from './receipt-watch.mjs';
 import {resolveReplyContent} from './reply-content.mjs';
-import {mailLoading} from './mail-loading.mjs';
+import {mailLoading,loadingButton} from './mail-loading.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
 import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime} from './mail-status.mjs';
 
@@ -94,7 +94,7 @@ function page(title,body,back){
 }
 function action(key,fn){
   const btn=el().querySelector('[data-mb="'+key+'"]');if(!btn)return;
-  btn.onclick=async()=>{btn.disabled=true;try{await fn();}catch(e){const p=el().querySelector('.mb-error');if(p)p.textContent=e.message;}finally{btn.disabled=false;}};
+  btn.onclick=async()=>{const done=loadingButton(btn);try{await fn();}catch(e){const p=el().querySelector('.mb-error');if(p)p.textContent=e.message;}finally{done();}};
 }
 function findRow(id,sent=false){return read().find(x=>x.id===id&&!!x.sent===sent);}
 function portrait(f){return '<button class="mail-friend" data-friend="'+esc(f.code)+'" aria-label="View '+esc(f.name)+'’s profile"><img alt="" src="'+profilePhoto(f)+'"><strong>'+esc(f.name)+'</strong><small data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</small></button>';}
@@ -113,7 +113,7 @@ export function wirePeople(root,refresh){
 export function friendProfile(code,refresh){
  const f=(directory().friends||[]).find(friend=>friend.code===code);if(!f)return;
  if(f.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}
- page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. A check-in can happen in the background; it does not mean they are online.</p></article>'+button('person-mail','View mail')+button('refresh-person','Refresh profile'));
+ page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. A check-in can happen in the background; it does not mean they are online.</p></article>'+'<div class="mail-button-row friend-profile-actions">'+button('person-mail','View mail')+button('refresh-person','Refresh profile')+'</div>');
  const card=el().querySelector('.friend-profile');
  const updates=new AbortController();
  const updatePhoto=()=>{
@@ -128,7 +128,7 @@ export function friendProfile(code,refresh){
  action('refresh-person',async()=>{await refreshFriends();if(card.isConnected&&el().open)friendProfile(code,refresh);});
 }
 export function mailboxView(){
-  if(!phoneCache.ready())return '<p class="image-loading-label" role="status">Loading your inbox…</p>';
+  if(!phoneCache.ready())return mailLoading('Loading your inbox…');
   const unread=unreadCount(read(),id=>phoneCache.wasRead(id));
   const rows=read().filter(r=>!!r.sent===(folder==='sent')&&(!person||r.code===person||r.senderCode===person));
   return '<section class="mailbox-heading" aria-label="Mailbox"><img src="assets/home/mailbox.png" alt="Mailbox" width="1864" height="843"></section>'+peopleSection()+'<div class="mail-tabs">'+['inbox','sent'].map(f=>'<button aria-pressed="'+(f===folder)+'" data-folder="'+f+'">'+'<img src="assets/home/'+(f==='sent'?'happy':'envelope')+'.webp" alt="">'+(f==='sent'?'Sent':'Inbox')+'</button>').join('')+'</div>'+(person?'<button class="mb-button" data-clear>All people ×</button>':'')+(folder==='inbox'&&unread?'<div class="mail-read-actions"><button type="button" data-mark-seen>Clear unread badges</button></div>':'')+'<div class="mail-rows">'+rows.map(m=>'<button class="mail-row" data-row="'+esc(m.id)+'" data-sent="'+!!m.sent+'"><span class="parcel-thumb"><img loading="lazy" decoding="async" alt="" src="'+esc((m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m))))+'"></span><span class="mail-dot">'+(!m.sent&&!['scheduled','cancelled','rejected'].includes(m.status)&&!phoneCache.wasRead(m.id)?'●':'')+'</span><span><strong>'+esc(m.sent?'To '+m.sender:m.sender||'Pigeon Post')+'</strong><span>'+esc(m.isReply?(m.text||'Sticker reply'):parcelKind(m.kind)||'Parcel')+'</span><small>'+esc(rowStatus(m))+'</small></span><time>'+esc(date(m.created||m.when))+'</time></button>').join('')+(rows.length?'':'<p>No '+(folder==='sent'?'sent parcels':'deliveries')+' here yet.</p>')+'</div>';
@@ -193,7 +193,7 @@ export function replyTo(id,refresh){
   intro();
 }
 async function viewReply(m,refresh,force=false){
-  page('Opening reply…',mailLoading());
+  page('Opening reply…',mailLoading(''));
   const loading=el().querySelector('.mail-opening');
   const content=await resolveReplyContent(m,{force,loadPicture:async()=>{
     const source=thumb(m.id),image=new Image();image.src=source;await image.decode();return source;

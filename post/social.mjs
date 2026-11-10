@@ -1,3 +1,4 @@
+import {loadingButton,loadingStatus} from './mail-loading.mjs';
 import {catalogueRecords,catalogueImage,catalogueThumbnail} from '../shop/catalogue.mjs';
 import {offerCamera} from '../shop/camera-choice.mjs';
 import {birds} from './profile-options.mjs';
@@ -27,17 +28,18 @@ export function installSocial(state,save,refresh){
     dialog.scrollTop=0;
   }
   const btn=(label,action,kind='main')=>`<button class="social-${kind}" data-social="${action}">${esc(label)}</button>`;
-  const on=(action,handler)=>{dialog.querySelector('[data-social="'+action+'"]').onclick=handler;};
+  const on=(action,handler)=>{const button=dialog.querySelector('[data-social="'+action+'"]');button.onclick=async()=>{const done=loadingButton(button);try{await handler();}catch(e){const line=dialog.querySelector('.social-alert');if(line)line.textContent=e.message;}finally{done();}};};
   const alert=text=>{dialog.querySelector('.social-alert').textContent=text;};
   function saveProfile(changes){
     const old=state.profile;state.profile={...old,...changes};
     if(!save()){state.profile=old;alert('Could not save your profile on this device.');return false;}
     refresh();profile();return true;
   }
+  let finishPictureStatus=()=>{};
   function pictureStatus(){
     const status=friendProfileShareState();
     const text=!window.Pigeon?'Saved in this browser preview.':{sharing:'Sharing your picture with friends…',shared:'Your picture is shared with friends.',waiting:'Saved on this phone. Waiting to share with friends.',unsupported:'Update the app to share your picture with friends.'}[status]||'';
-    const message=dialog.querySelector('[data-profile-picture-status]');if(message)message.textContent=text;
+    finishPictureStatus();const message=dialog.querySelector('[data-profile-picture-status]');if(message){if(status==='sharing')finishPictureStatus=loadingStatus(message,text);else message.textContent=text;}
     const retry=dialog.querySelector('[data-social=retry-picture]');if(retry){retry.hidden=status!=='waiting';retry.style.display=status==='waiting'?'':'none';}
   }
   window.addEventListener('profile-picture-sync',pictureStatus);
@@ -65,10 +67,10 @@ export function installSocial(state,save,refresh){
     const uploads=(await catalogueRecords({includeAvatars:true})).filter(row=>row.kind==='avatar');
     const extra=uploads.map(row=>`<button class="bird-choice" data-avatar="${esc(row.id)}" aria-pressed="false">${catalogueThumbnail(row.design)}${esc(row.name||'Profile picture')}</button>`).join('');
     show('Choose your profile picture',`<div class="bird-wall">${tiles}${extra}</div>${btn('Choose a photo','upload','quiet')}<input type="file" accept="image/*" hidden>`,profile);
-    for(const tile of dialog.querySelectorAll('[data-avatar]'))tile.onclick=async()=>{try{const row=uploads.find(r=>r.id===tile.dataset.avatar),img=await catalogueImage(row.design);const side=Math.min(img.width,img.height);saveProfile({photo:squarePhoto(img,[(img.width-side)/2,(img.height-side)/2,side,side],true),pigeon:-1});}catch(e){alert(e.message);}};
-    for(const tile of dialog.querySelectorAll('.bird-choice[data-index]'))tile.onclick=async()=>{const i=Number(tile.dataset.index);tile.disabled=true;try{const im=await readImage('assets/home/portraits.webp');if(tile.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160],true)});}catch(e){if(tile.isConnected)alert(e.message);}finally{tile.disabled=false;}};
+    for(const tile of dialog.querySelectorAll('[data-avatar]'))tile.onclick=async()=>{const done=loadingButton(tile,'Opening picture');try{const row=uploads.find(r=>r.id===tile.dataset.avatar),img=await catalogueImage(row.design);const side=Math.min(img.width,img.height);saveProfile({photo:squarePhoto(img,[(img.width-side)/2,(img.height-side)/2,side,side],true),pigeon:-1});}catch(e){alert(e.message);}finally{done();}};
+    for(const tile of dialog.querySelectorAll('.bird-choice[data-index]'))tile.onclick=async()=>{const i=Number(tile.dataset.index),done=loadingButton(tile,'Opening picture');try{const im=await readImage('assets/home/portraits.webp');if(tile.isConnected&&dialog.open)saveProfile({pigeon:i,photo:squarePhoto(im,[i%6*160,Math.floor(i/6)*160,160,160],true)});}catch(e){if(tile.isConnected)alert(e.message);}finally{done();}};
     const input=dialog.querySelector('input');on('upload',()=>input.click());offerCamera(input,{uploadButton:dialog.querySelector('[data-social=upload]')});
-    input.onchange=async()=>{const file=input.files[0];if(!file)return;const url=URL.createObjectURL(file);try{const im=await readImage(url);const edge=Math.min(im.width,im.height);if(input.isConnected&&dialog.open)saveProfile({pigeon:null,photo:squarePhoto(im,[(im.width-edge)/2,(im.height-edge)/2,edge,edge])});}catch(e){alert(e.message);}finally{URL.revokeObjectURL(url);}};
+    input.onchange=async()=>{const file=input.files[0];if(!file)return;const url=URL.createObjectURL(file),done=loadingButton(dialog.querySelector('[data-social=upload]'),'Opening photo');try{const im=await readImage(url);const edge=Math.min(im.width,im.height);if(input.isConnected&&dialog.open)saveProfile({pigeon:null,photo:squarePhoto(im,[(im.width-edge)/2,(im.height-edge)/2,edge,edge])});}catch(e){alert(e.message);}finally{done();URL.revokeObjectURL(url);}};
   }
   function lookup(){
     show('Add a friend',`<form class="code-form"><label>Their friend code<span class="code-wrap"><input class="social-input" name="code" value="${esc(code)}" placeholder="e.g. OWEN-27" autocomplete="off" maxlength="24"><i aria-hidden="true">✓</i></span></label><button class="social-main">Find friend</button></form>${btn('My code','mine','quiet')}<small class="local-note">Demo code · OWEN-27</small>`);
