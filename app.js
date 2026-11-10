@@ -8,7 +8,7 @@ import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
 import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
 import {mountCategoryWheel,restoreCategoryWheel} from './shop/category-wheel.mjs';
-import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends,publishFriendProfile} from './post/mailbox.mjs';
+import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends,publishFriendProfile,retryFriendProfile} from './post/mailbox.mjs';
 import {pendingFriendRequests} from './post/friend-requests.mjs';
 import {createRequestPrompts} from './post/friend-state.mjs';
 import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
@@ -200,13 +200,13 @@ window.refreshMailbox=()=>phoneCache.refresh().catch(()=>{});
 let mailPaint;window.addEventListener('phone-mail-updated',()=>{cancelAnimationFrame(mailPaint);mailPaint=requestAnimationFrame(()=>{updateUnreadBadge();pageCache.delete('inbox');if(tab==='inbox'&&!document.querySelector('dialog[open]'))render();queueRequestPrompt();});});
 window.openParcelAction=async id=>{if(id!=='@settings')await phoneCache.refresh().catch(()=>{});if(id==='@settings'){tab='settings';render();return;}tab='inbox';render();if(id==='@friends')friendsWindow(render);else if(id.startsWith('@inbox:'))openMailboxItem(id.slice(7),render);else replyTo(id,render);};
 if(window.Pigeon){state.receiving=Pigeon.isOpen();
-  phoneCache.refresh().catch(()=>{});refreshFriends().catch(()=>{});setInterval(()=>{if(!document.hidden)refreshFriends().catch(()=>{});},15000);
+  phoneCache.refresh().catch(()=>{});refreshFriends().catch(()=>{});setInterval(()=>{if(!document.hidden){refreshFriends().catch(()=>{});retryFriendProfile().catch(()=>{});}},15000);
   // Keep mailbox receipts current while the list is visible, including deliveries after Send.
   setInterval(()=>{if(tab==='inbox'&&!document.hidden)refreshFriends().catch(()=>{});},3000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden){requestPrompts.reset();phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});refreshFriends().catch(()=>{});}});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){requestPrompts.reset();publishFriendProfile(state.profile).catch(()=>{});phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});refreshFriends().catch(()=>{});}});
 }
 if(!window.Pigeon&&new URLSearchParams(location.search).get('review')==='settings')tab='settings';
-window.refreshDeliverySettings=()=>{requestPrompts.reset();phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});if(tab==='settings')wireSettings(app);else pageCache.delete('settings');refreshArtwork();};
+window.refreshDeliverySettings=()=>{requestPrompts.reset();publishFriendProfile(state.profile).catch(()=>{});phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});if(tab==='settings')wireSettings(app);else pageCache.delete('settings');refreshArtwork();};
 window.addEventListener('shared-art-updated',()=>{
  updateUnreadBadge();
  pageCache.delete('home');if(tab==='home')mountHomeWheel();
@@ -214,6 +214,7 @@ window.addEventListener('shared-art-updated',()=>{
 function refreshArtwork(){if(!document.hidden)refreshMainArt().catch(()=>{});}
 document.addEventListener('visibilitychange',refreshArtwork);
 window.addEventListener('online',refreshArtwork);
+window.addEventListener('online',()=>publishFriendProfile(state.profile).catch(()=>{}));
 render();refreshArtwork();setTimeout(catchUp,600);setInterval(catchUp,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)catchUp()});
 
 window.pigeonBack=()=>{

@@ -1,6 +1,7 @@
 import {unreadCount} from './unread.mjs';
 import {dispatchControls} from './dispatch-controls.mjs';
 import {profilePhoto} from './home.mjs';
+import {createProfilePublisher} from './profile-publisher.mjs';
 import {fitPreview} from '../shop/preview-image.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 import {openReplyShop,openShop} from '../shop/shop.mjs';
@@ -60,15 +61,13 @@ function confirmOpening(m,content=el()){
  document.addEventListener('visibilitychange',ready,{signal:controller.signal});
  if(image&&!image.complete){image.addEventListener('load',report,{once:true,signal:controller.signal});}else ready();
 }
-let publishedPhoto='',publishingPhoto=false;
-export async function publishFriendProfile(profile){
- const src=profilePhoto(profile);if(!tracking()||src===publishedPhoto||publishingPhoto)return;
- publishingPhoto=true;
- try{
-  const img=new Image();img.src=src;await img.decode();const c=document.createElement('canvas');c.width=c.height=128;c.getContext('2d').drawImage(img,0,0,128,128);
-  await post('profile',{photo:c.toDataURL('image/webp',.85)});publishedPhoto=src;
- }catch{}finally{publishingPhoto=false;}
-}
+const profilePublisher=createProfilePublisher({supported:tracking,encode:async source=>{
+ const image=new Image();image.src=source;await image.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+ canvas.getContext('2d').drawImage(image,0,0,128,128);return canvas.toDataURL('image/webp',.85);
+},publish:photo=>post('profile',{photo}),changed:()=>window.dispatchEvent(new Event('profile-picture-sync'))});
+export const friendProfileShareState=()=>profilePublisher.status();
+export function publishFriendProfile(profile){return profilePublisher.update(profilePhoto(profile));}
+export const retryFriendProfile=()=>profilePublisher.retry();
 const bird='<img class="reply-bird" src="assets/home/mascot.webp" alt="Pigeon post courier">';
 const button=(key,label)=>'<button class="mb-button" type="button" data-mb="'+key+'">'+label+'</button>';
 const parcelKind=kind=>/^a pigeon$/i.test(kind||'')?'a sticker':kind;
@@ -116,6 +115,15 @@ export function friendProfile(code,refresh){
  if(f.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}
  page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. A check-in can happen in the background; it does not mean they are online.</p></article>'+button('person-mail','View mail')+button('refresh-person','Refresh profile'));
  const card=el().querySelector('.friend-profile');
+ const updates=new AbortController();
+ const updatePhoto=()=>{
+  if(!card.isConnected||!el().open){updates.abort();return;}
+  const latest=(directory().friends||[]).find(friend=>friend.code===code);if(!latest)return;
+  const image=card.querySelector('.friend-profile-photo'),source=profilePhoto(latest);
+  if(image.getAttribute('src')!==source)image.src=source;
+ };
+ window.addEventListener('phone-mail-updated',updatePhoto,{signal:updates.signal});
+ el().addEventListener('close',()=>updates.abort(),{once:true,signal:updates.signal});
  action('person-mail',()=>{person=code;el().close();refresh();});
  action('refresh-person',async()=>{await refreshFriends();if(card.isConnected&&el().open)friendProfile(code,refresh);});
 }

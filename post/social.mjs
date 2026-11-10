@@ -4,6 +4,7 @@ import {birds} from './profile-options.mjs';
 import {mainRecords,avatarSettings} from '../shop/main-art.mjs';
 import {escapeHtml as esc} from '../domain.mjs';
 import {profilePhoto} from './home.mjs';
+import {friendProfileShareState,retryFriendProfile} from './mailbox.mjs';
 
 
 function readImage(src){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>no(new Error('That image could not be opened.'));if(/^https?:/i.test(src))img.crossOrigin='anonymous';img.src=src;});}
@@ -33,8 +34,15 @@ export function installSocial(state,save,refresh){
     if(!save()){state.profile=old;alert('Could not save your profile on this device.');return false;}
     refresh();profile();return true;
   }
+  function pictureStatus(){
+    const status=friendProfileShareState();
+    const text=!window.Pigeon?'Saved in this browser preview.':{sharing:'Sharing your picture with friends…',shared:'Your picture is shared with friends.',waiting:'Saved on this phone. Waiting to share with friends.',unsupported:'Update the app to share your picture with friends.'}[status]||'';
+    const message=dialog.querySelector('[data-profile-picture-status]');if(message)message.textContent=text;
+    const retry=dialog.querySelector('[data-social=retry-picture]');if(retry){retry.hidden=status!=='waiting';retry.style.display=status==='waiting'?'':'none';}
+  }
+  window.addEventListener('profile-picture-sync',pictureStatus);
   function profile(){
-    show('My profile',`<figure class="photo-booth"><button type="button" class="profile-photo-open" data-social="enlarge" aria-label="Enlarge profile picture"><img src="${profilePhoto(state.profile)}" alt="Your profile picture"></button><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change picture','change')}${btn('Edit name','edit','quiet')}`,from==='lookup'?lookup:null);
+    show('My profile',`<figure class="photo-booth"><button type="button" class="profile-photo-open" data-social="enlarge" aria-label="Enlarge profile picture"><img src="${profilePhoto(state.profile)}" alt="Your profile picture"></button><figcaption>${esc(state.profile.name)}</figcaption></figure><div class="profile-number"><small>My friend code</small><strong>${esc(window.Pigeon?(JSON.parse(Pigeon.friendsCached()).me?.code||'Connecting…'):state.profile.code)}</strong></div>${btn('Change picture','change')}${btn('Edit name','edit','quiet')}<p data-profile-picture-status role="status"></p><button type="button" class="social-quiet" data-social="retry-picture" hidden>Retry sharing picture</button>`,from==='lookup'?lookup:null);
     on('enlarge',()=>{
       const trigger=dialog.querySelector('[data-social=enlarge]'),viewer=document.createElement('dialog');
       viewer.id='profile-photo-viewer';viewer.setAttribute('aria-label','Enlarged profile picture');
@@ -44,6 +52,7 @@ export function installSocial(state,save,refresh){
       viewer.onclose=()=>{viewer.remove();if(trigger.isConnected)trigger.focus({preventScroll:true});};
       viewer.showModal();
     });
+    pictureStatus();on('retry-picture',()=>retryFriendProfile());
     on('change',wall);
     on('edit',()=>{
       show('What should we call you?',`<label>Your name<input maxlength="40" class="social-input social-name" value="${esc(state.profile.name)}"></label>${btn('Save name','save')}`,profile);

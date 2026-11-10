@@ -43,11 +43,15 @@
  Object.defineProperty(window,'localStorage',{value:{getItem:k=>originalStorage.getItem(prefix+k),setItem:(k,v)=>originalStorage.setItem(prefix+k,v),removeItem:k=>originalStorage.removeItem(prefix+k)}});
  localStorage.setItem('pigeon.main-art.owner','FIXTURE');
  localStorage.setItem('youve-got-mail-draft-v1',JSON.stringify({version:1,theme:new URLSearchParams(location.search).get('theme')||'dark',profile:{name:'Nicole'},friends:[],inbox:[],scheduled:[]}));
+ const avatarCase=new URLSearchParams(location.search).get('case')==='avatars';
  const pictureCase=new URLSearchParams(location.search).get('case')==='picture',trackingCase=new URLSearchParams(location.search).get('case')==='tracking';
  const canvas=document.createElement('canvas');canvas.width=200;canvas.height=300;const ctx=canvas.getContext('2d');ctx.fillStyle='#a1c6bc';ctx.fillRect(0,0,200,300);ctx.fillStyle='#294938';ctx.font='24px sans-serif';ctx.fillText('Picture reply',20,120);const picture=canvas.toDataURL('image/png');
+ if(avatarCase){const state=JSON.parse(localStorage.getItem('youve-got-mail-draft-v1'));state.profile.photo=picture;localStorage.setItem('youve-got-mail-draft-v1',JSON.stringify(state));}
  const now=Date.now(),seen=new URLSearchParams(location.search).get('case')==='seen';
  const receipt={sentAt:now-300000,deliveredAt:now-290000,lockedNotificationAt:now-280000,...(seen?{seenAt:now-60000}:{}),status:'acknowledged'};
  const book={me:{code:'123456789A'},friends:[{name:'Owen',code:'ABCDEF1234',mode:'open',photo:'assets/home/owen.webp',settings:{notifications:true,popups:true,warning:true,onUnlock:true,replyNotifications:true,precise:true,push:'connected'},lastContactAt:now-20000,settingsAt:now-100000},{name:'Sophie',code:'1234ABCDEF',mode:'closed',photo:'assets/home/sophie.webp'}],incoming:[],outgoing:[]};
+ if(avatarCase)delete book.friends[0].photo;
+ window.fixturePhotoOnline=false;window.fixtureProfileUploads=[];window.fixtureIncomingPhoto='';window.fixtureOwnPhoto=picture;
  const rows=[{id:'parcel1',sender:'Owen',code:'ABCDEF1234',kind:'a sticker',sent:true,status:'sent',when:now-300000,created:now-300000,delivery:receipt},{id:'reply-parcel1',originalId:'parcel1',sender:'Owen',senderCode:'ABCDEF1234',isReply:true,remote:true,kind:'Reply',text:pictureCase?'null':'Hi Nicole! This is a simulated reply.',status:'received',when:now-50000,created:now-50000}];
  const slowCase=new URLSearchParams(location.search).has('loading');
  if(slowCase){rows.push({...rows[1],id:'cached-picture',text:'',hasImage:true},{...rows[1],id:'cached-text',text:'Saved text reply',hasImage:false});}
@@ -56,13 +60,14 @@
  window.fetch=(input,options={})=>{const u=new URL(typeof input==='string'?input:input.url,location.href);if(u.pathname.includes('/api/catalogue/'))return Promise.resolve(Response.json({items:[],categories:['Photos','Notes','Flowers','Stickers','Reminders','Postcards','Love notes'].map(name=>({name})),avatars:{hidden:[]},more:false}));return fetchOriginal(input,options);};
  const log=value=>parent.postMessage({type:'receipt-fixture',value},location.origin);
  window.Pigeon={mailbox:()=>JSON.stringify(rows),friendsCached:()=>JSON.stringify(book),wasRead:id=>read.has(id),markRead:id=>{read.add(id);log('Unread badge cleared: '+id);},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,deliveryPrefs:()=>JSON.stringify({appVersion:'0.1.46',receiptTracking:true,fullPopup:true,notifications:true}),post:(ticket,op,raw)=>{
-  const body=JSON.parse(raw);let data=book;
+  const body=JSON.parse(raw);let data=book,error;
+  if(op==='friends'&&avatarCase&&window.fixtureIncomingPhoto)book.friends[0].photo=window.fixtureIncomingPhoto;
   if(op==='receipt'){window.fixtureReceiptRequests++;}if(op==='receipt')data=pictureCase?{...receipt,reply:'',replyImage:picture}:{...receipt,reply:'A simulated reply'};
   if(op==='send'){window.fixtureReceiptRequests=0;data={ok:true,id:'simulated-parcel',sentAt:Date.now()};}
   if(op==='receipt'&&trackingCase){const phase=Math.min(2,window.fixtureReceiptRequests-1);data={sentAt:now,...(phase>=1?{deliveredAt:now+1,status:'acknowledged'}:{}),...(phase>=2?{displayedAt:now+2}:{})};}
   if(op==='seen'){window.fixtureSeen.push(body.id);const row=rows.find(r=>r.id===body.id);if(row)row.seenAt=Date.now();data={ok:true};log('Opening confirmation: '+body.id);}
-  if(op==='profile')data={ok:true};
-  const answer=()=>window.postOfficeResult(ticket,JSON.stringify({data}));if(slowCase&&op==='receipt')setTimeout(answer,450);else queueMicrotask(answer);
+  if(op==='profile'){data={ok:true};if(avatarCase){if(!window.fixturePhotoOnline)error='Offline';else window.fixtureProfileUploads.push(body.photo);}}
+  const answer=()=>window.postOfficeResult(ticket,JSON.stringify(error?{error}:{data}));if(slowCase&&op==='receipt')setTimeout(answer,450);else queueMicrotask(answer);
  }};
 })();
 </script><script type="module" src="app.js?v=hanging-sign-2"></script>

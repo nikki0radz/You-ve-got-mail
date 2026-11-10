@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Profile picture sharing</title><style>body{font:16px system-ui;background:#dce7e0;color:#203a30}iframe{width:390px;height:820px;border:1px solid #738c7c}button{padding:12px;margin:4px}</style></head><body><button id="run">Check profile sharing</button><p id="result">Ready · simulated profiles only</p><iframe title="Phone app" src="mail-status-app.html?case=avatars"></iframe><script type="module">
+const frame=document.querySelector('iframe'),result=document.querySelector('#result'),assert=(v,m)=>{if(!v)throw Error(m);},tick=()=>new Promise(requestAnimationFrame);
+async function until(fn){for(let i=0;i<360;i++){if(fn())return;await tick();}throw Error('Timed out waiting for picture sync');}
+document.querySelector('#run').onclick=async()=>{
+ try{
+  const w=frame.contentWindow,d=w.document;await until(()=>d.querySelector('[data-home-send]:not([disabled])'));
+  const {phoneCache}=await w.eval('import('+JSON.stringify(new URL('post/phone-cache.mjs',d.baseURI).href)+')');
+  const {refreshFriends}=await w.eval('import('+JSON.stringify(new URL('post/mailbox.mjs',d.baseURI).href)+')');
+  d.querySelector('[data-action=profile]').click();await until(()=>d.querySelector('[data-profile-picture-status]')?.textContent.includes('Waiting to share'));
+  const own=d.querySelector('.profile-photo-open img');assert(own.getAttribute('src')===w.fixtureOwnPhoto,'Own saved picture lost');
+  assert(!d.querySelector('[data-social=retry-picture]').hidden,'Missing retry after offline upload');
+  w.fixturePhotoOnline=true;d.querySelector('[data-social=retry-picture]').click();await until(()=>d.querySelector('[data-profile-picture-status]')?.textContent.includes('shared with friends'));
+  assert(w.fixtureProfileUploads.length===1,'Picture was not uploaded once on retry');
+  const encoded=new w.Image();encoded.src=w.fixtureProfileUploads[0];await encoded.decode();assert(encoded.naturalWidth===128&&encoded.naturalHeight===128,'Shared avatar has wrong size');
+  assert(w.getComputedStyle(d.querySelector('[data-social=retry-picture]')).display==='none','Retry remained visible after success');
+  d.querySelector('#social-flow [data-x]').click();d.querySelector('[data-action=tab][data-id=inbox]').click();await until(()=>d.querySelector('[data-people-toggle]'));d.querySelector('[data-people-toggle]').click();
+  d.querySelector('[data-friend="ABCDEF1234"]').click();await until(()=>d.querySelector('.friend-profile-photo'));
+  assert(d.querySelector('.friend-profile-photo').getAttribute('src').endsWith('mascot.webp'),'Missing picture must use a real placeholder');
+  // Fresh friend data arrives while the profile is open, without closing/reopening it.
+  w.fixtureIncomingPhoto=w.fixtureProfileUploads[0];await refreshFriends();await phoneCache.refreshFresh();
+  await until(()=>d.querySelector('.friend-profile-photo').getAttribute('src')===w.fixtureIncomingPhoto);
+  await d.querySelector('.friend-profile-photo').decode();
+  for(const width of [320,430]){frame.style.width=width+'px';await tick();assert(d.querySelector('.friend-profile-photo').getBoundingClientRect().width<=width,'Profile overflows phone');}
+  d.querySelector('#mail-window [data-x]').click();await until(()=>d.querySelector('[data-friend="ABCDEF1234"] img')?.getAttribute('src')===w.fixtureIncomingPhoto);
+  result.textContent='PASS · saved photo retained while offline; failed upload retried; shared 128px picture confirmed; open friend profile and Your people update to received photo; 320/430px. Simulated profiles only.';
+ }catch(e){result.textContent='FAIL · '+e.message;}
+};
+</script></body></html>
