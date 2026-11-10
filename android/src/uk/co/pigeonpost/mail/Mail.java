@@ -85,7 +85,7 @@ final class Mail {
     static synchronized void accept(Context c,JSONObject payload,boolean remote)throws Exception{
         String id=remote?payload.getString("id"):UUID.randomUUID().toString();
         File dest=image(c,id);JSONObject old=meta(c,id);
-        if(old.has("id")){if("scheduled".equals(old.optString("status")))alarm(c,id,old.getLong("when"));return;}
+        if(old.has("id")){if(remote)queueAcknowledgement(c,id,old.optLong("deliveredAt",System.currentTimeMillis()));if("scheduled".equals(old.optString("status")))alarm(c,id,old.getLong("when"));return;}
         String data=payload.getString("image");byte[] bytes;
         if(!remote&&data.equals("assets/home/test-pigeon.png"))bytes=read(c.getAssets().open("site/"+data));
         else {if(!data.startsWith("data:image/png;base64,")||data.length()>8000000)throw new IOException("Expected a PNG");bytes=Base64.decode(data.substring(22),Base64.DEFAULT);}
@@ -94,7 +94,10 @@ final class Mail {
         if(!"image/png".equals(size.outMimeType)||size.outWidth<1||size.outHeight<1||(long)size.outWidth*size.outHeight>16000000)throw new IOException("Invalid PNG size");
         AtomicFile f=new AtomicFile(dest);FileOutputStream out=f.startWrite();try{out.write(bytes);f.finishWrite(out);}catch(IOException e){f.failWrite(out);throw e;}
         JSONObject m=new JSONObject().put("created",System.currentTimeMillis()).put("inboxOnly",payload.optBoolean("inboxOnly"));for(String k:new String[]{"sender","kind","text","senderCode"})m.put(k,payload.optString(k));
-        m.put("id",id).put("remote",remote).put("when",Math.max(System.currentTimeMillis(),payload.optLong("when",0))).put("status","scheduled").put("deliveredAt",System.currentTimeMillis());save(c,m);alarm(c,id,m.getLong("when"));
+        m.put("id",id).put("remote",remote).put("when",Math.max(System.currentTimeMillis(),payload.optLong("when",0))).put("status","scheduled").put("deliveredAt",System.currentTimeMillis());
+        SharedPreferences.Editor stored=prefs(c).edit().putString("m:"+id,m.toString());if(remote)stored.putString("ack:"+id,Long.toString(m.getLong("deliveredAt")));
+        if(!stored.commit())throw new IOException("Device storage unavailable");
+        if(remote)DeliveryConfirmations.enqueue(c);alarm(c,id,m.getLong("when"));
     }
     static List<JSONObject> history(Context c){
         List<JSONObject> results=new ArrayList<>();for(String k:prefs(c).getAll().keySet())if(k.startsWith("m:"))results.add(meta(c,k.substring(2)));
@@ -109,7 +112,7 @@ final class Mail {
         String id=parcel.optString("id"),key="outcome:"+id;
         if("screen".equals(prefs(c).getString(key,"")))return;
         prefs(c).edit().putString(key,value).commit();
-        io.execute(()->{try{flushOutcome(c,key);}catch(Exception ignored){}});
+        DeliveryConfirmations.enqueue(c);
     }
     private static void flushOutcome(Context c,String key)throws Exception{
         String value=prefs(c).getString(key,"");
@@ -117,14 +120,39 @@ final class Mail {
         request(c,"outcome",new JSONObject().put("id",key.substring(8)).put("outcome",value));
         synchronized(Mail.class){if(value.equals(prefs(c).getString(key,"")))prefs(c).edit().remove(key).commit();}
     }
+    private static void queueAcknowledgement(Context c,String id,long at)throws IOException{
+        String key="ack:"+id;if(!prefs(c).contains(key)&&!prefs(c).edit().putString(key,Long.toString(at)).commit())throw new IOException("Could not save delivery confirmation");
+        DeliveryConfirmations.enqueue(c);
+    }
+    private static void sendAcknowledgement(Context c,String id)throws Exception{
+        try{request(c,"ack",new JSONObject().put("id",id));}catch(HttpFailure error){if(error.status!=404&&error.status!=410)throw error;}
+    }
+    static void confirmDelivery(Context c,String id)throws Exception{
+        String key="ack:"+id,value=prefs(c).getString(key,"");sendAcknowledgement(c,id);
+        synchronized(Mail.class){if(value.equals(prefs(c).getString(key,"")))prefs(c).edit().remove(key).commit();}
+    }
+    static void flushAcknowledgements(Context c)throws Exception{
+        ConfirmationQueue.flush(new ConfirmationQueue.Store(){
+            public String[] keys(){return prefs(c).getAll().keySet().stream().filter(k->k.startsWith("ack:")).toArray(String[]::new);}
+            public String read(String key){return prefs(c).getString(key,"");}
+            public void clear(String key,String value)throws IOException{synchronized(Mail.class){if(value.equals(prefs(c).getString(key,""))&&!prefs(c).edit().remove(key).commit())throw new IOException("Could not save delivery confirmation");}}
+        },(key,value)->sendAcknowledgement(c,key.substring(4)));
+    }
+    static void flushOutcomes(Context c)throws Exception{
+        boolean failed=false;for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
+            try{flushOutcome(c,key);}catch(Exception retry){failed=true;}
+        }
+        if(failed)throw new IOException("Delivery status will retry");
+    }
     static void sync(Context c)throws Exception{
         synchronized(SYNC_LOCK){
+        try{flushAcknowledgements(c);}catch(Exception retry){DeliveryConfirmations.enqueue(c);}
         // A push for new mail must not wait behind profile or historical reply downloads.
         boolean more=false;
         for(int i=0;i<8;i++){
             JSONArray incoming=request(c,"inbox",null).getJSONArray("messages");if(incoming.length()==0)break;
             JSONObject parcel=incoming.getJSONObject(0);accept(c,parcel,true);
-            request(c,"ack",new JSONObject().put("id",parcel.getString("id")));more=i==7;
+            confirmDelivery(c,parcel.getString("id"));more=i==7;
         }
         if(more)PushConnection.sync(c,true);
         boolean incomplete=false;

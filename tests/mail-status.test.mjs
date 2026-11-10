@@ -26,5 +26,15 @@ test('friend profiles show only reported settings and never infer online or phon
  const facts=friendFacts({mode:'inbox',settings:{notifications:false,popups:true,unapproved:'secret'},lastContactAt:100});
  assert.equal(facts[0][1],'Accepting mail · inbox only');assert.ok(facts.some(([k,v])=>k==='Delivery notifications'&&v==='Off'));
  assert.equal(facts.some(([k])=>/online|locked|secret/i.test(k)),false);
- assert.equal(friendFacts({mode:'closed'}).length,1);
+ assert.equal(friendFacts({mode:'closed'}).length,2);
+});
+
+test('DND is an independent reported setting; it never turns sent into delivered or notifications into seen',()=>{
+ for(const dnd of [true,false,undefined]){
+  const facts=friendFacts({mode:'open',settings:{dnd}}),value=facts.find(([k])=>k==='Phone Do Not Disturb')[1];
+  assert.equal(value,dnd===true?'On · last reported':dnd===false?'Off · last reported':'Not reported');
+  assert.equal(deliverySummary({dnd}).stage,'sent');
+  assert.equal(deliverySummary({notificationAt:123,dnd}).stage,'delivered');
+  assert.equal(Boolean(deliverySummary({notificationAt:123,dnd}).seen),false);
+ }
 });

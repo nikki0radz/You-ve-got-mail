@@ -20,6 +20,7 @@ final class PostOffice {
           .put("warning",p.getBoolean("warning",true)).put("onUnlock",p.getBoolean("onUnlock",true)).put("replyNotifications",Mail.enabled(c,"replies")&&p.getBoolean("replyAlerts",true))
           .put("precise",Mail.exact(c)).put("push",PushConnection.registered(c)?"connected":"pending")
           .put("version",c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName);
+        String dnd=DndState.read(c);if(p.getBoolean("shareDnd",true)&&!"unknown".equals(dnd))settings.put("dnd","on".equals(dnd));
         String photo=p.getString("profilePhoto","");String details=settings.toString()+photo;
         if(mode.equals(p.getString("publishedMode",""))&&name.equals(p.getString("publishedName",""))&&details.equals(p.getString("publishedDetails","")))return;
         JSONObject me=Mail.request(c,"profile",new JSONObject().put("name",name).put("mode",mode).put("settings",settings).put("photo",photo.isEmpty()?JSONObject.NULL:photo));

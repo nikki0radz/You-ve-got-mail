@@ -10,7 +10,7 @@ for item in required:
     assert item in manifest,'Missing packaged push component: '+item
 with zipfile.ZipFile(apk) as archive:
     dex=b''.join(archive.read(name) for name in archive.namelist() if name.endswith('.dex'))
-    for item in [b'FirebaseMessagingService',b'PushRegistrationWorker',b'PushMailboxWorker']:
+    for item in [b'FirebaseMessagingService',b'PushRegistrationWorker',b'PushMailboxWorker',b'DeliveryConfirmations']:
         assert item in dex,'Missing compiled push implementation: '+item.decode()
     resources=archive.read('resources.arsc')
     for item in ['google_app_id','google_api_key','gcm_defaultSenderId','you-ve-got-mail-f8f2b','1:529846975356:android:95d4f26d9399e06f3482f9']:

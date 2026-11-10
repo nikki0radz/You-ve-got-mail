@@ -15,7 +15,7 @@ import {watchReceipt} from './receipt-watch.mjs';
 import {resolveReplyContent} from './reply-content.mjs';
 import {mailLoading,loadingButton} from './mail-loading.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
-import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime} from './mail-status.mjs';
+import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime,dndSummary} from './mail-status.mjs';
 
 let mailboxImages;
 const pending=new Map();let sequence=0,folder='inbox',person='';
@@ -99,7 +99,7 @@ function action(key,fn){
   btn.onclick=async()=>{const done=loadingButton(btn);try{await fn();}catch(e){const p=el().querySelector('.mb-error');if(p)p.textContent=e.message;}finally{done();}};
 }
 function findRow(id,sent=false){return read().find(x=>x.id===id&&!!x.sent===sent);}
-function portrait(f){return '<button class="mail-friend" data-friend="'+esc(f.code)+'" aria-label="View '+esc(f.name)+'’s profile"><img alt="" src="'+profilePhoto(f)+'"><strong>'+esc(f.name)+'</strong><small data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</small></button>';}
+function portrait(f){return '<button class="mail-friend" data-friend="'+esc(f.code)+'" aria-label="View '+esc(f.name)+'’s profile"><img alt="" src="'+profilePhoto(f)+'"><strong>'+esc(f.name)+'</strong><small data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</small>'+(f.settings?.dnd===true?'<small>Phone DND on · last reported</small>':'')+'</button>';}
 let peopleExpanded=false;
 export function peopleSection(){
  const book=directory(),friends=book.friends||[],requests=pendingFriendRequests(),count=requests.length;
@@ -115,7 +115,7 @@ export function wirePeople(root,refresh){
 export function friendProfile(code,refresh){
  const f=(directory().friends||[]).find(friend=>friend.code===code);if(!f)return;
  if(f.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}
- page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. A check-in can happen in the background; it does not mean they are online.</p></article>'+'<div class="mail-button-row friend-profile-actions">'+button('person-mail','View mail')+button('refresh-person','Refresh profile')+'</div>');
+ page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. DND can change between check-ins. It silences interruptions, not delivery confirmations. A check-in does not mean they are online.</p></article>'+'<div class="mail-button-row friend-profile-actions">'+button('person-mail','View mail')+button('refresh-person','Refresh profile')+'</div>');
  const card=el().querySelector('.friend-profile');
  const updates=new AbortController();
  const updatePhoto=()=>{
@@ -123,6 +123,7 @@ export function friendProfile(code,refresh){
   const latest=(directory().friends||[]).find(friend=>friend.code===code);if(!latest)return;
   const image=card.querySelector('.friend-profile-photo'),source=profilePhoto(latest);
   if(image.getAttribute('src')!==source)image.src=source;
+  card.querySelector('dl').innerHTML=friendFacts(latest).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('');
  };
  window.addEventListener('phone-mail-updated',updatePhoto,{signal:updates.signal});
  el().addEventListener('close',()=>updates.abort(),{once:true,signal:updates.signal});
@@ -251,7 +252,7 @@ export function composeFrom(category,refresh,example,myProfile={}){
     const list=el().querySelector('.recipient-people'),menu=el().querySelector('.recipient-menu'),heading=menu.querySelector('summary');
     el().querySelector('.recipient-choice>label').onclick=e=>{if(e.target.localName==='label'){e.preventDefault();menu.open=!menu.open;heading.focus();}};
     const updateTarget=()=>{
-      draft.target=target.value;const recipientStatus=el().querySelector('[data-recipient-mail-status]');if(recipientStatus)recipientStatus.textContent=target.value==='self'?'Sending to yourself':mailModes[people.find(f=>f.code===target.value)?.mode]||'Mail status not reported';
+      draft.target=target.value;const recipientStatus=el().querySelector('[data-recipient-mail-status]');if(recipientStatus){const friend=people.find(f=>f.code===target.value);recipientStatus.textContent=target.value==='self'?'Sending to yourself':(mailModes[friend?.mode]||'Mail status not reported')+(friend?.settings?.dnd===true?' · '+dndSummary(friend):'');}
       [...list.children].forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===target.selectedIndex)));
       const selected=list.children[target.selectedIndex];if(selected)heading.replaceChildren(...[...selected.childNodes].map(node=>node.cloneNode(true)));
       heading.setAttribute('aria-label','Send to '+target.selectedOptions[0].textContent);

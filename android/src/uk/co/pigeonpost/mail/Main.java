@@ -419,9 +419,10 @@ public class Main extends Activity {
         @JavascriptInterface public String deliveryPrefs(){
             SharedPreferences p=Mail.prefs(Main.this);JSONObject data=new JSONObject();
             try{
-                for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
+                for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox","shareDnd"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
+                data.put("dndSharingSupported",true).put("dndStatus",DndState.read(Main.this));
                 data.put("receiptTracking",true).put("pushSupported",true).put("pushStatus",PushConnection.status(Main.this)).put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
@@ -437,10 +438,10 @@ public class Main extends Activity {
                 if(!Arrays.asList("3","10","15").contains(value))return;
                 change.putInt(key,Integer.parseInt(value)).apply();return;
             }
-            if(!Arrays.asList("fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox").contains(key))return;
+            if(!Arrays.asList("fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox","shareDnd").contains(key))return;
             boolean on="true".equals(value);change.putBoolean(key,on).apply();
             if(!on&&("fullPopup".equals(key)||"onUnlock".equals(key)))runOnUiThread(()->UnlockQueue.reset(Main.this));
-            if("closedInbox".equals(key))PostOffice.syncSoon(Main.this);
+            if("closedInbox".equals(key)||"shareDnd".equals(key))PostOffice.syncSoon(Main.this);
         }
         @JavascriptInterface public boolean designPaired(){return DesignMode.paired(Main.this);}
         @JavascriptInterface public void settingsAction(String key){runOnUiThread(()->openSetting(key));}

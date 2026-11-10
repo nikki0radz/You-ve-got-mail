@@ -21,11 +21,13 @@ export function deliveryTimeline(r={},when=0,reply=false){
   [['Sent',r.sentAt],['Delivered to phone',Number(r.deliveredAt)||earliest(r.notificationAt,r.lockedNotificationAt,r.rejectedAt,seen)],['Notification posted',r.notificationAt],['Notification posted while phone was locked',r.lockedNotificationAt],['Pop-up declined',r.rejectedAt],['Seen',seen]];
  return fields.filter(([,at])=>at>0).map(([label,at])=>({label,at,time:statusTime(at)})).sort((a,b)=>a.at-b.at);
 }
+export function dndSummary(friend){return typeof friend?.settings?.dnd==='boolean'?(friend.settings.dnd?'Phone DND on · last reported':'Phone DND off · last reported'):'';}
 export function friendFacts(friend){
  const s=friend.settings||{},facts=[['Mail',mailModes[friend.mode]||'Status not reported']];
  for(const [key,label] of [['notifications','Delivery notifications'],['popups','Full-screen pop-ups'],['warning','Incoming warning'],['onUnlock','Pop-ups after unlocking'],['replyNotifications','Reply notifications'],['precise','Precise schedules']]){
   if(typeof s[key]==='boolean')facts.push([label,s[key]?'On':'Off']);
  }
+ facts.push(['Phone Do Not Disturb',typeof s.dnd==='boolean'?(s.dnd?'On · last reported':'Off · last reported'):'Not reported']);
  if(['connected','pending','unavailable'].includes(s.push))facts.push(['Push connection',{connected:'Registered',pending:'Connecting',unavailable:'Unavailable'}[s.push]]);
  if(friend.lastContactAt)facts.push(['Last app check-in',statusTime(friend.lastContactAt)]);
  if(friend.settingsAt)facts.push(['Settings reported',statusTime(friend.settingsAt)]);

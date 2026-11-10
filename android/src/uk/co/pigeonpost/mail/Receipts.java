@@ -24,7 +24,7 @@ final class Receipts {
    JSONObject body=new JSONObject().put("id",id).put("event",event).put("at",at);
    if(reply)body.put("replyAt",version);
    Mail.prefs(c).edit().putString(key,body.toString()).commit();
-   Mail.io.execute(()->{try{flush(c);}catch(Exception ignored){}});
+   DeliveryConfirmations.enqueue(c);
   }catch(JSONException ignored){}
  }
  static void flush(Context c)throws Exception{
