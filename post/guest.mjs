@@ -159,7 +159,7 @@ function showReceipt(key){
       finishInitial();display(result);
       hasReply=Boolean(result.reply||result.replyImage);reply.textContent=result.reply?'Nicole replied: '+result.reply:'';
       if(typeof result.replyImage==='string'&&result.replyImage.startsWith('data:image/png;base64,')){
-        const image=new Image();image.src=result.replyImage;image.alt='Sticker reply from Nicole';image.style.cssText='width:100%;max-width:220px;height:auto;max-height:320px;object-fit:contain';reply.append(image);
+        const image=new Image();image.src=result.replyImage;image.alt='Picture reply from Nicole';image.style.cssText='width:100%;max-width:220px;height:auto;max-height:320px;object-fit:contain';reply.append(image);
       }
       status.textContent=manual?'Receipt checked just now.':'';
     }catch(e){
