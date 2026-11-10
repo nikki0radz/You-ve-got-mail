@@ -8,6 +8,7 @@ import {scaled} from '../shop/transport-image.mjs';
 import {phoneCache} from './phone-cache.mjs';
 import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend-requests.mjs';
 import {watchImage} from '../shop/ui-tasks.mjs';
+import {watchReceipt} from './receipt-watch.mjs';
 import {resolveReplyContent} from './reply-content.mjs';
 import {mailLoading} from './mail-loading.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
@@ -30,7 +31,16 @@ const modes={open:'Open to mail',inbox:'Inbox only',closed:'Closed to mail'};
 function tracking(){try{return Boolean(JSON.parse(window.Pigeon?.deliveryPrefs?.()||'{}').receiptTracking);}catch{return false;}}
 function receiptMarkup(receipt={},when=0,reply=false){
  const summary=deliverySummary(receipt,when,reply);
- return '<section class="delivery-status" aria-label="'+(reply?'Reply status':'Delivery status')+'"><strong class="'+(summary.seen?'mail-seen':'')+'">'+esc(summary.label)+'</strong><ol>'+deliveryTimeline(receipt,when,reply).map(e=>'<li><span>'+esc(e.label)+'</span><time>'+esc(e.time)+'</time></li>').join('')+'</ol><small>'+(summary.seen?'Seen confirms an opening or interaction.':'Notifications and automatic pop-ups do not confirm that someone read the message.')+'</small></section>';
+ return '<section class="delivery-status" aria-label="'+(reply?'Reply status':'Delivery status')+'"><strong class="'+(summary.seen?'mail-seen':'')+'">'+esc(summary.label)+'</strong><ol>'+deliveryTimeline(receipt,when,reply).map(e=>'<li><span>'+esc(e.label)+'</span><time>'+esc(e.time)+'</time></li>').join('')+'</ol><small>'+(summary.seen?'Opened on their screen, through a pop-up or by opening the mail.':summary.stage==='delivered'?'Received on their phone. A notification alone does not count as seen.':summary.stage==='scheduled'?'The parcel is scheduled for this time.':'Sent to the post office; waiting for their phone to confirm receipt.')+'</small></section>';
+}
+function followReceipt(panel,id,when,onUpdate){
+ const d=el();
+ const watcher=watchReceipt({read:()=>post('receipt',{id}),active:()=>panel.isConnected&&d.open,visible:()=>!document.hidden,
+  draw:receipt=>{panel.innerHTML=receiptMarkup(receipt,when);onUpdate?.(receipt);},
+  onError:()=>{let note=panel.querySelector('[data-status-error]');if(!note){note=document.createElement('small');note.dataset.statusError='';panel.append(note);}note.textContent='Could not refresh status. Retrying when connected.';},
+  subscribe:callback=>{document.addEventListener('visibilitychange',callback);return()=>document.removeEventListener('visibilitychange',callback);}
+ });
+ d.addEventListener('close',watcher.stop,{once:true});return watcher;
 }
 function rowStatus(m){
  if(m.status==='cancelled')return 'Cancelled';
@@ -195,7 +205,15 @@ async function view(m,refresh){
   page((m.sent?'To ':'From ')+m.sender,'<p>'+esc(parcelKind(m.kind))+' · '+esc(date(m.when))+'</p><img class="mail-proof" src="'+(m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m)))+'" alt="Parcel artwork"><div class="thread-reply"></div>'+(!m.sent?(m.status==='scheduled'?button('cancel','Cancel scheduled delivery'):m.status==='cancelled'?'':button('reply','Reply')):''));
   if(!m.sent){enlargeMailArtwork(el()).then(ready=>{if(ready)confirmOpening(m);});}
   const answer=el().querySelector('.thread-reply');action('reply',()=>replyTo(m.id,refresh));action('cancel',()=>{Pigeon.cancelScheduled(m.id);el().close();phoneCache.refresh().then(refresh).catch(()=>{});});
-  if(m.sent&&!m.selfSent){try{const r=await post('receipt',{id:m.id});if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();}answer.innerHTML=receiptMarkup(r,m.when);if(r.reply||r.replyImage){const p=document.createElement('p');p.textContent=r.reply||'Sticker reply';answer.append(p);}if(r.replyImage?.startsWith('data:image/png;base64,')){const i=new Image();i.className='mail-proof';i.src=r.replyImage;i.alt='Reply';answer.append(i);}if(r.reply||r.replyImage)confirmOpening({id:'reply-'+m.id,remote:true},answer);}catch(e){answer.textContent=e.message;}}
+  if(m.sent&&!m.selfSent){
+    const panel=document.createElement('div'),reply=document.createElement('div');answer.replaceChildren(panel,reply);panel.innerHTML=receiptMarkup(m.delivery||{},m.when);let replyVersion;
+    followReceipt(panel,m.id,m.when,r=>{
+      const version=JSON.stringify([r.replyAt,r.reply,r.replyImage]);if(version===replyVersion)return;replyVersion=version;reply.replaceChildren();
+      if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();const text=document.createElement('p');text.textContent=r.reply||'Picture reply';reply.append(text);}
+      if(r.replyImage?.startsWith('data:image/png;base64,')){const image=new Image();image.className='mail-proof';image.src=r.replyImage;image.alt='Reply';reply.append(image);}
+      if(r.reply||r.replyImage)confirmOpening({id:'reply-'+m.id,remote:true},reply);
+    });
+  }
   else if(m.pictureReply||m.reply){answer.innerHTML=receiptMarkup(m.replyDelivery||{},0,true);const caption=document.createElement('p');answer.append(caption);caption.textContent=m.pictureReply?'Your sticker reply':'You replied: '+m.reply;if(m.pictureReply){const i=new Image();i.className='mail-proof';i.src=thumb('reply-'+m.id);answer.append(i);}}
   else if(m.selfSent)answer.textContent=m.status==='scheduled'?'Scheduled':m.status==='cancelled'?'Cancelled':'No reply yet.';
   refresh();
@@ -233,7 +251,7 @@ export function composeFrom(category,refresh,example,myProfile={}){
       else{const friend=people.find(f=>f.code===selected);sentResult=await post('send',{code:friend.code,recipient:friend.name,kind:uploadedKind||kinds[group]||'a parcel',image,when,receiptSecret:key});}
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
       page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+(sentResult?.id?'<div class="dispatch-status">'+receiptMarkup({sentAt:sentResult.sentAt},when)+'</div>':'')+'<div class="mail-button-row dispatch-complete-actions">'+(sentResult?.id?button('check-delivery','Check status'):'')+button('done','Done')+'</div>');
-      const receiptPanel=el().querySelector('.dispatch-status');action('check-delivery',async()=>{const receipt=await post('receipt',{id:sentResult.id});if(receiptPanel?.isConnected)receiptPanel.innerHTML=receiptMarkup(receipt,when);});
+      const receiptPanel=el().querySelector('.dispatch-status'),watcher=receiptPanel?followReceipt(receiptPanel,sentResult.id,when):null;action('check-delivery',()=>watcher?.refresh());
       el().dataset.receipt='0';action('done',()=>{el().close();refresh();});});
   };
   if(example)return review(example.image,example.name,category,()=>composeFrom(category,refresh,null,myProfile));

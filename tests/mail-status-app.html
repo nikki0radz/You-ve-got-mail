@@ -43,7 +43,7 @@
  Object.defineProperty(window,'localStorage',{value:{getItem:k=>originalStorage.getItem(prefix+k),setItem:(k,v)=>originalStorage.setItem(prefix+k,v),removeItem:k=>originalStorage.removeItem(prefix+k)}});
  localStorage.setItem('pigeon.main-art.owner','FIXTURE');
  localStorage.setItem('youve-got-mail-draft-v1',JSON.stringify({version:1,theme:new URLSearchParams(location.search).get('theme')||'dark',profile:{name:'Nicole'},friends:[],inbox:[],scheduled:[]}));
- const pictureCase=new URLSearchParams(location.search).get('case')==='picture';
+ const pictureCase=new URLSearchParams(location.search).get('case')==='picture',trackingCase=new URLSearchParams(location.search).get('case')==='tracking';
  const canvas=document.createElement('canvas');canvas.width=200;canvas.height=300;const ctx=canvas.getContext('2d');ctx.fillStyle='#a1c6bc';ctx.fillRect(0,0,200,300);ctx.fillStyle='#294938';ctx.font='24px sans-serif';ctx.fillText('Picture reply',20,120);const picture=canvas.toDataURL('image/png');
  const now=Date.now(),seen=new URLSearchParams(location.search).get('case')==='seen';
  const receipt={sentAt:now-300000,deliveredAt:now-290000,lockedNotificationAt:now-280000,...(seen?{seenAt:now-60000}:{}),status:'acknowledged'};
@@ -58,7 +58,8 @@
  window.Pigeon={mailbox:()=>JSON.stringify(rows),friendsCached:()=>JSON.stringify(book),wasRead:id=>read.has(id),markRead:id=>{read.add(id);log('Unread badge cleared: '+id);},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,deliveryPrefs:()=>JSON.stringify({appVersion:'0.1.46',receiptTracking:true,fullPopup:true,notifications:true}),post:(ticket,op,raw)=>{
   const body=JSON.parse(raw);let data=book;
   if(op==='receipt'){window.fixtureReceiptRequests++;}if(op==='receipt')data=pictureCase?{...receipt,reply:'',replyImage:picture}:{...receipt,reply:'A simulated reply'};
-  if(op==='send')data={ok:true,id:'simulated-parcel',sentAt:Date.now()};
+  if(op==='send'){window.fixtureReceiptRequests=0;data={ok:true,id:'simulated-parcel',sentAt:Date.now()};}
+  if(op==='receipt'&&trackingCase){const phase=Math.min(2,window.fixtureReceiptRequests-1);data={sentAt:now,...(phase>=1?{deliveredAt:now+1,status:'acknowledged'}:{}),...(phase>=2?{displayedAt:now+2}:{})};}
   if(op==='seen'){window.fixtureSeen.push(body.id);const row=rows.find(r=>r.id===body.id);if(row)row.seenAt=Date.now();data={ok:true};log('Opening confirmation: '+body.id);}
   if(op==='profile')data={ok:true};
   const answer=()=>window.postOfficeResult(ticket,JSON.stringify({data}));if(slowCase&&op==='receipt')setTimeout(answer,450);else queueMicrotask(answer);

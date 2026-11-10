@@ -201,6 +201,8 @@ let mailPaint;window.addEventListener('phone-mail-updated',()=>{cancelAnimationF
 window.openParcelAction=async id=>{if(id!=='@settings')await phoneCache.refresh().catch(()=>{});if(id==='@settings'){tab='settings';render();return;}tab='inbox';render();if(id==='@friends')friendsWindow(render);else if(id.startsWith('@inbox:'))openMailboxItem(id.slice(7),render);else replyTo(id,render);};
 if(window.Pigeon){state.receiving=Pigeon.isOpen();
   phoneCache.refresh().catch(()=>{});refreshFriends().catch(()=>{});setInterval(()=>{if(!document.hidden)refreshFriends().catch(()=>{});},15000);
+  // Keep mailbox receipts current while the list is visible, including deliveries after Send.
+  setInterval(()=>{if(tab==='inbox'&&!document.hidden)refreshFriends().catch(()=>{});},3000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){requestPrompts.reset();phoneCache.refresh().finally(queueRequestPrompt).catch(()=>{});refreshFriends().catch(()=>{});}});
 }
 if(!window.Pigeon&&new URLSearchParams(location.search).get('review')==='settings')tab='settings';

@@ -119,6 +119,14 @@ final class Mail {
     }
     static void sync(Context c)throws Exception{
         synchronized(SYNC_LOCK){
+        // A push for new mail must not wait behind profile or historical reply downloads.
+        boolean more=false;
+        for(int i=0;i<8;i++){
+            JSONArray incoming=request(c,"inbox",null).getJSONArray("messages");if(incoming.length()==0)break;
+            JSONObject parcel=incoming.getJSONObject(0);accept(c,parcel,true);
+            request(c,"ack",new JSONObject().put("id",parcel.getString("id")));more=i==7;
+        }
+        if(more)PushConnection.sync(c,true);
         boolean incomplete=false;
         try{PostOffice.friends(c);}catch(Exception ignored){incomplete=true;}
         try{Replies.sync(c);}catch(Exception ignored){incomplete=true;}
@@ -126,9 +134,7 @@ final class Mail {
         for(String key:prefs(c).getAll().keySet())if(key.startsWith("outcome:")){
             try{flushOutcome(c,key);}catch(Exception ignored){incomplete=true;}
         }
-        for(int i=0;i<8;i++){JSONArray arr=request(c,"inbox",null).getJSONArray("messages");if(arr.length()==0){if(incomplete)throw new IOException("Mailbox sync will retry");return;}
-            JSONObject m=arr.getJSONObject(0);accept(c,m,true);request(c,"ack",new JSONObject().put("id",m.getString("id")));}
-        PushConnection.sync(c,false);
+        if(incomplete)throw new IOException("Mailbox sync will retry");
         }
     }
     static void markRead(Context c,String id){prefs(c).edit().putBoolean("read:"+id,true).apply();c.getSystemService(NotificationManager.class).cancel(id,5);c.getSystemService(NotificationManager.class).cancel(id,1);}

@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Delivery receipt progression</title><style>body{font:16px system-ui;background:#dce7e0;color:#203a30}iframe{width:390px;height:820px;border:1px solid #738c7c}button{padding:12px;margin:4px}</style></head><body><button id="run">Check automatic delivery status</button><p id="result">Ready · simulated delivery only</p><iframe title="Phone app" src="mail-status-app.html?case=tracking"></iframe><script type="module">
+const frame=document.querySelector('iframe'),result=document.querySelector('#result');
+const assert=(v,m)=>{if(!v)throw Error(m);},tick=()=>new Promise(requestAnimationFrame);
+async function until(fn){for(let i=0;i<1200;i++){if(fn())return;await tick();}throw Error('Timed out waiting for status');}
+document.querySelector('#run').onclick=async()=>{
+ try{
+  const w=frame.contentWindow,d=w.document;await until(()=>d.querySelector('[data-home-send]:not([disabled])'));
+  const {composeFrom}=await w.eval('import('+JSON.stringify(new URL('post/mailbox.mjs',d.baseURI).href)+')');
+  const c=d.createElement('canvas');c.width=c.height=100;c.getContext('2d').fillRect(0,0,100,100);
+  for(const width of [320,430]){
+   frame.style.width=width+'px';d.documentElement.dataset.theme=width===320?'light':'dark';
+   await composeFrom('Photos',()=>{},{image:c.toDataURL(),name:'Simulated photo'});
+   const target=d.querySelector('[data-target]');target.value='ABCDEF1234';target.dispatchEvent(new w.Event('change'));d.querySelector('[data-mb=send]').click();
+   const label=()=>d.querySelector('.dispatch-status .delivery-status>strong')?.textContent||'';
+   await until(()=>label().startsWith('Sent'));result.textContent='Checking '+width+'px · Sent observed';
+   await until(()=>label().startsWith('Delivered to phone'));result.textContent='Checking '+width+'px · Delivered observed without pressing Check status';
+   assert(!label().startsWith('Seen'),'Delivery alone marked seen');
+   await until(()=>label().startsWith('Seen'));assert(d.querySelector('.mail-seen'),'Seen styling missing');
+   const a=d.querySelector('[data-mb=check-delivery]').getBoundingClientRect(),b=d.querySelector('[data-mb=done]').getBoundingClientRect();assert(Math.abs(a.top-b.top)<2,'Status buttons left their row');
+   d.querySelector('[data-mb=done]').click();const count=w.fixtureReceiptRequests;await new Promise(resolve=>setTimeout(resolve,3300));assert(w.fixtureReceiptRequests===count,'Closed confirmation kept polling');
+  }
+  result.textContent='PASS · Sent → Delivered to phone → Seen automatically at 320/430px; visible pop-up counts as seen; Done stops polling; Check status and Done stay on one row. Simulated delivery only.';
+ }catch(e){result.textContent='FAIL · '+e.message;}
+};
+</script></body></html>

@@ -108,7 +108,8 @@ public class Delivery extends BroadcastReceiver {
                 if(Build.VERSION.SDK_INT>=29){window.setStatusBarContrastEnforced(false);window.setNavigationBarContrastEnforced(false);}
             }
             FrameLayout root=new FrameLayout(c);ImageView art=new ImageView(c);
-            art.setImageBitmap(BitmapFactory.decodeFile(Mail.image(c,id).getPath()));art.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            Bitmap bitmap=BitmapFactory.decodeFile(Mail.image(c,id).getPath());if(bitmap==null)throw new java.io.IOException("Saved picture unavailable");
+            art.setImageBitmap(bitmap);art.setScaleType(ImageView.ScaleType.FIT_CENTER);
             art.setContentDescription(Mail.label(m));root.addView(art,new FrameLayout.LayoutParams(-1,-1));
             int dp=(int)(c.getResources().getDisplayMetrics().density*12);
             LinearLayout actions=new LinearLayout(c);actions.setPadding(dp,dp,dp,dp);actions.setGravity(Gravity.CENTER);
@@ -164,7 +165,7 @@ public class Delivery extends BroadcastReceiver {
                         root.getViewTreeObserver().removeOnPreDrawListener(this);
                         Runnable report=()->{
                             if(root.isAttachedToWindow()&&root.isShown()&&root.getWindowVisibility()==View.VISIBLE&&!locked(c)){
-                                if(automatic){if(allowed(c))Mail.outcome(c,m,"screen");}else Receipts.seen(c,m);
+                                if(automatic){if(allowed(c)){Mail.outcome(c,m,"screen");Receipts.seen(c,m);}}else Receipts.seen(c,m);
                             }
                         };
                         if(Build.VERSION.SDK_INT>=29&&root.isHardwareAccelerated())root.getViewTreeObserver().registerFrameCommitCallback(report);

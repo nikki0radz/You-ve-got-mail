@@ -1,23 +1,24 @@
 export const mailModes={open:'Accepting mail',inbox:'Accepting mail · inbox only',closed:'Not accepting mail'};
 export const statusTime=value=>Number.isFinite(Number(value))&&Number(value)>0?new Date(Number(value)).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+const earliest=(...values)=>{const times=values.map(Number).filter(n=>Number.isFinite(n)&&n>0);return times.length?Math.min(...times):0;};
+export const mailSeenAt=r=>earliest(r.seenAt,r.displayedAt,r.outcome==='screen'?r.outcomeAt:0);
 export function deliverySummary(r={},when=0,reply=false){
  if(reply){
-  if(r.replySeenAt)return {label:'Your reply seen · '+statusTime(r.replySeenAt),seen:true};
-  if(r.replyDeliveredAt)return {label:'Your reply delivered · seen not confirmed'};
-  return {label:r.replyAt?'Reply sent · waiting for delivery':'Reply sent · status not reported yet'};
+  if(r.replySeenAt)return {stage:'seen',label:'Your reply seen · '+statusTime(r.replySeenAt),seen:true};
+  if(r.replyDeliveredAt)return {stage:'delivered',label:'Your reply delivered · '+statusTime(r.replyDeliveredAt)};
+  return {stage:'sent',label:'Reply sent · waiting for their phone'};
  }
- if(r.seenAt)return {label:'Seen · '+statusTime(r.seenAt),seen:true};
- if(r.displayedAt||r.outcome==='screen')return {label:'Displayed · seen not confirmed'};
- if(r.rejectedAt||r.outcome==='rejected')return {label:'Pop-up declined · kept in inbox'};
- if(r.lockedNotificationAt||r.outcome==='locked_notification')return {label:'Seen not confirmed · notification posted while locked'};
- if(r.notificationAt||r.outcome==='notification')return {label:'Notification posted · seen not confirmed'};
- if(Number(when)>Date.now())return {label:'Scheduled · '+statusTime(when)};
- if(r.deliveredAt||r.status==='acknowledged'||r.outcome==='inbox')return {label:'Delivered to phone · seen not confirmed'};
- return {label:'Sent · waiting for delivery confirmation'};
+ const seen=mailSeenAt(r);
+ if(seen||r.outcome==='screen')return {stage:'seen',label:'Seen'+(seen?' · '+statusTime(seen):''),seen:true};
+ if(Number(when)>Date.now())return {stage:'scheduled',label:'Scheduled · '+statusTime(when)};
+ const collected=Number(r.deliveredAt)||earliest(r.notificationAt,r.lockedNotificationAt,r.rejectedAt);
+ if(collected||r.status==='acknowledged'||['inbox','notification','locked_notification','rejected'].includes(r.outcome))return {stage:'delivered',label:'Delivered to phone'+(collected?' · '+statusTime(collected):'')};
+ return {stage:'sent',label:'Sent · waiting for their phone'};
 }
 export function deliveryTimeline(r={},when=0,reply=false){
+ const seen=mailSeenAt(r);
  const fields=reply?[['Reply sent',r.replyAt],['Reply delivered to phone',r.replyDeliveredAt],['Reply seen',r.replySeenAt]]:
-  [['Sent',r.sentAt],['Delivered to phone',r.deliveredAt],['Notification posted',r.notificationAt],['Notification posted while phone was locked',r.lockedNotificationAt],['Pop-up declined',r.rejectedAt],['Displayed on unlocked screen',r.displayedAt],['Seen',r.seenAt]];
+  [['Sent',r.sentAt],['Delivered to phone',Number(r.deliveredAt)||earliest(r.notificationAt,r.lockedNotificationAt,r.rejectedAt,seen)],['Notification posted',r.notificationAt],['Notification posted while phone was locked',r.lockedNotificationAt],['Pop-up declined',r.rejectedAt],['Seen',seen]];
  return fields.filter(([,at])=>at>0).map(([label,at])=>({label,at,time:statusTime(at)})).sort((a,b)=>a.at-b.at);
 }
 export function friendFacts(friend){
