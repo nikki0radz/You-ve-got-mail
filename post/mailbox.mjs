@@ -9,6 +9,7 @@ import {phoneCache} from './phone-cache.mjs';
 import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend-requests.mjs';
 import {watchImage} from '../shop/ui-tasks.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
+import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime} from './mail-status.mjs';
 
 let mailboxImages;
 const pending=new Map();let sequence=0,folder='inbox',person='';
@@ -24,6 +25,38 @@ const artworkId=row=>row.sent&&!row.selfSent?'sent-'+row.id:row.id;
 const directory=friendsDirectory;
 const date=value=>new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 const modes={open:'Open to mail',inbox:'Inbox only',closed:'Closed to mail'};
+function tracking(){try{return Boolean(JSON.parse(window.Pigeon?.deliveryPrefs?.()||'{}').receiptTracking);}catch{return false;}}
+function receiptMarkup(receipt={},when=0,reply=false){
+ const summary=deliverySummary(receipt,when,reply);
+ return '<section class="delivery-status" aria-label="'+(reply?'Reply status':'Delivery status')+'"><strong class="'+(summary.seen?'mail-seen':'')+'">'+esc(summary.label)+'</strong><ol>'+deliveryTimeline(receipt,when,reply).map(e=>'<li><span>'+esc(e.label)+'</span><time>'+esc(e.time)+'</time></li>').join('')+'</ol><small>'+(summary.seen?'Seen confirms an opening or interaction.':'Notifications and automatic pop-ups do not confirm that someone read the message.')+'</small></section>';
+}
+function rowStatus(m){
+ if(m.status==='cancelled')return 'Cancelled';
+ if(m.status==='scheduled')return 'Scheduled · '+date(m.when);
+ if(m.sent&&!m.selfSent)return deliverySummary(m.delivery||{},m.when).label;
+ if(m.reply||m.pictureReply)return deliverySummary(m.replyDelivery||{},0,true).label;
+ return m.seenAt?'Opened by you · '+statusTime(m.seenAt):'';
+}
+function confirmOpening(m,content=el()){
+ if(!tracking()||!m.remote||m.sent||m.status==='scheduled')return;
+ const d=el(),marker=Symbol();content.openingMarker=marker;
+ const controller=new AbortController();let reported=false;
+ const report=()=>requestAnimationFrame(()=>{if(!reported&&d.open&&content.isConnected&&content.openingMarker===marker&&!document.hidden){reported=true;controller.abort();post('seen',{id:m.id}).catch(()=>{});}});
+ const image=content.querySelector('.mail-proof');
+ const ready=()=>{if(!image||(image.complete&&image.naturalWidth))report();};
+ d.addEventListener('close',()=>controller.abort(),{once:true,signal:controller.signal});
+ document.addEventListener('visibilitychange',ready,{signal:controller.signal});
+ if(image&&!image.complete){image.addEventListener('load',report,{once:true,signal:controller.signal});}else ready();
+}
+let publishedPhoto='',publishingPhoto=false;
+export async function publishFriendProfile(profile){
+ const src=profilePhoto(profile);if(!tracking()||src===publishedPhoto||publishingPhoto)return;
+ publishingPhoto=true;
+ try{
+  const img=new Image();img.src=src;await img.decode();const c=document.createElement('canvas');c.width=c.height=128;c.getContext('2d').drawImage(img,0,0,128,128);
+  await post('profile',{photo:c.toDataURL('image/webp',.85)});publishedPhoto=src;
+ }catch{}finally{publishingPhoto=false;}
+}
 const bird='<img class="reply-bird" src="assets/home/mascot.webp" alt="Pigeon post courier">';
 const button=(key,label)=>'<button class="mb-button" type="button" data-mb="'+key+'">'+label+'</button>';
 const parcelKind=kind=>/^a pigeon$/i.test(kind||'')?'a sticker':kind;
@@ -53,7 +86,7 @@ function action(key,fn){
   btn.onclick=async()=>{btn.disabled=true;try{await fn();}catch(e){const p=el().querySelector('.mb-error');if(p)p.textContent=e.message;}finally{btn.disabled=false;}};
 }
 function findRow(id,sent=false){return read().find(x=>x.id===id&&!!x.sent===sent);}
-function portrait(f){return '<button class="mail-friend" data-friend="'+esc(f.code)+'"><img alt="" src="assets/home/mascot.webp"><strong>'+esc(f.name)+'</strong><small>'+esc(modes[f.mode]||'')+'</small></button>';}
+function portrait(f){return '<button class="mail-friend" data-friend="'+esc(f.code)+'" aria-label="View '+esc(f.name)+'’s profile"><img alt="" src="'+profilePhoto(f)+'"><strong>'+esc(f.name)+'</strong><small data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</small></button>';}
 let peopleExpanded=false;
 export function peopleSection(){
  const book=directory(),friends=book.friends||[],requests=pendingFriendRequests(),count=requests.length;
@@ -64,13 +97,21 @@ export function wirePeople(root,refresh){
  if(toggle)toggle.onclick=()=>{peopleExpanded=!peopleExpanded;toggle.setAttribute('aria-expanded',String(peopleExpanded));list.hidden=!peopleExpanded;};
  root.querySelector('[data-book]')?.addEventListener('click',()=>friendsPage(refresh));
  root.querySelector('[data-requests]')?.addEventListener('click',()=>openFriendRequests(refresh));
- for(const b of root.querySelectorAll('[data-friend]'))b.onclick=()=>{const friend=(directory().friends||[]).find(f=>f.code===b.dataset.friend);if(friend?.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}person=b.dataset.friend;refresh();};
+ for(const b of root.querySelectorAll('[data-friend]'))b.onclick=()=>friendProfile(b.dataset.friend,refresh);
+}
+export function friendProfile(code,refresh){
+ const f=(directory().friends||[]).find(friend=>friend.code===code);if(!f)return;
+ if(f.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}
+ page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. A check-in can happen in the background; it does not mean they are online.</p></article>'+button('person-mail','View mail')+button('refresh-person','Refresh profile'));
+ const card=el().querySelector('.friend-profile');
+ action('person-mail',()=>{person=code;el().close();refresh();});
+ action('refresh-person',async()=>{await refreshFriends();if(card.isConnected&&el().open)friendProfile(code,refresh);});
 }
 export function mailboxView(){
   if(!phoneCache.ready())return '<p class="image-loading-label" role="status">Loading your inbox…</p>';
   const unread=unreadCount(read(),id=>phoneCache.wasRead(id));
   const rows=read().filter(r=>!!r.sent===(folder==='sent')&&(!person||r.code===person||r.senderCode===person));
-  return '<section class="mailbox-heading" aria-label="Mailbox"><img src="assets/home/mailbox.png" alt="Mailbox" width="1864" height="843"></section>'+peopleSection()+'<div class="mail-tabs">'+['inbox','sent'].map(f=>'<button aria-pressed="'+(f===folder)+'" data-folder="'+f+'">'+'<img src="assets/home/'+(f==='sent'?'happy':'envelope')+'.webp" alt="">'+(f==='sent'?'Sent':'Inbox')+'</button>').join('')+'</div>'+(person?'<button class="mb-button" data-clear>All people ×</button>':'')+(folder==='inbox'&&unread?'<div class="mail-read-actions"><button type="button" data-mark-seen>Mark all as seen</button></div>':'')+'<div class="mail-rows">'+rows.map(m=>'<button class="mail-row" data-row="'+esc(m.id)+'" data-sent="'+!!m.sent+'"><span class="parcel-thumb"><img loading="lazy" decoding="async" alt="" src="'+esc((m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m))))+'"></span><span class="mail-dot">'+(!m.sent&&!['scheduled','cancelled','rejected'].includes(m.status)&&!phoneCache.wasRead(m.id)?'●':'')+'</span><span><strong>'+esc(m.sent?'To '+m.sender:m.sender||'Pigeon Post')+'</strong><span>'+esc(m.isReply?(m.text||'Sticker reply'):parcelKind(m.kind)||'Parcel')+'</span><small>'+esc(m.status==='scheduled'?'Scheduled · '+date(m.when):m.reply||m.pictureReply?'Replied':m.status==='cancelled'?'Cancelled':'')+'</small></span><time>'+esc(date(m.created||m.when))+'</time></button>').join('')+(rows.length?'':'<p>No '+(folder==='sent'?'sent parcels':'deliveries')+' here yet.</p>')+'</div>';
+  return '<section class="mailbox-heading" aria-label="Mailbox"><img src="assets/home/mailbox.png" alt="Mailbox" width="1864" height="843"></section>'+peopleSection()+'<div class="mail-tabs">'+['inbox','sent'].map(f=>'<button aria-pressed="'+(f===folder)+'" data-folder="'+f+'">'+'<img src="assets/home/'+(f==='sent'?'happy':'envelope')+'.webp" alt="">'+(f==='sent'?'Sent':'Inbox')+'</button>').join('')+'</div>'+(person?'<button class="mb-button" data-clear>All people ×</button>':'')+(folder==='inbox'&&unread?'<div class="mail-read-actions"><button type="button" data-mark-seen>Clear unread badges</button></div>':'')+'<div class="mail-rows">'+rows.map(m=>'<button class="mail-row" data-row="'+esc(m.id)+'" data-sent="'+!!m.sent+'"><span class="parcel-thumb"><img loading="lazy" decoding="async" alt="" src="'+esc((m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m))))+'"></span><span class="mail-dot">'+(!m.sent&&!['scheduled','cancelled','rejected'].includes(m.status)&&!phoneCache.wasRead(m.id)?'●':'')+'</span><span><strong>'+esc(m.sent?'To '+m.sender:m.sender||'Pigeon Post')+'</strong><span>'+esc(m.isReply?(m.text||'Sticker reply'):parcelKind(m.kind)||'Parcel')+'</span><small>'+esc(rowStatus(m))+'</small></span><time>'+esc(date(m.created||m.when))+'</time></button>').join('')+(rows.length?'':'<p>No '+(folder==='sent'?'sent parcels':'deliveries')+' here yet.</p>')+'</div>';
 }
 export function wireMailbox(root,refresh){
   if(!phoneCache.ready())return;
@@ -133,12 +174,12 @@ export function replyTo(id,refresh){
 }
 async function view(m,refresh){
   if(!m)return;if(!m.sent)phoneCache.markRead(m.id);
-  if(m.isReply){page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+thumb(m.id)+'" alt="Sticker reply">':'')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
+  if(m.isReply){page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+thumb(m.id)+'" alt="Sticker reply">':'')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';confirmOpening(m);if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
   page((m.sent?'To ':'From ')+m.sender,'<p>'+esc(parcelKind(m.kind))+' · '+esc(date(m.when))+'</p><img class="mail-proof" src="'+(m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m)))+'" alt="Parcel artwork"><div class="thread-reply"></div>'+(!m.sent?(m.status==='scheduled'?button('cancel','Cancel scheduled delivery'):m.status==='cancelled'?'':button('reply','Reply')):''));
-  if(!m.sent)enlargeMailArtwork(el());
+  if(!m.sent){enlargeMailArtwork(el());confirmOpening(m);}
   const answer=el().querySelector('.thread-reply');action('reply',()=>replyTo(m.id,refresh));action('cancel',()=>{Pigeon.cancelScheduled(m.id);el().close();phoneCache.refresh().then(refresh).catch(()=>{});});
-  if(m.sent&&!m.selfSent){try{const r=await post('receipt',{id:m.id});if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();}answer.textContent=r.reply||(!r.replyImage?'No reply yet.':'Sticker reply');if(r.replyImage?.startsWith('data:image/png;base64,')){const i=new Image();i.className='mail-proof';i.src=r.replyImage;i.alt='Reply';answer.append(i);}}catch(e){answer.textContent=e.message;}}
-  else if(m.pictureReply||m.reply){answer.textContent=m.pictureReply?'Your sticker reply':'You replied: '+m.reply;if(m.pictureReply){const i=new Image();i.className='mail-proof';i.src=thumb('reply-'+m.id);answer.append(i);}}
+  if(m.sent&&!m.selfSent){try{const r=await post('receipt',{id:m.id});if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();}answer.innerHTML=receiptMarkup(r,m.when);if(r.reply||r.replyImage){const p=document.createElement('p');p.textContent=r.reply||'Sticker reply';answer.append(p);}if(r.replyImage?.startsWith('data:image/png;base64,')){const i=new Image();i.className='mail-proof';i.src=r.replyImage;i.alt='Reply';answer.append(i);}if(r.reply||r.replyImage)confirmOpening({id:'reply-'+m.id,remote:true},answer);}catch(e){answer.textContent=e.message;}}
+  else if(m.pictureReply||m.reply){answer.innerHTML=receiptMarkup(m.replyDelivery||{},0,true);const caption=document.createElement('p');answer.append(caption);caption.textContent=m.pictureReply?'Your sticker reply':'You replied: '+m.reply;if(m.pictureReply){const i=new Image();i.className='mail-proof';i.src=thumb('reply-'+m.id);answer.append(i);}}
   else if(m.selfSent)answer.textContent=m.status==='scheduled'?'Scheduled':m.status==='cancelled'?'Cancelled':'No reply yet.';
   refresh();
 }
@@ -149,13 +190,13 @@ export function composeFrom(category,refresh,example,myProfile={}){
   const review=async(png,name,group,reopen,uploadedKind)=>{
     const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
     const people=(snapshot.friends||[]).filter(friend=>!friend.simulated);const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a sticker',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-3" data-review-look="sendrow-3"><label>Send to<select data-target hidden aria-label="Recipient"><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><details class="recipient-menu" data-base-look="recipientdivider-1" data-review-look="recipientdivider-1"><summary aria-label="Choose recipient"></summary><div class="recipient-people" data-review-look="recipientfont-2" data-base-look="recipientfont-2" role="group" aria-label="Recipient"></div></details></section><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
+    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-3" data-review-look="sendrow-3"><label>Send to<select data-target hidden aria-label="Recipient"><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><details class="recipient-menu" data-base-look="recipientdivider-1" data-review-look="recipientdivider-1"><summary aria-label="Choose recipient"></summary><div class="recipient-people" data-review-look="recipientfont-2" data-base-look="recipientfont-2" role="group" aria-label="Recipient"></div></details></section><p data-recipient-mail-status></p><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
     fitPreview(el().querySelector('.mail-proof'));
     const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
     const list=el().querySelector('.recipient-people'),menu=el().querySelector('.recipient-menu'),heading=menu.querySelector('summary');
     el().querySelector('.recipient-choice>label').onclick=e=>{if(e.target.localName==='label'){e.preventDefault();menu.open=!menu.open;heading.focus();}};
     const updateTarget=()=>{
-      draft.target=target.value;
+      draft.target=target.value;const recipientStatus=el().querySelector('[data-recipient-mail-status]');if(recipientStatus)recipientStatus.textContent=target.value==='self'?'Sending to yourself':mailModes[people.find(f=>f.code===target.value)?.mode]||'Mail status not reported';
       [...list.children].forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===target.selectedIndex)));
       const selected=list.children[target.selectedIndex];if(selected)heading.replaceChildren(...[...selected.childNodes].map(node=>node.cloneNode(true)));
       heading.setAttribute('aria-label','Send to '+target.selectedOptions[0].textContent);
@@ -170,11 +211,12 @@ export function composeFrom(category,refresh,example,myProfile={}){
     target.onchange=updateTarget;updateTarget();
     dispatchControls(el().querySelector('.delivery-controls'),draft);
     action('edit',()=>{el().close();reopen();});
-    action('send',async()=>{const selected=target.value,later=draft.later,when=later?new Date(draft.day+'T'+draft.clock).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
+    action('send',async()=>{let sentResult;const selected=target.value,later=draft.later,when=later?new Date(draft.day+'T'+draft.clock).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
       if(selected==='self'){const result=Pigeon.queue(JSON.stringify({sender:'Myself',senderCode:'self',image,kind:uploadedKind||kinds[group]||'a parcel',text:name,when}));if(result!=='ok')throw Error(result);phoneCache.refresh().catch(()=>{});}
-      else{const friend=people.find(f=>f.code===selected);await post('send',{code:friend.code,recipient:friend.name,kind:uploadedKind||kinds[group]||'a parcel',image,when,receiptSecret:key});}
+      else{const friend=people.find(f=>f.code===selected);sentResult=await post('send',{code:friend.code,recipient:friend.name,kind:uploadedKind||kinds[group]||'a parcel',image,when,receiptSecret:key});}
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
-      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+button('done','Done'));
+      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+(sentResult?.id?'<div class="dispatch-status">'+receiptMarkup({sentAt:sentResult.sentAt},when)+'</div>'+button('check-delivery','Check status'):'')+button('done','Done'));
+      const receiptPanel=el().querySelector('.dispatch-status');action('check-delivery',async()=>{const receipt=await post('receipt',{id:sentResult.id});if(receiptPanel?.isConnected)receiptPanel.innerHTML=receiptMarkup(receipt,when);});
       el().dataset.receipt='0';action('done',()=>{el().close();refresh();});});
   };
   if(example)return review(example.image,example.name,category,()=>composeFrom(category,refresh,null,myProfile));

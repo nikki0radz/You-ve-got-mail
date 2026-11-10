@@ -19,3 +19,27 @@
 #art-upload .art-request-test{margin:20px 0;padding:14px;border:1px dashed var(--mm-text);border-radius:16px;color:var(--mm-text);background:var(--mm-panel)}
 #art-upload .art-request-test button{margin:5px 4px 5px 0}
 @media(prefers-reduced-motion:reduce){#app .people-chevron{transition:none}}
+/* The address book heading is plain writing, independent of older design presets. */
+#app .address-book .people-heading,#app .address-book .people-toggle,#app .address-book .people-toggle b{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--mm-text);border-radius:0}
+#app .address-book .people-heading{padding:7px 0;margin:0}
+#app .address-book .friend-grid .mail-friend{border:1px solid var(--mm-edge);border-radius:16px;padding:12px 8px;background:var(--mm-panel);color:var(--mm-text)}
+#app .friend-grid .mail-friend img{width:58px;height:58px;object-fit:cover;background:transparent;border:0;box-shadow:none}
+#app .mail-friend strong{font-size:16px}
+#app [data-mail-mode=closed]{color:#a7474d}
+html[data-theme=dark] #app [data-mail-mode=closed]{color:#f7aab0}
+#mail-window .friend-profile{text-align:center}
+#mail-window .friend-profile-photo{display:block;width:132px;height:132px;margin:10px auto;object-fit:cover;border-radius:50%;border:0;background:transparent}
+#mail-window .friend-mail-mode{display:block;margin:12px 0;font-size:17px}
+#mail-window .friend-profile dl{margin:18px 0;text-align:left}
+#mail-window .friend-profile dl div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid #b5bca9}
+#mail-window .friend-profile dt{font-weight:600}
+#mail-window .friend-profile dd{margin:0;text-align:right}
+#mail-window .friend-profile p{font-size:12px;line-height:1.5}
+#mail-window .delivery-status{margin:16px 0;padding:14px 0;text-align:left;border-block:1px solid #a7b5a1}
+#mail-window .delivery-status ol{padding:0;margin:10px 0;list-style:none}
+#mail-window .delivery-status li{display:flex;justify-content:space-between;gap:12px;margin:8px 0;font-size:13px}
+#mail-window .delivery-status time{flex:none}
+#mail-window .delivery-status small{display:block;font-size:12px;line-height:1.5;color:inherit}
+#mail-window .mail-seen{color:#1e5e94}
+html[data-theme=dark] #mail-window .mail-seen{color:#8ac9ff}
+#mail-window [data-recipient-mail-status]{margin:10px 0;font-weight:650}

@@ -39,10 +39,11 @@ final class Mail {
         try{h.setConnectTimeout(10000);h.setReadTimeout(15000);h.setInstanceFollowRedirects(false);
             h.setRequestProperty("Authorization","Bearer "+key);
             if(body!=null){h.setRequestMethod("POST");h.setDoOutput(true);h.setRequestProperty("Content-Type","application/json");try(OutputStream o=h.getOutputStream()){o.write(body.toString().getBytes(StandardCharsets.UTF_8));}}
-            int status=h.getResponseCode();if(status<200||status>=300){String error="Post office returned "+status;try{error=new JSONObject(new String(read(h.getErrorStream()),StandardCharsets.UTF_8)).optString("error",error);}catch(Exception ignored){}throw new IOException(error);}
+            int status=h.getResponseCode();if(status<200||status>=300){String error="Post office returned "+status;try{error=new JSONObject(new String(read(h.getErrorStream()),StandardCharsets.UTF_8)).optString("error",error);}catch(Exception ignored){}throw new HttpFailure(status,error);}
             byte[] b=read(h.getInputStream());return b.length==0?new JSONObject():new JSONObject(new String(b,StandardCharsets.UTF_8));
         }finally{h.disconnect();}
     }
+    static final class HttpFailure extends IOException{final int status;HttpFailure(int status,String message){super(message);this.status=status;}}
     static void channels(Context c){
         NotificationManager n=c.getSystemService(NotificationManager.class);
         n.createNotificationChannel(new NotificationChannel("replies","Replies",NotificationManager.IMPORTANCE_DEFAULT));
@@ -93,7 +94,7 @@ final class Mail {
         if(!"image/png".equals(size.outMimeType)||size.outWidth<1||size.outHeight<1||(long)size.outWidth*size.outHeight>16000000)throw new IOException("Invalid PNG size");
         AtomicFile f=new AtomicFile(dest);FileOutputStream out=f.startWrite();try{out.write(bytes);f.finishWrite(out);}catch(IOException e){f.failWrite(out);throw e;}
         JSONObject m=new JSONObject().put("created",System.currentTimeMillis()).put("inboxOnly",payload.optBoolean("inboxOnly"));for(String k:new String[]{"sender","kind","text","senderCode"})m.put(k,payload.optString(k));
-        m.put("id",id).put("remote",remote).put("when",Math.max(System.currentTimeMillis(),payload.optLong("when",0))).put("status","scheduled");save(c,m);alarm(c,id,m.getLong("when"));
+        m.put("id",id).put("remote",remote).put("when",Math.max(System.currentTimeMillis(),payload.optLong("when",0))).put("status","scheduled").put("deliveredAt",System.currentTimeMillis());save(c,m);alarm(c,id,m.getLong("when"));
     }
     static List<JSONObject> history(Context c){
         List<JSONObject> results=new ArrayList<>();for(String k:prefs(c).getAll().keySet())if(k.startsWith("m:"))results.add(meta(c,k.substring(2)));
@@ -101,6 +102,8 @@ final class Mail {
     }
     // Persist delivery outcomes separately from the parcel. Retry after a lost response or restart.
     static synchronized void outcome(Context c,JSONObject parcel,String value){
+        try{JSONObject current=meta(c,parcel.optString("id"));String field="screen".equals(value)?"displayedAt":"notification".equals(value)?"notificationAt":"locked_notification".equals(value)?"lockedNotificationAt":"rejected".equals(value)?"rejectedAt":null;
+            if(field!=null&&!current.has(field)){current.put(field,System.currentTimeMillis());save(c,current);}}catch(Exception ignored){}
         if("screen".equals(value))markRead(c,parcel.optString("id"));
         if(!parcel.optBoolean("remote"))return;
         String id=parcel.optString("id"),key="outcome:"+id;

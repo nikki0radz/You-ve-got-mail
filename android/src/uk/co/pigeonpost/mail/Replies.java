@@ -18,20 +18,24 @@ final class Replies {
   }while(!after.isEmpty());
  }
  static synchronized void receive(Context c,JSONObject reply,boolean remote)throws Exception{
+  receive(c,reply,remote,true);
+ }
+ static synchronized void receive(Context c,JSONObject reply,boolean remote,boolean alert)throws Exception{
   String original=reply.getString("id"),id="reply-"+original;
   String text=reply.optString("reply",""),image=reply.optString("replyImage","");
   if(text.isEmpty()&&image.isEmpty())return;
   StringBuilder hash=new StringBuilder();
   for(byte b:MessageDigest.getInstance("SHA-256").digest((text+"\u0000"+image).getBytes(StandardCharsets.UTF_8)))hash.append(String.format(Locale.ROOT,"%02x",b&255));
-  JSONObject old=Mail.meta(c,id);if(hash.toString().equals(old.optString("fingerprint")))return;
+  JSONObject old=Mail.meta(c,id);if(hash.toString().equals(old.optString("fingerprint"))&&reply.optLong("replyAt")==old.optLong("replyAt")){Receipts.deliveredReply(c,old);return;}
   if(!image.isEmpty())PostOffice.writeImage(c,id,image);
   long now=System.currentTimeMillis();
   JSONObject m=new JSONObject().put("id",id).put("originalId",original).put("isReply",true).put("remote",remote)
    .put("sender",reply.optString("sender","A friend")).put("senderCode",reply.optString("senderCode"))
    .put("kind","Reply").put("text",text).put("hasImage",!image.isEmpty()).put("status","received")
-   .put("created",now).put("when",now).put("fingerprint",hash.toString());
+   .put("created",now).put("when",now).put("fingerprint",hash.toString()).put("replyAt",reply.optLong("replyAt"));
   if(!Mail.prefs(c).edit().putString("m:"+id,m.toString()).putBoolean("read:"+id,false).commit())throw new java.io.IOException("Could not save reply");
-  if(!Mail.prefs(c).getBoolean("replyAlerts",true)||"closed".equals(PostOffice.mode(c))||!Mail.enabled(c,"replies"))return;
+  Mail.prefs(c).edit().remove("seenAt:"+id).apply();Receipts.deliveredReply(c,m);
+  if(!alert||!Mail.prefs(c).getBoolean("replyAlerts",true)||"closed".equals(PostOffice.mode(c))||!Mail.enabled(c,"replies"))return;
   Notification notice=new Notification.Builder(c,"replies").setSmallIcon(android.R.drawable.ic_dialog_email)
    .setContentTitle(m.optString("sender")+" replied").setContentText(text.isEmpty()?"Sticker reply":text)
    .setVisibility(Notification.VISIBILITY_PRIVATE).setAutoCancel(true).setContentIntent(Mail.action(c,id,"inbox",true)).build();

@@ -16,9 +16,14 @@ final class PostOffice {
     }
     static void profile(Context c)throws Exception{
         SharedPreferences p=Mail.prefs(c);String mode=mode(c),name=p.getString("displayName","New pigeon");
-        if(mode.equals(p.getString("publishedMode",""))&&name.equals(p.getString("publishedName","")))return;
-        JSONObject me=Mail.request(c,"profile",new JSONObject().put("name",name).put("mode",mode));
-        p.edit().putString("publishedMode",mode).putString("publishedName",name).putString("code",me.getString("code")).apply();
+        JSONObject settings=new JSONObject().put("notifications",Mail.enabled(c,Mail.QUIET)).put("popups",Mail.full(c)&&android.provider.Settings.canDrawOverlays(c))
+          .put("warning",p.getBoolean("warning",true)).put("onUnlock",p.getBoolean("onUnlock",true)).put("replyNotifications",Mail.enabled(c,"replies")&&p.getBoolean("replyAlerts",true))
+          .put("precise",Mail.exact(c)).put("push",PushConnection.registered(c)?"connected":"pending")
+          .put("version",c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName);
+        String photo=p.getString("profilePhoto","");String details=settings.toString()+photo;
+        if(mode.equals(p.getString("publishedMode",""))&&name.equals(p.getString("publishedName",""))&&details.equals(p.getString("publishedDetails","")))return;
+        JSONObject me=Mail.request(c,"profile",new JSONObject().put("name",name).put("mode",mode).put("settings",settings).put("photo",photo.isEmpty()?JSONObject.NULL:photo));
+        p.edit().putString("publishedMode",mode).putString("publishedName",name).putString("publishedDetails",details).putString("code",me.getString("code")).apply();
     }
     static synchronized JSONObject friends(Context c)throws Exception{
         profile(c);SharedPreferences p=Mail.prefs(c);long cursor=p.getLong("friendsCursor",-1);
@@ -33,7 +38,8 @@ final class PostOffice {
             }
         }
         FriendRequests.update(c,data.optJSONArray("incoming"));
-        data.remove("events");p.edit().putLong("friendsCursor",data.getLong("cursor")).putString("friendsSnapshot",data.toString()).apply();return data;
+        data.remove("events");p.edit().putLong("friendsCursor",data.getLong("cursor")).putString("friendsSnapshot",data.toString()).apply();
+        try{Receipts.sync(c);}catch(Exception ignored){}return data;
     }
     static String status(String mode){return "open".equals(mode)?"Open to mail":"inbox".equals(mode)?"Inbox only":"Closed to mail";}
     static void syncSoon(Context c){Mail.io.execute(()->{try{friends(c);}catch(Exception ignored){}});}
@@ -44,6 +50,11 @@ final class PostOffice {
         try{stream.write(bytes);dest.finishWrite(stream);}catch(IOException e){dest.failWrite(stream);throw e;}
     }
     static JSONObject perform(Context c,String op,JSONObject payload)throws Exception{
+        if("profile".equals(op)){
+            String photo=payload.optString("photo","");
+            if(photo.length()>48000||(!photo.isEmpty()&&!photo.matches("^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$")))throw new IOException("Choose a smaller profile picture");
+            Mail.prefs(c).edit().putString("profilePhoto",photo).apply();profile(c);return new JSONObject().put("ok",true);
+        }
         if("friends".equals(op))return friends(c);
         if(Arrays.asList("request","accept","decline").contains(op)){
             profile(c);Mail.request(c,"friends/"+op,new JSONObject().put("code",payload.getString("code")));return friends(c);
@@ -54,23 +65,27 @@ final class PostOffice {
             writeImage(c,"sent-"+id,payload.getString("image"));
             JSONObject row=new JSONObject().put("id",id).put("sender",recipient).put("kind",payload.getString("kind")).put("when",payload.optLong("when",System.currentTimeMillis())).put("created",System.currentTimeMillis()).put("code",payload.getString("code")).put("status","sent").put("sent",true);
             Mail.prefs(c).edit().putString("s:"+id,row.toString()).putString("receipt:"+id,result.getString("receipt")).commit();
-            return new JSONObject().put("ok",true);
+            return new JSONObject().put("ok",true).put("id",id).put("sentAt",row.getLong("created"));
         }
         String id=payload.getString("id");
+        if("seen".equals(op)){Receipts.seen(c,Mail.meta(c,id));return new JSONObject().put("ok",true);}
         if("receipt".equals(op)){
             String secret=Mail.prefs(c).getString("receipt:"+id,"");
             if(secret.isEmpty())throw new IOException("Receipt unavailable");
             JSONObject receipt=Mail.authorized("receipt",null,secret);
             JSONObject sent=new JSONObject(Mail.prefs(c).getString("s:"+id,"{}"));
+            JSONObject details=new JSONObject();for(String k:new String[]{"status","outcome","outcomeAt","sentAt","deliveredAt","seenAt","displayedAt","notificationAt","lockedNotificationAt","rejectedAt","replyAt","replyDeliveredAt","replySeenAt"})if(receipt.has(k)&&!receipt.isNull(k))details.put(k,receipt.get(k));
+            sent.put("delivery",details);Mail.prefs(c).edit().putString("s:"+id,sent.toString()).apply();
             Replies.receive(c,new JSONObject(receipt.toString()).put("id",id).put("sender",sent.optString("sender","A friend")).put("senderCode",sent.optString("code")),true,false);
             return receipt;
         }
         if("reply".equals(op)){
             JSONObject item=Mail.meta(c,id);if(!item.has("id")||"scheduled".equals(item.optString("status")))throw new IOException("Parcel unavailable");
+            Receipts.seen(c,item);
             if(item.optBoolean("remote"))Mail.request(c,"reply",payload);
             String picture=payload.optString("image");
             if(!picture.isEmpty())writeImage(c,"reply-"+id,picture);
-            item=Mail.meta(c,id);item.put("reply",payload.optString("text")).put("pictureReply",!picture.isEmpty());Mail.save(c,item);
+            item=Mail.meta(c,id);item.remove("replyDelivery");item.put("reply",payload.optString("text")).put("pictureReply",!picture.isEmpty());Mail.save(c,item);
             if(!item.optBoolean("remote"))Replies.receive(c,new JSONObject().put("id",id).put("sender","Myself").put("senderCode","self").put("reply",payload.optString("text")).put("replyImage",picture),false);
             return new JSONObject().put("ok",true);
         }

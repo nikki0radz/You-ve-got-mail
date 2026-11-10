@@ -27,6 +27,16 @@
 #app .mail-status-art{display:block;width:100%;height:auto;pointer-events:none}
 #app .mail-toggle input:focus-visible+.mail-status-art{outline:3px solid #deac38;outline-offset:2px;border-radius:10px}
 #app .home-palette{border:0;border-radius:50%;background:var(--mm-panel);width:36px;height:36px;min-width:36px;padding:0;font-size:19px;display:grid;place-items:center}
+#app .courier-stand.post-office-home{width:min(100%,clamp(255px,36dvh,310px))}
+#home-wheel{min-height:160px;flex:0 1 auto}
+#home-wheel .wheel-paper{padding-block:4px}
+#home-wheel .category-reel button{flex-basis:32%}
+#home-wheel .category-reel::before,#home-wheel .category-reel::after{flex-basis:34%}
+#app button.home-send{box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:15px;width:100%;min-height:58px;flex:none;margin:12px 0 9px;padding:11px 20px;border:1px solid #234532;border-radius:28px;background:#365a40;color:#fff9e8;box-shadow:0 3px 0 #243e2d;font:800 24px/1.25 PostalBaloo,system-ui;cursor:pointer}
+#app .home-send svg{width:25px;height:25px;flex:none}
+#app .home-send:disabled{opacity:.55;cursor:default}
+#app .home-send:focus-visible{outline:3px solid var(--mm-text);outline-offset:4px}
+@media(max-height:700px){#app .courier-stand.post-office-home{width:min(100%,42dvh,270px)}#home-wheel .category-reel button{flex-basis:28%}#home-wheel .category-reel::before,#home-wheel .category-reel::after{flex-basis:36%}#app button.home-send{min-height:52px;margin-top:8px}}
 #app[data-custom-home] .app-nav button[aria-current=page]{background:var(--home-selected);color:var(--mm-text)}
 .home-colour-dialog{position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,480px);max-height:72dvh;overflow:auto;padding:14px 16px 18px;border:1px solid #9eae9c;border-radius:22px 22px 0 0;background:#f8f3e5;color:#253e31;box-shadow:0 -4px 22px #0005;font:14px system-ui}
 .home-colour-dialog::backdrop{background:#0002;backdrop-filter:none;-webkit-backdrop-filter:none}

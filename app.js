@@ -8,7 +8,7 @@ import {settingsPage,wireSettings,backdropOpacity} from './post/settings.mjs';
 import {refreshMainArt,verifyManager} from './shop/main-art.mjs';
 import {catalogueDesigns} from './shop/catalogue.mjs';
 import {mountCategoryWheel} from './shop/category-wheel.mjs';
-import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends} from './post/mailbox.mjs';
+import {mailboxView,wireMailbox,friendsWindow,replyTo,composeFrom,openMailboxItem,peopleSection,wirePeople,openFriendRequests,refreshFriends,publishFriendProfile} from './post/mailbox.mjs';
 import {pendingFriendRequests} from './post/friend-requests.mjs';
 import {createRequestPrompts} from './post/friend-state.mjs';
 import {header,home,demoPeople} from './post/home.mjs?v=hanging-sign-2';
@@ -39,13 +39,20 @@ function inbox(){if(window.Pigeon?.mailbox)return mailboxView();
  const tabs='<div class="mail-tabs">'+['inbox','sent'].map(f=>`<button type="button" data-action="local-folder" data-id="${f}" aria-pressed="${localFolder===f}"><img src="assets/home/${f==='sent'?'happy':'envelope'}.webp" alt="">${f==='sent'?'Sent':'Inbox'}</button>`).join('')+'</div>';
  if(localFolder==='sent')return '<section class="mailbox-heading"><img src="assets/home/mailbox.png" alt="Mailbox" width="1864" height="843"></section>'+tabs+localSent();const request=state.friendRequest;const requestCard=request?`<button class="menu-item" data-action="invitation"><span><strong>Friend request</strong><small>Local test · ${esc(request.status)}</small></span><span>›</span></button>`:'';return`<section class="mailbox-heading"><img src="assets/home/mailbox.png" alt="Mailbox" width="1864" height="843">${window.Pigeon?'<button class="primary" data-action="phone-history">Phone inbox &amp; schedules</button>':''}</section>${tabs}${requestCard}${!state.inbox.length?`<div class="empty"><img src="assets/pigeon.webp" alt=""><h2>Suspiciously peaceful.</h2><p>Try a test pop-up to see a letter here.</p><button class="secondary" data-action="test">Send test</button></div>`:`<div class="inbox-list">${state.inbox.slice().reverse().map(m=>`<button class="inbox-item" data-action="read" data-id="${esc(m.id)}"><span>${m.type==='picture'&&m.image?'<img alt="" class="local-mail-thumb" src="'+esc(m.image)+'">':icon(m.type==='message'?'mail':'inbox')}</span><span><strong>${esc(m.sender)}</strong><span>${esc(m.type==='picture'?'A picture':m.text||m.gift||'A little interruption')}</span><small>${formatTime(m.createdAt)} · Test on this device${m.snoozeUntil?' · Snoozed':''}</small></span>${m.read?'':'<b class="unread" aria-label="Unread"></b>'}</button>`).join('')}</div>`}${state.scheduled.length?`<h2 class="section-title">Waiting pigeons</h2>${state.scheduled.map(m=>`<div class="scheduled"><span>Local test · ${esc(m.recipient)}<small>${formatTime(Date.parse(m.when))}</small></span><button class="text-button" data-action="cancel-scheduled" data-id="${esc(m.id)}">Cancel</button></div>`).join('')}`:''}`}
 let homeCategory='Photos',wheelGeneration=0;
+function browseHomeCategory(category){
+ if(window.Pigeon)return composeFrom(category,render,null,state.profile);
+ const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();
+}
 async function mountHomeWheel(){
  const root=app.querySelector('#home-wheel'),generation=++wheelGeneration;
  if(!root)return;
  let designs;
  try{designs=await catalogueDesigns();}catch{if(root.isConnected)root.textContent='The artwork could not load. Reopen Post office to retry.';finishStartup();return;}
  if(!root.isConnected||generation!==wheelGeneration)return;
- mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;},onBack:()=>{},onBrowse:category=>{if(window.Pigeon)return composeFrom(category,render,null,state.profile);const b=document.createElement('button');b.dataset.action='shop';b.dataset.id=category;app.append(b);b.click();b.remove();}});
+ const send=app.querySelector('[data-home-send]');
+ mountCategoryWheel(root,{initialCategory:homeCategory,designs,onSelect:key=>{homeCategory=key;send?.setAttribute('aria-label','Send '+(key==='Photos'?'photo frames':key==='Stickers'?'stickers':key.toLowerCase()));},onBack:()=>{},onBrowse:browseHomeCategory});
+ const hint=root.querySelector('.wheel > p');if(hint)hint.textContent='Swipe to choose, then tap Send.';
+ if(send){send.disabled=false;send.onclick=()=>browseHomeCategory(homeCategory);}
  finishStartup();
 }
 function updateUnreadBadge(){
@@ -60,6 +67,7 @@ function render(reuse=false){const previous=app.querySelector('.page-content');i
  if(tab==='inbox'&&window.Pigeon?.mailbox)wireMailbox(app,render);
  if(tab==='inbox'&&!window.Pigeon?.mailbox){const content=app.querySelector('.page-content');if(!cached)content.insertAdjacentHTML('afterbegin',peopleSection());wirePeople(app,render);}
  if(window.Pigeon?.name&&nativeName!==state.profile.name){Pigeon.name(state.profile.name);nativeName=state.profile.name;}
+ publishFriendProfile(state.profile).catch(()=>{});
 }
 homeColours=setupHomeColours({app,getTheme:()=>state.theme,setTheme:value=>{state.theme=value;persist();render()},isHome:()=>tab==='home'});
 window.openPigeonHomeColours=async()=>{await verifyManager();tab='home';render();homeColours.open('page');};

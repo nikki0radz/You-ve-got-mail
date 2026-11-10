@@ -130,6 +130,7 @@ public class Delivery extends BroadcastReceiver {
             root.addView(actions,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));actions.setVisibility(View.INVISIBLE);
             Runnable dismissParcel=()->{
                 if(visible!=root)return;
+                Receipts.seen(c,m);
                 c.getSystemService(NotificationManager.class).cancel(id,1);
                 clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();
             };
@@ -156,13 +157,15 @@ public class Delivery extends BroadcastReceiver {
                     }
                 }
             });
-            dismiss.setOnClickListener(v->dismissParcel.run());reply.setOnClickListener(v->{try{c.startActivity(new Intent(c,Main.class).setAction("reply").putExtra("id",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}catch(Exception ignored){notice(c,m,false);}clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();});
-            if(automatic){
+            dismiss.setOnClickListener(v->{Receipts.seen(c,m);dismissParcel.run();});reply.setOnClickListener(v->{Receipts.seen(c,m);try{c.startActivity(new Intent(c,Main.class).setAction("reply").putExtra("id",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}catch(Exception ignored){notice(c,m,false);}clear(c);if(c instanceof OpenParcel)((OpenParcel)c).finish();});
+            {
                 root.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener(){
                     public boolean onPreDraw(){
                         root.getViewTreeObserver().removeOnPreDrawListener(this);
                         Runnable report=()->{
-                            if(root.isAttachedToWindow()&&root.isShown()&&root.getWindowVisibility()==View.VISIBLE&&allowed(c))Mail.outcome(c,m,"screen");
+                            if(root.isAttachedToWindow()&&root.isShown()&&root.getWindowVisibility()==View.VISIBLE&&!locked(c)){
+                                if(automatic){if(allowed(c))Mail.outcome(c,m,"screen");}else Receipts.seen(c,m);
+                            }
                         };
                         if(Build.VERSION.SDK_INT>=29&&root.isHardwareAccelerated())root.getViewTreeObserver().registerFrameCommitCallback(report);
                         else root.postOnAnimation(report);

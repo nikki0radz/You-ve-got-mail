@@ -422,7 +422,7 @@ public class Main extends Activity {
                 for(String k:new String[]{"fullPopup","onUnlock","warning","friendAlerts","replyAlerts","closedInbox"})data.put(k,p.getBoolean(k,"closedInbox".equals(k)?p.getBoolean("quiet",true):!"friendAlerts".equals(k)));
                 data.put(ParcelFrost.OPACITY,ParcelFrost.opacity(Main.this));
                 try{data.put("cameraCapture",true);data.put("embeddedCamera",true);data.put("appVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
-                data.put("pushSupported",true).put("pushStatus",PushConnection.status(Main.this)).put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
+                data.put("receiptTracking",true).put("pushSupported",true).put("pushStatus",PushConnection.status(Main.this)).put("friendRequestNotifications",true).put("screenFlashBrightness",true).put("permissionSetup",true).put("battery",DeliverySetup.enabled(Main.this,"battery"));
                 data.put("warningSeconds",Mail.delay(Main.this)).put("overlay",Settings.canDrawOverlays(Main.this)).put("notifications",DeliverySetup.enabled(Main.this,"notifications")).put("precise",Mail.exact(Main.this));
             }catch(JSONException ignored){}
             return data.toString();
