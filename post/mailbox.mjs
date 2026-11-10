@@ -8,6 +8,8 @@ import {scaled} from '../shop/transport-image.mjs';
 import {phoneCache} from './phone-cache.mjs';
 import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend-requests.mjs';
 import {watchImage} from '../shop/ui-tasks.mjs';
+import {resolveReplyContent} from './reply-content.mjs';
+import {mailLoading} from './mail-loading.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
 import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime} from './mail-status.mjs';
 
@@ -68,7 +70,7 @@ window.postOfficeResult=(id,raw)=>{const promise=pending.get(id);if(!promise)ret
 const el=()=>document.querySelector('#mail-window');
 function page(title,body,back){
   const d=el();
-  delete d.dataset.mailArtViewer;
+  delete d.dataset.mailArtViewer;delete d.openingMarker;
   // Keep private sender names out of the design export.
   d.dataset.reviewScreen=title.replace(/^(Reply to |A note for |To |From ).+$/,(_,prefix)=>prefix.trim()+' parcel');
   delete d.dataset.receipt;if(!d.open)d.showModal();
@@ -172,30 +174,26 @@ export function replyTo(id,refresh){
   function done(){page(m.remote?'Reply sent':'Reply saved',bird+button('done','Back to mailbox'));el().dataset.reviewScreen='reply-confirmation';refresh();action('done',()=>{el().close();refresh();});}
   intro();
 }
+async function viewReply(m,refresh,force=false){
+  page('Opening reply…',mailLoading());
+  const loading=el().querySelector('.mail-opening');
+  const content=await resolveReplyContent(m,{force,loadPicture:async()=>{
+    const source=thumb(m.id),image=new Image();image.src=source;await image.decode();return source;
+  },fetchReceipt:id=>post('receipt',{id})});
+  if(!loading.isConnected||!el().open)return;
+  const hasContent=Boolean(content.text||content.image);
+  page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(content.text?'<p class="received-reply">'+esc(content.text)+'</p>':'')+(content.image?'<img class="mail-proof" style="visibility:hidden" src="'+esc(content.image)+'" alt="Picture reply">':'')+(!hasContent&&content.verified?'<p>No reply is attached to this parcel yet.</p>':'')+(content.warning?'<p role="status">'+esc(content.warning)+'</p>':'')+'<div class="mail-button-row reply-view-actions">'+button('retry-reply','Refresh reply')+button('done','Back to mailbox')+'</div>');
+  el().dataset.reviewScreen='received-reply';
+  action('retry-reply',()=>viewReply(m,refresh,true));action('done',()=>{el().close();refresh();});
+  if(content.image){if(await enlargeMailArtwork(el()))confirmOpening(m);}
+  else if(hasContent)confirmOpening(m);
+  refresh();
+}
 async function view(m,refresh){
   if(!m)return;if(!m.sent)phoneCache.markRead(m.id);
-  if(m.isReply){
-    let replyImage='',warning='',verified=false;
-    if(m.remote&&m.originalId){
-      page('Opening reply…','<p data-reply-loading>Checking for the picture and message…</p>');
-      const loading=el().querySelector('[data-reply-loading]');
-      try{
-        const r=await post('receipt',{id:m.originalId});
-        if(!loading.isConnected||!el().open)return;
-        replyImage=typeof r.replyImage==='string'&&r.replyImage.startsWith('data:image/png;base64,')?r.replyImage:'';
-        m={...m,text:typeof r.reply==='string'?r.reply:'',hasImage:Boolean(replyImage)};verified=true;
-        await phoneCache.refreshFresh().catch(()=>{});
-        if(!loading.isConnected||!el().open)return;
-      }catch{
-        if(!loading.isConnected||!el().open)return;
-        warning='Could not refresh this reply. Showing the copy saved on this phone.';
-        if(m.text==='null'&&!m.hasImage){m={...m,text:''};warning='This reply did not download correctly. Connect to the internet and try again.';}
-      }
-    }
-    const content=Boolean(m.text||m.hasImage);
-    page('Reply from '+m.sender,'<p>'+esc(date(m.created||m.when))+'</p>'+(m.text?'<p class="received-reply">'+esc(m.text)+'</p>':'')+(m.hasImage?'<img class="mail-proof" src="'+esc(replyImage||thumb(m.id))+'" alt="Picture reply">':'')+(!content&&verified?'<p>No reply is attached to this parcel yet.</p>':'')+(warning?'<p role="status">'+esc(warning)+'</p>':'')+button('retry-reply','Refresh reply')+button('done','Back to mailbox'));el().dataset.reviewScreen='received-reply';if(content)confirmOpening(m);action('retry-reply',()=>view(m,refresh));if(m.hasImage)enlargeMailArtwork(el());action('done',()=>{el().close();refresh();});refresh();return;}
+  if(m.isReply)return viewReply(m,refresh);
   page((m.sent?'To ':'From ')+m.sender,'<p>'+esc(parcelKind(m.kind))+' · '+esc(date(m.when))+'</p><img class="mail-proof" src="'+(m.isReply&&!m.hasImage?'assets/home/envelope.webp':thumb(artworkId(m)))+'" alt="Parcel artwork"><div class="thread-reply"></div>'+(!m.sent?(m.status==='scheduled'?button('cancel','Cancel scheduled delivery'):m.status==='cancelled'?'':button('reply','Reply')):''));
-  if(!m.sent){enlargeMailArtwork(el());confirmOpening(m);}
+  if(!m.sent){enlargeMailArtwork(el()).then(ready=>{if(ready)confirmOpening(m);});}
   const answer=el().querySelector('.thread-reply');action('reply',()=>replyTo(m.id,refresh));action('cancel',()=>{Pigeon.cancelScheduled(m.id);el().close();phoneCache.refresh().then(refresh).catch(()=>{});});
   if(m.sent&&!m.selfSent){try{const r=await post('receipt',{id:m.id});if(r.reply||r.replyImage){phoneCache.markRead('reply-'+m.id);refresh();}answer.innerHTML=receiptMarkup(r,m.when);if(r.reply||r.replyImage){const p=document.createElement('p');p.textContent=r.reply||'Sticker reply';answer.append(p);}if(r.replyImage?.startsWith('data:image/png;base64,')){const i=new Image();i.className='mail-proof';i.src=r.replyImage;i.alt='Reply';answer.append(i);}if(r.reply||r.replyImage)confirmOpening({id:'reply-'+m.id,remote:true},answer);}catch(e){answer.textContent=e.message;}}
   else if(m.pictureReply||m.reply){answer.innerHTML=receiptMarkup(m.replyDelivery||{},0,true);const caption=document.createElement('p');answer.append(caption);caption.textContent=m.pictureReply?'Your sticker reply':'You replied: '+m.reply;if(m.pictureReply){const i=new Image();i.className='mail-proof';i.src=thumb('reply-'+m.id);answer.append(i);}}
@@ -234,7 +232,7 @@ export function composeFrom(category,refresh,example,myProfile={}){
       if(selected==='self'){const result=Pigeon.queue(JSON.stringify({sender:'Myself',senderCode:'self',image,kind:uploadedKind||kinds[group]||'a parcel',text:name,when}));if(result!=='ok')throw Error(result);phoneCache.refresh().catch(()=>{});}
       else{const friend=people.find(f=>f.code===selected);sentResult=await post('send',{code:friend.code,recipient:friend.name,kind:uploadedKind||kinds[group]||'a parcel',image,when,receiptSecret:key});}
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
-      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+(sentResult?.id?'<div class="dispatch-status">'+receiptMarkup({sentAt:sentResult.sentAt},when)+'</div>'+button('check-delivery','Check status'):'')+button('done','Done'));
+      page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+(sentResult?.id?'<div class="dispatch-status">'+receiptMarkup({sentAt:sentResult.sentAt},when)+'</div>':'')+'<div class="mail-button-row dispatch-complete-actions">'+(sentResult?.id?button('check-delivery','Check status'):'')+button('done','Done')+'</div>');
       const receiptPanel=el().querySelector('.dispatch-status');action('check-delivery',async()=>{const receipt=await post('receipt',{id:sentResult.id});if(receiptPanel?.isConnected)receiptPanel.innerHTML=receiptMarkup(receipt,when);});
       el().dataset.receipt='0';action('done',()=>{el().close();refresh();});});
   };

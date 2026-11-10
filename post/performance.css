@@ -4,3 +4,12 @@
 .image-loading-label{display:flex;align-items:center;justify-content:center;gap:10px;min-height:80px}
 .library-grid>button,.mail-row{content-visibility:auto;contain-intrinsic-size:auto 70px}
 @media(prefers-reduced-motion:reduce){.art-pending::after,.image-loading-label::before{animation:none}}
+
+/* Reply and picture loading share three moving dots. */
+#mail-window .mail-opening{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:120px;color:inherit;text-align:center}
+#mail-window .mail-loading-dots{display:flex;align-items:center;justify-content:center;gap:8px;height:24px}
+#mail-window .mail-loading-dots i{display:block;width:9px;height:9px;border-radius:50%;background:currentColor;animation:mail-loading-dot 1s ease-in-out infinite}
+#mail-window .mail-loading-dots i:nth-child(2){animation-delay:.15s}
+#mail-window .mail-loading-dots i:nth-child(3){animation-delay:.3s}
+@keyframes mail-loading-dot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-7px);opacity:1}}
+@media(prefers-reduced-motion:reduce){#mail-window .mail-loading-dots i{animation:none;opacity:1}}

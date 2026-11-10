@@ -49,15 +49,19 @@
  const receipt={sentAt:now-300000,deliveredAt:now-290000,lockedNotificationAt:now-280000,...(seen?{seenAt:now-60000}:{}),status:'acknowledged'};
  const book={me:{code:'123456789A'},friends:[{name:'Owen',code:'ABCDEF1234',mode:'open',photo:'assets/home/owen.webp',settings:{notifications:true,popups:true,warning:true,onUnlock:true,replyNotifications:true,precise:true,push:'connected'},lastContactAt:now-20000,settingsAt:now-100000},{name:'Sophie',code:'1234ABCDEF',mode:'closed',photo:'assets/home/sophie.webp'}],incoming:[],outgoing:[]};
  const rows=[{id:'parcel1',sender:'Owen',code:'ABCDEF1234',kind:'a sticker',sent:true,status:'sent',when:now-300000,created:now-300000,delivery:receipt},{id:'reply-parcel1',originalId:'parcel1',sender:'Owen',senderCode:'ABCDEF1234',isReply:true,remote:true,kind:'Reply',text:pictureCase?'null':'Hi Nicole! This is a simulated reply.',status:'received',when:now-50000,created:now-50000}];
+ const slowCase=new URLSearchParams(location.search).has('loading');
+ if(slowCase){rows.push({...rows[1],id:'cached-picture',text:'',hasImage:true},{...rows[1],id:'cached-text',text:'Saved text reply',hasImage:false});}
+ window.fixtureReceiptRequests=0;window.fixtureSeen=[];
  const read=new Set(),fetchOriginal=fetch.bind(window);
  window.fetch=(input,options={})=>{const u=new URL(typeof input==='string'?input:input.url,location.href);if(u.pathname.includes('/api/catalogue/'))return Promise.resolve(Response.json({items:[],categories:['Photos','Notes','Flowers','Stickers','Reminders','Postcards','Love notes'].map(name=>({name})),avatars:{hidden:[]},more:false}));return fetchOriginal(input,options);};
  const log=value=>parent.postMessage({type:'receipt-fixture',value},location.origin);
  window.Pigeon={mailbox:()=>JSON.stringify(rows),friendsCached:()=>JSON.stringify(book),wasRead:id=>read.has(id),markRead:id=>{read.add(id);log('Unread badge cleared: '+id);},isOpen:()=>true,receiving:()=>{},name:()=>{},setTheme:()=>{},designPaired:()=>false,deliveryPrefs:()=>JSON.stringify({appVersion:'0.1.46',receiptTracking:true,fullPopup:true,notifications:true}),post:(ticket,op,raw)=>{
   const body=JSON.parse(raw);let data=book;
-  if(op==='receipt')data=pictureCase?{...receipt,reply:'',replyImage:picture}:{...receipt,reply:'A simulated reply'};
-  if(op==='seen'){const row=rows.find(r=>r.id===body.id);if(row)row.seenAt=Date.now();data={ok:true};log('Opening confirmation: '+body.id);}
+  if(op==='receipt'){window.fixtureReceiptRequests++;}if(op==='receipt')data=pictureCase?{...receipt,reply:'',replyImage:picture}:{...receipt,reply:'A simulated reply'};
+  if(op==='send')data={ok:true,id:'simulated-parcel',sentAt:Date.now()};
+  if(op==='seen'){window.fixtureSeen.push(body.id);const row=rows.find(r=>r.id===body.id);if(row)row.seenAt=Date.now();data={ok:true};log('Opening confirmation: '+body.id);}
   if(op==='profile')data={ok:true};
-  queueMicrotask(()=>window.postOfficeResult(ticket,JSON.stringify({data})));
+  const answer=()=>window.postOfficeResult(ticket,JSON.stringify({data}));if(slowCase&&op==='receipt')setTimeout(answer,450);else queueMicrotask(answer);
  }};
 })();
 </script><script type="module" src="app.js?v=hanging-sign-2"></script>

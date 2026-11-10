@@ -43,3 +43,6 @@ html[data-theme=dark] #app [data-mail-mode=closed]{color:#f7aab0}
 #mail-window .mail-seen{color:#1e5e94}
 html[data-theme=dark] #mail-window .mail-seen{color:#8ac9ff}
 #mail-window [data-recipient-mail-status]{margin:10px 0;font-weight:650}
+
+#mail-window .mail-button-row{display:flex;align-items:stretch;gap:10px;margin-top:14px}
+#mail-window .mail-button-row>button.mb-button[data-mb]{flex:1 1 0;min-width:0;min-height:48px;margin:0;padding:10px 8px;font-size:clamp(12px,3.8vw,16px);white-space:nowrap}

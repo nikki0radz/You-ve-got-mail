@@ -4,8 +4,8 @@ export function fitPreview(image){
  if(tasks.has(image))return tasks.get(image);
  const small=Boolean(image.closest('.parcel-thumb')),source=image.src;if(small&&fitted.has(image))return Promise.resolve();
  if(small&&thumbnails.has(source)){image.src=thumbnails.get(source);return Promise.resolve();}
- const task=pending.then(async()=>{if(!image.isConnected)return;await idleTurn();if(!image.isConnected)return;await trimPreview(image,small);if(small)fitted.add(image);if(small&&image.src!==source){if(thumbnails.size>=80)thumbnails.delete(thumbnails.keys().next().value);thumbnails.set(source,image.src);}}).finally(()=>tasks.delete(image));tasks.set(image,task);
- pending=task.catch(()=>{});return task;
+ const task=(small?pending:Promise.resolve()).then(async()=>{if(!image.isConnected)return;if(small)await idleTurn();if(!image.isConnected)return;await trimPreview(image,small);if(small)fitted.add(image);if(small&&image.src!==source){if(thumbnails.size>=80)thumbnails.delete(thumbnails.keys().next().value);thumbnails.set(source,image.src);}}).finally(()=>tasks.delete(image));tasks.set(image,task);
+ if(small)pending=task.catch(()=>{});return task;
 }
 // Sending keeps full placement geometry; only the visible preview is trimmed.
 async function trimPreview(image,small){
@@ -20,7 +20,7 @@ async function trimPreview(image,small){
     ctx.drawImage(image,0,0,w,h);
     const {data}=ctx.getImageData(0,0,w,h);
     let left=w,right=-1,top=h,bottom=-1;
-    for(let y=0;y<h;y++){if(y%48===0){await idleTurn();if(!image.isConnected)return;}for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){if(y%(small?48:128)===0){if(small)await idleTurn();else await new Promise(resolve=>setTimeout(resolve,0));if(!image.isConnected)return;}for(let x=0;x<w;x++){
       if(data[(y*w+x)*4+3]<12)continue;
       left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
     }
