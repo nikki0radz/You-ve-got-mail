@@ -7,3 +7,7 @@
 .frame-camera [data-flash-hint]{font-size:12px;margin:6px 0}
 .frame-camera .camera-readout{display:grid;gap:2px;min-width:0}
 .frame-camera [data-beauty-status]{font:600 12px/1.3 system-ui;color:#fff9ed}
+.frame-camera .camera-zoom{box-sizing:border-box;display:flex;align-items:center;gap:8px;width:min(100%,380px);margin:0 auto 12px;padding:7px 12px;border-radius:24px;background:#172d28ed;color:#fff9ed;font:600 12px/1.3 system-ui}
+.frame-camera .camera-zoom input{flex:1;min-width:36px;min-height:40px;accent-color:#c7ddcb;touch-action:pan-x}
+.frame-camera .camera-zoom output{min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.frame-camera .camera-zoom input:disabled{opacity:.5}

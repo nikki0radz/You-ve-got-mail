@@ -4,9 +4,12 @@
 <h1>Camera flash checks</h1><p>Simulated stream: checks controls and cleanup, not physical flash.</p>
 <label><input type="checkbox" id="hardware" checked> Back camera supports flash</label>
 <label><input type="checkbox" id="acknowledge" checked> Simulated Android acknowledges brightness</label>
+<label><input type="checkbox" id="frame" checked> Narrow frame for zoom checks</label>
 <button id="open" type="button">Open test camera</button><p id="result" role="status">Ready</p><pre id="events" aria-label="Flash events"></pre><img id="photo" alt="Saved test photo" style="max-width:200px">
 <script type="module">
 import {openFrameCamera} from '../shop/frame-camera.mjs';
+import {setBeautyEnabled} from '../shop/beauty-pref.mjs';
+setBeautyEnabled(false);
 const log=[],events=document.querySelector('#events'),result=document.querySelector('#result');
 function record(value){log.push(value);events.textContent=log.join('\n');}
 window.Pigeon={deliveryPrefs:()=>JSON.stringify({screenFlashBrightness:true}),settingsAction:key=>record('simulated native '+key)};
@@ -20,6 +23,7 @@ Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async g
  const facing=typeof video.facingMode==='object'?(video.facingMode.exact||video.facingMode.ideal):video.facingMode;
  const canvas=document.createElement('canvas');canvas.width=360;canvas.height=640;const ctx=canvas.getContext('2d');
  ctx.fillStyle='#739c85';ctx.fillRect(0,0,360,640);ctx.fillStyle='#d89a87';ctx.fillRect(180,0,180,640);ctx.fillStyle='#253e31';ctx.font='28px sans-serif';ctx.fillText('CAMERA TEST',80,200);ctx.fillText(facing==='user'?'FRONT':'BACK',130,280);
+ ctx.fillStyle='#fff';for(const [x,y] of [[0,0],[340,0],[0,620],[340,620]])ctx.fillRect(x,y,20,20);
  const stream=canvas.captureStream(15),track=stream.getVideoTracks()[0],settings=track.getSettings.bind(track),stop=track.stop.bind(track);let torch=false;
  track.getSettings=()=>({...settings(),facingMode:facing,torch});track.getCapabilities=()=>({torch:facing==='environment'&&document.querySelector('#hardware').checked});
  const pulse=setInterval(()=>{ctx.fillStyle='#253e31';ctx.fillRect(0,630,360,10);track.requestFrame?.();},60);
@@ -27,9 +31,13 @@ Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async g
  record('opened '+facing);return stream;
 }}});
 document.querySelector('#open').onclick=async()=>{
- log.length=0;record('start');result.textContent='Camera open';const file=await openFrameCamera(null);
+ log.length=0;record('start');result.textContent='Camera open';
+ const art=document.createElement('canvas');art.width=200;art.height=800;const a=art.getContext('2d');a.fillStyle='#d89a87';a.fillRect(0,0,200,800);a.clearRect(20,20,160,760);
+ const mask=document.createElement('canvas');mask.width=200;mask.height=800;const m=mask.getContext('2d');m.fillStyle='#fff';m.fillRect(20,20,160,760);
+ const item=document.querySelector('#frame').checked?{sharedId:'test',master:art.toDataURL(),maskSheet:mask.toDataURL(),rect:[0,0,200,800],opening:[.1,.025,.9,.975]}:null;
+ const file=await openFrameCamera(item);
  if(!file){result.textContent='Cancelled; no photo saved';return;}
- const image=await createImageBitmap(file);result.textContent='Saved '+file.name+' · '+image.width+' × '+image.height;image.close();
+ const image=await createImageBitmap(file);const check=document.createElement('canvas');check.width=image.width;check.height=image.height;const ctx=check.getContext('2d');ctx.drawImage(image,0,0);const alpha=ctx.getImageData(0,0,1,1).data[3];result.textContent='Saved '+file.name+' · '+image.width+' × '+image.height+' · corner alpha '+alpha;image.close();
  const photo=document.querySelector('#photo');if(photo.dataset.url)URL.revokeObjectURL(photo.dataset.url);photo.dataset.url=URL.createObjectURL(file);photo.src=photo.dataset.url;
 };
 </script></body></html>

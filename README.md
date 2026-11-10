@@ -41,6 +41,8 @@ The in-app camera has a labelled flash switch for each lens, off by default. And
 
 The pinned MediaPipe runtime and model are downloaded by `scripts/prepare-beauty-assets.mjs` on the first clean build and included in the app and published design release. Generated vendor binaries stay out of Git; the downloader checks the model checksum and includes the upstream licence.
 
+The camera’s Zoom out / Zoom in slider changes framing before capture on either camera. Masked frames can zoom out far enough to show the whole camera image instead of forcing it to fill a mismatched opening; uncovered space stays transparent. Plain photos start at the full camera view and allow digital zoom in. The saved image uses the same framing at capture resolution, including transparent PNG padding when zoomed out, so the photo-fitting step retains the chosen composition. This is digital framing within the current camera lens, not an ultra-wide lens switch.
+
 ## Guest delivery
 
 The Android app creates a private mailbox key on the device. The HTTPS delivery service stores hashed credentials, claims a link atomically, and clears the parcel from the server after the receiver saves and acknowledges it. Invitations expire after seven days. The invitation and reply receipt travel in URL fragments on the guest page. Anyone holding an unspent invitation can use it once. Friend mail uses mutually accepted connections. The app stores received history on the device and saves a private receipt for each sent friend parcel.
