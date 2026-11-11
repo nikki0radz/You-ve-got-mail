@@ -201,6 +201,7 @@ public class Main extends Activity {
         String value=pendingReply;pendingReply="";web.evaluateJavascript("window.openParcelAction("+JSONObject.quote(value)+")",null);
     }
     private void incoming(Intent i){
+        if("mailbox".equals(i.getAction())){pendingReply="@inbox:";dispatchIntent();return;}
         if("friends".equals(i.getAction())){pendingReply="@friends";dispatchIntent();return;}
         String id=i.getStringExtra("id");if(id==null)return;
         JSONObject m=Mail.meta(this,id);if(!m.has("id"))return;

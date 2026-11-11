@@ -20,11 +20,10 @@ public final class OpenParcel extends Activity {
             });
         }else open(m);
     }
-    void open(JSONObject m){String id=m.optString("id");UnlockQueue.remove(this,id);UnlockQueue.cleanup(this);
-        getSystemService(NotificationManager.class).cancel(id,1);
+    void open(JSONObject m){String id=m.optString("id");
         if("warning".equals(m.optString("status")))Mail.state(this,m,"received");
         Delivery.clear(this);
-        Delivery.present(this,m,false);
+        if(Delivery.present(this,m,false)){UnlockQueue.remove(this,id);UnlockQueue.cleanup(this);getSystemService(NotificationManager.class).cancel(id,1);}
     }
     protected void onDestroy(){Delivery.closeActivityWindow(this);super.onDestroy();}
 }

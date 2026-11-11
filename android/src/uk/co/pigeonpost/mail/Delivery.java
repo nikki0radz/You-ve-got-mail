@@ -59,7 +59,12 @@ public class Delivery extends BroadcastReceiver {
             if(!Mail.enabled(c,Mail.ALERT)||n.getNotificationChannel(Mail.ALERT).getImportance()<NotificationManager.IMPORTANCE_HIGH){notice(c,m,false);return;}
             Mail.state(c,m,"warning");notice(c,m,true);
             Mail.schedule(c,m.optString("id"),"finishWarning",System.currentTimeMillis()+Mail.delay(c)*1000L);
-        }else{if(warn)notice(c,m,false);show(c,m);}
+        }else{if(warn)notice(c,m,false);
+            if(!show(c,m)){
+                if(Mail.full(c)&&locked(c)&&Settings.canDrawOverlays(c)&&Mail.prefs(c).getBoolean("onUnlock",true))UnlockQueue.arm(c,m.optString("id"));
+                notice(c,m,false);
+            }
+        }
     }
     static void closeActivityWindow(Activity c){if(visible!=null&&visible.getContext()==c)clear(c);}
     static void clear(Context c){
@@ -69,10 +74,11 @@ public class Delivery extends BroadcastReceiver {
         else if(host instanceof OpenParcel&&!((Activity)host).isFinishing())((Activity)host).finish();
         UnlockQueue.afterUnlock(c.getApplicationContext());
     }
-    static void show(Context c,JSONObject m){present(c,m,true);}
-    static void present(Context c,JSONObject m,boolean automatic){
-        String id=m.optString("id");if(visible!=null){notice(c,m,false);return;}
+    static boolean show(Context c,JSONObject m){return present(c,m,true);}
+    static boolean present(Context c,JSONObject m,boolean automatic){
+        String id=m.optString("id");if(visible!=null){notice(c,m,false);return false;}
         try{
+            if(automatic&&!allowed(c))return false;
             boolean inActivity=c instanceof OpenParcel;
             Context windowContext=c;
             if(!inActivity&&Build.VERSION.SDK_INT>=30){
@@ -174,11 +180,13 @@ public class Delivery extends BroadcastReceiver {
                     }
                 });
             }
+            if(automatic&&!allowed(c))return false;
             if(inActivity)((Activity)c).setContentView(root);else{pane.setContentView(root);pane.show();}
             glass=pane;visible=root;window.setLayout(-1,-1);
             ParcelFrost.attach(windowContext,window);
             root.postDelayed(()->actions.setVisibility(View.VISIBLE),1000);
-        }catch(Exception e){android.util.Log.w("Pigeon","Could not present parcel window",e);clear(c);notice(c,m,false);if(c instanceof OpenParcel)((Activity)c).finish();}
+            return true;
+        }catch(Exception e){android.util.Log.w("Pigeon","Could not present parcel window",e);clear(c);notice(c,m,false);if(c instanceof OpenParcel)((Activity)c).finish();return false;}
     }
 }
 
