@@ -243,19 +243,30 @@ export function openMailboxItem(id,refresh){folder='inbox';person='';return view
 export function friendsWindow(refresh){return pendingFriendRequests().length?openFriendRequests(refresh):friendsPage(refresh);}
 export function composeFrom(category,refresh,example,myProfile={}){
   const draft={later:false,day:'',clock:'',target:'self'};
+  const key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
   const review=async(png,name,group,reopen,uploadedKind)=>{
-    const image=await scaled(png),snapshot=directory(),key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
+    page('Who is it for?',mailLoading('Refreshing your people…'));
+    const panel=el().firstElementChild;let refreshError='';
+    try{await refreshFriends();}catch{refreshError='Could not refresh your people. Showing saved contacts; tap Refresh people to retry.';}
+    if(!el().open||el().firstElementChild!==panel)return;
+    const image=await scaled(png);if(!el().open||el().firstElementChild!==panel)return;
+    const snapshot=directory();
     const people=(snapshot.friends||[]).filter(friend=>!friend.simulated);const kinds={Photos:'a framed photo',Notes:'a note',Stickers:'a sticker',Reminders:'a reminder',Flowers:'flowers',Postcards:'a postcard','Love notes':'a love note'};
-    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-3" data-review-look="sendrow-3"><label>Send to<select data-target hidden aria-label="Recipient"><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><details class="recipient-menu" data-base-look="recipientdivider-1" data-review-look="recipientdivider-1"><summary aria-label="Choose recipient"></summary><div class="recipient-people" data-review-look="recipientfont-2" data-base-look="recipientfont-2" role="group" aria-label="Recipient"></div></details></section><p data-recipient-mail-status></p><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
+    page('Who is it for?','<img class="mail-proof small" src="'+png+'" alt="'+esc(name)+'"><section class="recipient-choice" data-base-look="sendrow-3" data-review-look="sendrow-3"><label>Send to<select data-target hidden aria-label="Recipient"><option value="self">Myself</option>'+people.map(f=>'<option value="'+esc(f.code)+'" '+(f.mode==='closed'?'disabled':'')+'>'+esc(f.name)+' · '+esc(modes[f.mode])+'</option>').join('')+'</select></label><details class="recipient-menu" data-base-look="recipientdivider-1" data-review-look="recipientdivider-1"><summary aria-label="Choose recipient"></summary><div class="recipient-people" data-review-look="recipientfont-2" data-base-look="recipientfont-2" role="group" aria-label="Recipient"></div></details></section>'+button('refresh-recipients','Refresh people')+'<p data-recipient-refresh-status role="status"></p><p data-recipient-mail-status></p><div class="delivery-controls"></div><button class="dispatch-submit" type="button" data-mb="send">Send parcel <span aria-hidden="true">💌</span></button>'+button('edit','✎ Edit parcel'));
     fitPreview(el().querySelector('.mail-proof'));
-    const target=el().querySelector('[data-target]');if([...target.options].some(o=>o.value===draft.target&&!o.disabled))target.value=draft.target;
+    const target=el().querySelector('[data-target]');target.value=draft.target;
+    el().querySelector('[data-recipient-refresh-status]').textContent=refreshError;
+    action('refresh-recipients',()=>review(png,name,group,reopen,uploadedKind));
     const list=el().querySelector('.recipient-people'),menu=el().querySelector('.recipient-menu'),heading=menu.querySelector('summary');
+    // Let the dialog scroll as one list; small nested lists can hide contacts.
+    Object.assign(list.style,{maxHeight:'none',overflow:'visible',justifyContent:'flex-start'});
     el().querySelector('.recipient-choice>label').onclick=e=>{if(e.target.localName==='label'){e.preventDefault();menu.open=!menu.open;heading.focus();}};
     const updateTarget=()=>{
       draft.target=target.value;const recipientStatus=el().querySelector('[data-recipient-mail-status]');if(recipientStatus){const friend=people.find(f=>f.code===target.value);recipientStatus.textContent=target.value==='self'?'Sending to yourself':(mailModes[friend?.mode]||'Mail status not reported')+(friend?.settings?.dnd===true?' · '+dndSummary(friend):'');}
       [...list.children].forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===target.selectedIndex)));
       const selected=list.children[target.selectedIndex];if(selected)heading.replaceChildren(...[...selected.childNodes].map(node=>node.cloneNode(true)));
-      heading.setAttribute('aria-label','Send to '+target.selectedOptions[0].textContent);
+      if(!selected)heading.textContent='Choose someone';
+      heading.setAttribute('aria-label',target.selectedOptions.length?'Send to '+target.selectedOptions[0].textContent:'Choose recipient');
     };
     for(const option of target.options){
       const person=document.createElement('button');person.type='button';person.disabled=option.disabled;
@@ -268,7 +279,8 @@ export function composeFrom(category,refresh,example,myProfile={}){
     dispatchControls(el().querySelector('.delivery-controls'),draft);
     action('edit',()=>{el().close();reopen();});
     action('send',async()=>{let sentResult;const selected=target.value,later=draft.later,when=later?new Date(draft.day+'T'+draft.clock).getTime():Date.now();if(later&&(!Number.isFinite(when)||when<=Date.now()||when>Date.now()+30*86400000))throw Error('Choose a future time within 30 days.');
-      if(selected==='self'){const result=Pigeon.queue(JSON.stringify({sender:'Myself',senderCode:'self',image,kind:uploadedKind||kinds[group]||'a parcel',text:name,when}));if(result!=='ok')throw Error(result);phoneCache.refresh().catch(()=>{});}
+      if(!selected||!Array.from(target.options).some(option=>option.value===selected&&!option.disabled))throw Error('Choose an available recipient first.');
+      if(selected==='self'){const result=await Pigeon.queue(JSON.stringify({sender:'Myself',senderCode:'self',image,kind:uploadedKind||kinds[group]||'a parcel',text:name,when}));if(result!=='ok')throw Error(result);phoneCache.refresh().catch(()=>{});}
       else{const friend=people.find(f=>f.code===selected);sentResult=await post('send',{code:friend.code,recipient:friend.name,kind:uploadedKind||kinds[group]||'a parcel',image,when,receiptSecret:key});}
       const to=selected==='self'?'you':people.find(f=>f.code===selected).name;
       page(later?'Flight booked!':'Parcel sent!','<section class="post-receipt">'+bird+'<small>PIGEON POST · '+(later?'BOOKING SLIP':'DISPATCH SLIP')+'</small><p>'+(later?'Your courier has a date in the diary.':'Your pigeon has clocked in. The satchel is packed.')+'</p><strong data-base-look="receiptfont-2" data-review-look="receiptfont-2">'+esc(name)+'</strong><p>For '+esc(to)+' · '+esc(later?date(when):'Immediate delivery')+'</p></section>'+(sentResult?.id?'<div class="dispatch-status">'+receiptMarkup({sentAt:sentResult.sentAt},when)+'</div>':'')+'<div class="mail-button-row dispatch-complete-actions">'+(sentResult?.id?button('check-delivery','Check status'):'')+button('done','Done')+'</div>');
