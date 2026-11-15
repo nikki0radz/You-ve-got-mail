@@ -13,6 +13,7 @@ import {friendsDirectory,pendingFriendRequests,respondToPractice} from './friend
 import {watchImage} from '../shop/ui-tasks.mjs';
 import {watchReceipt} from './receipt-watch.mjs';
 import {resolveReplyContent} from './reply-content.mjs';
+import {phoneFinderControls,openPhoneFinder,openFinderPermission} from './phone-finder.mjs';
 import {mailLoading,loadingButton} from './mail-loading.mjs';
 import {enlargeMailArtwork} from './mail-art-viewer.mjs';
 import {mailModes,deliverySummary,deliveryTimeline,friendFacts,statusTime,dndSummary} from './mail-status.mjs';
@@ -115,7 +116,7 @@ export function wirePeople(root,refresh){
 export function friendProfile(code,refresh){
  const f=(directory().friends||[]).find(friend=>friend.code===code);if(!f)return;
  if(f.simulated){page('Practice friend','<p>Simulation only · this friend cannot receive real parcels.</p>'+button('done','Done'));action('done',()=>el().close());return;}
- page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. DND can change between check-ins. It silences interruptions, not delivery confirmations. A check-in does not mean they are online.</p></article>'+'<div class="mail-button-row friend-profile-actions">'+button('person-mail','View mail')+button('refresh-person','Refresh profile')+'</div>');
+ page(f.name,'<article class="friend-profile"><img class="friend-profile-photo" src="'+profilePhoto(f)+'" alt="'+esc(f.name)+'’s profile picture"><strong class="friend-mail-mode" data-mail-mode="'+esc(f.mode||'unknown')+'">'+esc(mailModes[f.mode]||'Status not reported')+'</strong><dl>'+friendFacts(f).map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p>These are the last settings reported by their app. DND can change between check-ins. It silences interruptions, not delivery confirmations. A check-in does not mean they are online.</p></article>'+'<div class="mail-button-row friend-profile-actions">'+button('person-mail','View mail')+button('refresh-person','Refresh profile')+'</div>'+phoneFinderControls(f));
  const card=el().querySelector('.friend-profile');
  const updates=new AbortController();
  const updatePhoto=()=>{
@@ -127,6 +128,8 @@ export function friendProfile(code,refresh){
  };
  window.addEventListener('phone-mail-updated',updatePhoto,{signal:updates.signal});
  el().addEventListener('close',()=>updates.abort(),{once:true,signal:updates.signal});
+ action('find-phone',()=>openPhoneFinder(f,{page,button,action,post,el,back:()=>friendProfile(code,refresh)}));
+ action('finder-permission',()=>openFinderPermission(f,{page,button,action,post,el,back:()=>friendProfile(code,refresh)}));
  action('person-mail',()=>{person=code;el().close();refresh();});
  action('refresh-person',async()=>{await refreshFriends();if(card.isConnected&&el().open)friendProfile(code,refresh);});
 }

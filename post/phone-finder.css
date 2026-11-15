@@ -1,0 +1,6 @@
+#mail-window .phone-finder{margin-top:20px;padding-top:14px;border-top:1px solid #9aa68c}
+#mail-window .phone-finder h3{margin:0 0 8px;font-size:20px}
+#mail-window .phone-finder p{font-size:14px;line-height:1.5}
+#mail-window :is([data-mb=find-phone],[data-mb=ring-now],[data-mb=save-finder]){background:#365a40!important;color:#fff9e8!important;-webkit-text-fill-color:#fff9e8!important;border:1px solid #234532;border-radius:28px;box-shadow:0 3px 0 #243e2d;padding:9px 17px;min-height:46px;font:800 20px/1.3 PostalBaloo,system-ui}
+#mail-window .phone-finder button{display:block;width:100%;margin:10px 0;white-space:normal}
+#mail-window .phone-finder button:disabled{opacity:.55;box-shadow:none;cursor:default}

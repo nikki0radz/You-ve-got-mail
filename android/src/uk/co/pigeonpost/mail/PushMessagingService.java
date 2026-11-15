@@ -6,7 +6,10 @@ public final class PushMessagingService extends FirebaseMessagingService {
     @Override public void onNewToken(String token){PushConnection.token(this,token);}
     @Override public void onMessageReceived(RemoteMessage message){
         String type=message.getData().get("type");
-        if("friend_request_test".equals(type)){
+        if("find_phone".equals(type)){
+            Mail.prefs(this).edit().putLong("lastPushReceived",System.currentTimeMillis()).apply();
+            PhoneFinder.wake(this);
+        }else if("friend_request_test".equals(type)){
             Mail.prefs(this).edit().putLong("lastPushReceived",System.currentTimeMillis()).apply();
             FriendRequests.show(this,FriendRequests.TEST,"Practice pigeon",true);
         }else if("mail_available".equals(type)){

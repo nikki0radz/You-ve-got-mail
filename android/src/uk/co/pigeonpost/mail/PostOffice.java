@@ -18,7 +18,7 @@ final class PostOffice {
         SharedPreferences p=Mail.prefs(c);String mode=mode(c),name=p.getString("displayName","New pigeon");
         JSONObject settings=new JSONObject().put("notifications",Mail.enabled(c,Mail.QUIET)).put("popups",Mail.full(c)&&android.provider.Settings.canDrawOverlays(c))
           .put("warning",p.getBoolean("warning",true)).put("onUnlock",p.getBoolean("onUnlock",true)).put("replyNotifications",Mail.enabled(c,"replies")&&p.getBoolean("replyAlerts",true))
-          .put("precise",Mail.exact(c)).put("push",PushConnection.registered(c)?"connected":"pending")
+          .put("phoneFinder",true).put("precise",Mail.exact(c)).put("push",PushConnection.registered(c)?"connected":"pending")
           .put("version",c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName);
         String dnd=DndState.read(c);if(p.getBoolean("shareDnd",true)&&!"unknown".equals(dnd))settings.put("dnd","on".equals(dnd));
         String photo=p.getString("profilePhoto","");String details=settings.toString()+photo;
@@ -38,6 +38,14 @@ final class PostOffice {
                 c.getSystemService(NotificationManager.class).notify("friend:"+e.optString("code"),3,n);
             }
         }
+        try{
+            JSONArray permissions=Mail.request(c,"finder/permissions",null).optJSONArray("permissions"),peers=data.optJSONArray("friends");
+            if(peers!=null)for(int i=0;i<peers.length();i++){
+                JSONObject friend=peers.getJSONObject(i);String code=friend.optString("code");
+                friend.put("finderAllowed",p.getBoolean("finder:"+code,false));
+                if(permissions!=null)for(int j=0;j<permissions.length();j++){JSONObject grant=permissions.getJSONObject(j);if(code.equals(grant.optString("code")))friend.put("canFindPhone",grant.optInt("allowMe")==1);}
+            }
+        }catch(Exception ignored){}
         FriendRequests.update(c,data.optJSONArray("incoming"));
         data.remove("events");p.edit().putLong("friendsCursor",data.getLong("cursor")).putString("friendsSnapshot",data.toString()).apply();
         try{Receipts.sync(c);}catch(Exception ignored){}return data;
@@ -56,6 +64,16 @@ final class PostOffice {
             if(photo.length()>48000||(!photo.isEmpty()&&!photo.matches("^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$")))throw new IOException("Choose a smaller profile picture");
             Mail.prefs(c).edit().putString("profilePhoto",photo).apply();profile(c);return new JSONObject().put("ok",true);
         }
+        if("finder-permission".equals(op)){
+            String code=payload.getString("code");boolean allow=payload.getBoolean("allowed");
+            if(!code.matches("[A-F0-9]{10}"))throw new IOException("Invalid friend code");
+            if(allow&&!Mail.enabled(c,PhoneFinder.CHANNEL))throw new IOException("Enable app notifications in Android Settings first.");
+            if(!allow)Mail.prefs(c).edit().putBoolean("finder:"+code,false).commit();
+            Mail.request(c,"finder/permission",payload);
+            Mail.prefs(c).edit().putBoolean("finder:"+code,allow).commit();return friends(c);
+        }
+        if("find-phone".equals(op))return Mail.request(c,"finder/ring",payload);
+        if("find-status".equals(op))return Mail.request(c,"finder/status",payload);
         if("friends".equals(op))return friends(c);
         if(Arrays.asList("request","accept","decline").contains(op)){
             profile(c);Mail.request(c,"friends/"+op,new JSONObject().put("code",payload.getString("code")));return friends(c);

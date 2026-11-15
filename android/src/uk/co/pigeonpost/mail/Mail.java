@@ -46,6 +46,7 @@ final class Mail {
     static final class HttpFailure extends IOException{final int status;HttpFailure(int status,String message){super(message);this.status=status;}}
     static void channels(Context c){
         NotificationManager n=c.getSystemService(NotificationManager.class);
+        NotificationChannel finder=new NotificationChannel(PhoneFinder.CHANNEL,"Find phone",NotificationManager.IMPORTANCE_LOW);finder.setSound(null,null);n.createNotificationChannel(finder);
         n.createNotificationChannel(new NotificationChannel("replies","Replies",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel("friends","Friend status changes",NotificationManager.IMPORTANCE_DEFAULT));
         n.createNotificationChannel(new NotificationChannel(FriendRequests.CHANNEL,"Friend requests",NotificationManager.IMPORTANCE_DEFAULT));
